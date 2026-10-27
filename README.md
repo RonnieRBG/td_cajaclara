@@ -23,6 +23,7 @@
 ## Sobre el Proyecto
 
 Muchas pymes facturan pero no tienen liquidez, o no saben si su saldo mensual es positivo o negativo. **Caja Clara** resuelve esto con:
+
 - Registro categorizado de ingresos y gastos en Pesos Chilenos (CLP).
 - Seguimiento de cuentas por cobrar para anticipar cobros y evitar morosidad.
 - Métricas instantáneas de flujo de caja.
@@ -39,14 +40,14 @@ Muchas pymes facturan pero no tienen liquidez, o no saben si su saldo mensual es
 
 ## Stack Tecnológico
 
-| Capa | Tecnología | Versión |
-| :--- | :--- | :--- |
-| Lenguaje | Python | 3.10+ |
-| Framework | Django | 6.1.2 |
-| API REST | Django REST Framework | 3.18.3 |
-| CORS | django-cors-headers | 4.9.0 |
-| BD local | SQLite | 3 |
-| BD producción | PostgreSQL (`psycopg2-binary`) | 2.9.13 |
+| Capa          | Tecnología                     | Versión |
+| :------------ | :----------------------------- | :------ |
+| Lenguaje      | Python                         | 3.10+   |
+| Framework     | Django                         | 6.1.2   |
+| API REST      | Django REST Framework          | 3.18.3  |
+| CORS          | django-cors-headers            | 4.9.0   |
+| BD local      | SQLite                         | 3       |
+| BD producción | PostgreSQL (`psycopg2-binary`) | 2.9.13  |
 
 > Las versiones deben coincidir con `requirements.txt`.
 
@@ -127,13 +128,16 @@ Para PostgreSQL, usa `django.db.backends.postgresql` en `DATABASES` con las vari
 Definidos en `finanzas/models.py`; todos se asocian al `User` de Django.
 
 **`Categoria`**: clasifica los movimientos.
+
 - `usuario` (FK), `nombre` (50), `tipo` (`INGRESO` | `GASTO`).
 - Un usuario no puede repetir nombre + tipo.
 
 **`Movimiento`**: cada transacción real. Su tipo (ingreso/gasto) lo define la categoría.
+
 - `usuario` (FK), `categoria` (FK), `transaccion_id` (50, opcional), `monto` (CLP, sin decimales), `fecha`, `descripcion` (opcional), `fecha_registro` (automático).
 
 **`CuentaPorCobrar`**: pagos pendientes de clientes.
+
 - `usuario` (FK), `deudor` (100), `monto` (CLP), `fecha_emision`, `fecha_vencimiento`, `notas_contacto` (opcional).
 - `estado`: `PENDIENTE` (por defecto) | `PAGADA` | `VENCIDA`. Es un campo almacenado: nada lo cambia solo al pasar la fecha de vencimiento (ver [Notas Técnicas](#notas-técnicas-y-decisiones-pendientes)).
 
@@ -146,11 +150,13 @@ Local: `http://127.0.0.1:8000/api/finanzas/resumen-mensual/` · Sin autenticaci�
 > ⚠️ **Temporal:** el endpoint no filtra por el usuario que consulta; usa un usuario fijo (el primero en la base de datos). En la Semana 3 pasará a usar el usuario autenticado.
 
 **Funcionamiento:** toma el mes y año actuales (`now().date()`), filtra los `Movimiento` de ese período y calcula:
+
 - `total_ingresos`: suma de movimientos con categoría `INGRESO`.
 - `total_gastos`: suma de movimientos con categoría `GASTO`.
 - `flujo_caja`: `total_ingresos - total_gastos` (puede ser negativo).
 
 **Respuesta `200 OK`:**
+
 ```json
 {
   "mes": 10,
@@ -161,58 +167,67 @@ Local: `http://127.0.0.1:8000/api/finanzas/resumen-mensual/` · Sin autenticaci�
 }
 ```
 
-> ⚠️ **Frontend:** DRF serializa `DecimalField` como string por defecto (`"2850000"`). Si la vista no convierte a `int`, usa `Number(...)` antes de operar. Verifica la respuesta real con Postman y ajusta este ejemplo.
+> ⚠️ **Frontend:** DRF serializa `DecimalField` como string por defecto (`"2850000"`). Si la vista no convierte a `int`, usa `Number(...)` antes de operar. se necesita verificar la respuesta real con Postman y ajusta este ejemplo.
 
 **Error `400 Bad Request`** (no hay usuarios en la BD):
+
 ```json
 { "error": "No hay usuarios en la base de datos para probar." }
 ```
+
 Solución: `python manage.py createsuperuser` y agregar movimientos desde `/admin/`.
 
 ## Guía para UX / UI & Frontend
 
 Ya puedes maquetar con datos reales del resumen mensual.
 
-**CORS:** en desarrollo `CORS_ALLOW_ALL_ORIGINS = True`, así que puedes consumir la API desde React/Vite (`localhost:5173`, `localhost:3000`), HTML/JS vanilla o Postman/Insomnia. Se restringirá antes de producción.
+**CORS:** en desarrollo `CORS_ALLOW_ALL_ORIGINS = True`, se necesita consumir la API desde React/Vite u otro (`localhost:5173`, `localhost:3000`), HTML/JS vanilla o Postman/Insomnia. Se restringirá antes de producción.
 
 ### Pantallas a diseñar
 
-**A. Dashboard** (usa el endpoint actual)
-- Header con mes y año (ej: *"Octubre 2026"*).
+**A. Dashboard** (se usa el endpoint actual)
+
+- Header con mes y año (ej: _"Octubre 2026"_).
 - 3 tarjetas KPI: 🟢 Total Ingresos, 🔴 Total Gastos, ⚖️ Flujo de Caja Neto (verde si es positivo, rojo si es negativo).
 - Gráfico de dona o barras: Ingresos vs. Gastos.
 
 **B. Movimientos** (endpoints pendientes; maquetar con datos de ejemplo)
+
 - Tabla: Fecha, Categoría, Descripción, N° Transacción, Monto, con badge de color por Ingreso/Gasto.
 - Formulario "Nuevo Movimiento": tipo (filtra categorías), categoría, monto en CLP, fecha, descripción y comprobante (opcionales).
 
 **C. Cuentas por Cobrar**
+
 - Listado con deudor, monto y fecha límite.
 - Badges: 🟡 `PENDIENTE`, 🟢 `PAGADA`, 🔴 `VENCIDA`.
-- Acciones rápidas: *"Registrar Pago"* y *"Contactar"*.
+- Acciones rápidas: _"Registrar Pago"_ y _"Contactar"_.
 
 ### Reglas de formato
+
 - Montos en **CLP sin decimales**. Si `flujo_caja` es negativo, mostrar una alerta sugiriendo revisar gastos.
 
 ```javascript
 export const formatCLP = (amount) =>
-  new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
+  new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
     maximumFractionDigits: 0,
   }).format(Number(amount)); // Number() por si la API entrega strings
 ```
 
 ### Ejemplo de consumo
+
 ```javascript
 async function cargarResumenMensual() {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/finanzas/resumen-mensual/');
-    if (!response.ok) throw new Error('Error al obtener los datos');
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/finanzas/resumen-mensual/",
+    );
+    if (!response.ok) throw new Error("Error al obtener los datos");
     const data = await response.json();
-    console.log('Datos del mes:', data);
+    console.log("Datos del mes:", data);
   } catch (error) {
-    console.error('Error en la petición:', error);
+    console.error("Error en la petición:", error);
   }
 }
 ```
@@ -220,11 +235,13 @@ async function cargarResumenMensual() {
 ## Notas Técnicas y Decisiones Pendientes
 
 **Seguridad (antes de producción)**
+
 - Endpoint sin autenticación: se corrige con Token/JWT en la Semana 3.
 - Reemplazar `CORS_ALLOW_ALL_ORIGINS` por `CORS_ALLOWED_ORIGINS` con los dominios del frontend.
 - `DEBUG=False`, `SECRET_KEY` única y `ALLOWED_HOSTS` definido, todo desde variables de entorno.
 
-**Zona horaria:** `now().date()` puede desfasar el cambio de mes si `TIME_ZONE` no es `America/Santiago`. Recomendado:
+**Zona horaria:** `now().date()`se puede desfasar el cambio de mes si `TIME_ZONE` no es `America/Santiago`. Recomendado:
+
 ```python
 # settings.py
 TIME_ZONE = "America/Santiago"
@@ -235,9 +252,10 @@ from django.utils import timezone
 hoy = timezone.localdate()
 ```
 
-**Estado `VENCIDA` (decisión pendiente):** definir antes de crear los endpoints de `CuentaPorCobrar`:
-1. *Calculado:* una cuenta `PENDIENTE` con `fecha_vencimiento` anterior a hoy se trata como vencida (siempre consistente, sin tareas programadas).
-2. *Almacenado:* se actualiza con un *management command* diario.
+**Estado `VENCIDA` (decisión pendiente):** se necesita definir antes de crear los endpoints de `CuentaPorCobrar`:
+
+1. _Calculado:_ una cuenta `PENDIENTE` con `fecha_vencimiento` anterior a hoy se trata como vencida (siempre consistente, sin tareas programadas).
+2. _Almacenado:_ se actualiza con un _management command_ diario.
 
 ## Flujo de Trabajo con Git
 
@@ -264,4 +282,4 @@ hoy = timezone.localdate()
 
 ---
 
-*Desarrollado por el equipo de Caja Clara en el Bootcamp Talento Digital.*
+_Desarrollado por el equipo de Caja Clara en el Bootcamp Talento Digital._
