@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CajaClara — Movimientos</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <a class="logo" href="index.html" aria-label="CajaClara">
+            <span class="logo__mark"></span>
+          </a>
+          <h1 class="page-title">Movimientos</h1>
+        </div>
+        <div class="user">
+          <div class="user__avatar" aria-hidden="true"></div>
+          <div class="user__meta">
+            <span class="user__label">Usuario</span>
+            <span class="placeholder placeholder--text-sm"></span>
+          </div>
+        </div>
+      </header>
+
+      <main class="main">
+        <section class="toolbar" aria-label="Acciones">
+          <label class="btn-primary" for="sheet-nuevo">Nuevo Movimiento</label>
+        </section>
+
+        <section class="card filters-card" aria-label="Búsqueda y filtros">
+          <div class="search" role="search">
+            <span class="search__icon" aria-hidden="true"></span>
+            <span class="placeholder placeholder--text-md search__field"></span>
+          </div>
+
+          <div class="filters" role="tablist" aria-label="Filtro de tipo">
+            <label class="chip">
+              <input type="radio" name="filtro" checked />
+              <span>Todos</span>
+            </label>
+            <label class="chip">
+              <input type="radio" name="filtro" />
+              <span>Ingresos</span>
+            </label>
+            <label class="chip">
+              <input type="radio" name="filtro" />
+              <span>Gastos</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="card list-card" aria-label="Listado de movimientos">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Registro</span>
+              <h2 class="section-title">Movimientos</h2>
+            </div>
+            <span class="placeholder placeholder--text-sm"></span>
+          </div>
+
+          <ul class="movement-list">
+            <li class="movement-row">
+              <span class="summary__dot"></span>
+              <div class="movement-row__body">
+                <div class="movement-row__top">
+                  <span class="movement-row__label">Fecha</span>
+                  <span class="placeholder placeholder--date"></span>
+                </div>
+                <div class="movement-row__grid">
+                  <div>
+                    <span class="movement-row__label">Categoría</span>
+                    <span class="placeholder placeholder--text-sm"></span>
+                  </div>
+                  <div>
+                    <span class="movement-row__label">Descripción</span>
+                    <span class="placeholder placeholder--text-md"></span>
+                  </div>
+                  <div class="movement-row__amount">
+                    <span class="movement-row__label">Monto</span>
+                    <span class="placeholder placeholder--amount"></span>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li class="movement-row">
+              <span class="summary__dot summary__dot--mid"></span>
+              <div class="movement-row__body">
+                <div class="movement-row__top">
+                  <span class="movement-row__label">Fecha</span>
+                  <span class="placeholder placeholder--date"></span>
+                </div>
+                <div class="movement-row__grid">
+                  <div>
+                    <span class="movement-row__label">Categoría</span>
+                    <span class="placeholder placeholder--text-sm"></span>
+                  </div>
+                  <div>
+                    <span class="movement-row__label">Descripción</span>
+                    <span class="placeholder placeholder--text-md"></span>
+                  </div>
+                  <div class="movement-row__amount">
+                    <span class="movement-row__label">Monto</span>
+                    <span class="placeholder placeholder--amount"></span>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li class="movement-row">
+              <span class="summary__dot"></span>
+              <div class="movement-row__body">
+                <div class="movement-row__top">
+                  <span class="movement-row__label">Fecha</span>
+                  <span class="placeholder placeholder--date"></span>
+                </div>
+                <div class="movement-row__grid">
+                  <div>
+                    <span class="movement-row__label">Categoría</span>
+                    <span class="placeholder placeholder--text-sm"></span>
+                  </div>
+                  <div>
+                    <span class="movement-row__label">Descripción</span>
+                    <span class="placeholder placeholder--text-md"></span>
+                  </div>
+                  <div class="movement-row__amount">
+                    <span class="movement-row__label">Monto</span>
+                    <span class="placeholder placeholder--amount"></span>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li class="movement-row">
+              <span class="summary__dot summary__dot--light"></span>
+              <div class="movement-row__body">
+                <div class="movement-row__top">
+                  <span class="movement-row__label">Fecha</span>
+                  <span class="placeholder placeholder--date"></span>
+                </div>
+                <div class="movement-row__grid">
+                  <div>
+                    <span class="movement-row__label">Categoría</span>
+                    <span class="placeholder placeholder--text-sm"></span>
+                  </div>
+                  <div>
+                    <span class="movement-row__label">Descripción</span>
+                    <span class="placeholder placeholder--text-md"></span>
+                  </div>
+                  <div class="movement-row__amount">
+                    <span class="movement-row__label">Monto</span>
+                    <span class="placeholder placeholder--amount"></span>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li class="movement-row">
+              <span class="summary__dot summary__dot--mid"></span>
+              <div class="movement-row__body">
+                <div class="movement-row__top">
+                  <span class="movement-row__label">Fecha</span>
+                  <span class="placeholder placeholder--date"></span>
+                </div>
+                <div class="movement-row__grid">
+                  <div>
+                    <span class="movement-row__label">Categoría</span>
+                    <span class="placeholder placeholder--text-sm"></span>
+                  </div>
+                  <div>
+                    <span class="movement-row__label">Descripción</span>
+                    <span class="placeholder placeholder--text-md"></span>
+                  </div>
+                  <div class="movement-row__amount">
+                    <span class="movement-row__label">Monto</span>
+                    <span class="placeholder placeholder--amount"></span>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
+
+          <div class="table-wrap" aria-hidden="false">
+            <table class="movement-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="placeholder placeholder--date"></span></td>
+                  <td><span class="placeholder placeholder--text-sm"></span></td>
+                  <td><span class="placeholder placeholder--text-md"></span></td>
+                  <td><span class="placeholder placeholder--amount"></span></td>
+                </tr>
+                <tr>
+                  <td><span class="placeholder placeholder--date"></span></td>
+                  <td><span class="placeholder placeholder--text-sm"></span></td>
+                  <td><span class="placeholder placeholder--text-md"></span></td>
+                  <td><span class="placeholder placeholder--amount"></span></td>
+                </tr>
+                <tr>
+                  <td><span class="placeholder placeholder--date"></span></td>
+                  <td><span class="placeholder placeholder--text-sm"></span></td>
+                  <td><span class="placeholder placeholder--text-md"></span></td>
+                  <td><span class="placeholder placeholder--amount"></span></td>
+                </tr>
+                <tr>
+                  <td><span class="placeholder placeholder--date"></span></td>
+                  <td><span class="placeholder placeholder--text-sm"></span></td>
+                  <td><span class="placeholder placeholder--text-md"></span></td>
+                  <td><span class="placeholder placeholder--amount"></span></td>
+                </tr>
+                <tr>
+                  <td><span class="placeholder placeholder--date"></span></td>
+                  <td><span class="placeholder placeholder--text-sm"></span></td>
+                  <td><span class="placeholder placeholder--text-md"></span></td>
+                  <td><span class="placeholder placeholder--amount"></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <nav class="nav" aria-label="Navegación principal">
+        <a class="nav__item" href="index.html">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav__item nav__item--active" href="movimientos.html" aria-current="page">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Movimientos</span>
+        </a>
+        <a class="nav__item" href="cuentas-cobrar.html">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Cobros</span>
+        </a>
+        <a class="nav__item" href="#">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Reportes</span>
+        </a>
+      </nav>
+    </div>
+
+    <input class="sheet-toggle" type="checkbox" id="sheet-nuevo" />
+    <div class="sheet" role="dialog" aria-labelledby="sheet-title">
+      <label class="sheet__backdrop" for="sheet-nuevo" aria-label="Cerrar formulario"></label>
+      <form class="sheet__panel card" action="#" method="get">
+        <div class="sheet__head">
+          <div>
+            <span class="section-kicker">Registro</span>
+            <h2 class="section-title" id="sheet-title">Nuevo Movimiento</h2>
+          </div>
+          <label class="sheet__close" for="sheet-nuevo" aria-label="Cerrar">
+            <span></span>
+            <span></span>
+          </label>
+        </div>
+
+        <fieldset class="field">
+          <legend>Tipo</legend>
+          <div class="type-options">
+            <label class="type-option">
+              <input type="radio" name="tipo" checked />
+              <span>Ingreso</span>
+            </label>
+            <label class="type-option">
+              <input type="radio" name="tipo" />
+              <span>Gasto</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <label class="field">
+          <span>Categoría</span>
+          <span class="field__box">
+            <span class="placeholder placeholder--text-md"></span>
+            <span class="chevron" aria-hidden="true"></span>
+          </span>
+        </label>
+
+        <label class="field">
+          <span>Monto</span>
+          <span class="field__box">
+            <span class="placeholder placeholder--text-sm"></span>
+          </span>
+        </label>
+
+        <label class="field">
+          <span>Fecha</span>
+          <span class="field__box">
+            <span class="placeholder placeholder--date"></span>
+          </span>
+        </label>
+
+        <label class="field">
+          <span>Descripción</span>
+          <span class="field__box field__box--area">
+            <span class="placeholder placeholder--text-md"></span>
+            <span class="placeholder placeholder--text-sm"></span>
+          </span>
+        </label>
+
+        <button class="btn-primary" type="button">Guardar</button>
+      </form>
+    </div>
+  </body>
+</html>

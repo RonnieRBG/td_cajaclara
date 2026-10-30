@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CajaClara — Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <span class="logo__mark"></span>
+          </div>
+          <span class="brand__name">CajaClara</span>
+        </div>
+        <div class="user">
+          <div class="user__avatar" aria-hidden="true"></div>
+          <div class="user__meta">
+            <span class="user__label">Usuario</span>
+            <span class="placeholder placeholder--text-sm"></span>
+          </div>
+        </div>
+      </header>
+
+      <main class="main">
+        <section class="period" aria-label="Selector de período">
+          <div class="period__copy">
+            <span class="section-kicker">Período</span>
+            <h1 class="period__title">Mes actual</h1>
+          </div>
+          <button class="period__selector" type="button" aria-label="Cambiar período">
+            <span class="placeholder placeholder--text-md"></span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+        </section>
+
+        <section class="kpis" aria-label="Indicadores clave">
+          <article class="card kpi">
+            <div class="kpi__icon" aria-hidden="true"></div>
+            <span class="kpi__label">Total Ingresos</span>
+            <span class="placeholder placeholder--value"></span>
+            <span class="placeholder placeholder--text-xs"></span>
+          </article>
+          <article class="card kpi">
+            <div class="kpi__icon" aria-hidden="true"></div>
+            <span class="kpi__label">Total Gastos</span>
+            <span class="placeholder placeholder--value"></span>
+            <span class="placeholder placeholder--text-xs"></span>
+          </article>
+          <article class="card kpi kpi--emphasis">
+            <div class="kpi__icon" aria-hidden="true"></div>
+            <span class="kpi__label">Flujo de Caja Neto</span>
+            <span class="placeholder placeholder--value"></span>
+            <span class="placeholder placeholder--text-xs"></span>
+          </article>
+        </section>
+
+        <section class="card chart" aria-label="Comparativa de ingresos y gastos">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Comparativa</span>
+              <h2 class="section-title">Ingresos vs Gastos</h2>
+            </div>
+            <div class="legend">
+              <span class="legend__item">
+                <span class="swatch swatch--dark"></span>
+                <span>Ingresos</span>
+              </span>
+              <span class="legend__item">
+                <span class="swatch swatch--mid"></span>
+                <span>Gastos</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="chart__canvas" role="img" aria-label="Gráfico de barras placeholder">
+            <div class="chart__bars">
+              <div class="bar-group">
+                <div class="bar bar--dark" style="--h: 72%"></div>
+                <div class="bar bar--mid" style="--h: 48%"></div>
+                <span class="bar-group__label">S1</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar bar--dark" style="--h: 58%"></div>
+                <div class="bar bar--mid" style="--h: 64%"></div>
+                <span class="bar-group__label">S2</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar bar--dark" style="--h: 86%"></div>
+                <div class="bar bar--mid" style="--h: 40%"></div>
+                <span class="bar-group__label">S3</span>
+              </div>
+              <div class="bar-group">
+                <div class="bar bar--dark" style="--h: 64%"></div>
+                <div class="bar bar--mid" style="--h: 70%"></div>
+                <span class="bar-group__label">S4</span>
+              </div>
+            </div>
+            <div class="chart__axis" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card summary" aria-label="Resumen financiero">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Panorama</span>
+              <h2 class="section-title">Resumen Financiero</h2>
+            </div>
+            <span class="ghost-link">Ver detalle</span>
+          </div>
+
+          <ul class="summary__list">
+            <li class="summary__row">
+              <span class="summary__dot"></span>
+              <div class="summary__copy">
+                <span class="placeholder placeholder--text-md"></span>
+                <span class="placeholder placeholder--text-xs"></span>
+              </div>
+              <span class="placeholder placeholder--amount"></span>
+            </li>
+            <li class="summary__row">
+              <span class="summary__dot summary__dot--mid"></span>
+              <div class="summary__copy">
+                <span class="placeholder placeholder--text-md"></span>
+                <span class="placeholder placeholder--text-xs"></span>
+              </div>
+              <span class="placeholder placeholder--amount"></span>
+            </li>
+            <li class="summary__row">
+              <span class="summary__dot summary__dot--light"></span>
+              <div class="summary__copy">
+                <span class="placeholder placeholder--text-md"></span>
+                <span class="placeholder placeholder--text-xs"></span>
+              </div>
+              <span class="placeholder placeholder--amount"></span>
+            </li>
+            <li class="summary__row">
+              <span class="summary__dot"></span>
+              <div class="summary__copy">
+                <span class="placeholder placeholder--text-md"></span>
+                <span class="placeholder placeholder--text-xs"></span>
+              </div>
+              <span class="placeholder placeholder--amount"></span>
+            </li>
+          </ul>
+        </section>
+      </main>
+
+      <nav class="nav" aria-label="Navegación principal">
+        <a class="nav__item nav__item--active" href="index.html" aria-current="page">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav__item" href="movimientos.html">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Movimientos</span>
+        </a>
+        <a class="nav__item" href="cuentas-cobrar.html">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Cobros</span>
+        </a>
+        <a class="nav__item" href="#">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Reportes</span>
+        </a>
+      </nav>
+    </div>
+  </body>
+</html>
