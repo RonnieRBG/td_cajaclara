@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CajaClara — Dashboard</title>
+    <title>CajaClara — Panel Principal</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -13,7 +13,7 @@
            ========================================================================= -->
       <header class="header">
         <div class="brand">
-          <a class="logo" href="dashboard.html" aria-label="CajaClara Dashboard">
+          <a class="logo" href="dashboard.html" aria-label="CajaClara Inicio">
             <span class="logo__mark"></span>
           </a>
           <span class="brand__name">CajaClara</span>
@@ -21,48 +21,53 @@
         <div class="user">
           <div class="user__avatar" aria-hidden="true"></div>
           <div class="user__meta">
-            <!-- [DATO DIRECTO]: Cliente.nombre o Usuario logueado -->
-            <span class="user__label">Emprendedor</span>
-            <span class="placeholder placeholder--text-sm" aria-label="Nombre de usuario"></span>
+            <!-- [DATO DIRECTO]: Nombre del micronegocio -->
+            <span class="user__label">Negocio</span>
+            <strong style="font-size: 13px; color: var(--ink);">Almacén La Esquina</strong>
           </div>
         </div>
       </header>
 
       <!-- =========================================================================
-           CONTENIDO PRINCIPAL
+           CONTENIDO PRINCIPAL - PANEL DE CAJA
            ========================================================================= -->
       <main class="main">
         <!-- -----------------------------------------------------------------------
-             ACCIONES RÁPIDAS
-             Flujos prioritarios: registrar movimiento, revisar cobros y resumen mensual
+             ACCIONES RÁPIDAS DE CAJA REGISTRADORA
+             Flujos prioritarios: registrar venta, compra, gasto, revisar cobros y resumen
              ----------------------------------------------------------------------- -->
-        <!-- [ACCIONES RÁPIDAS DE NAVEGACIÓN Y OPERACIÓN] -->
-        <section class="card" aria-label="Acciones Rápidas">
-          <span class="section-kicker">Operaciones</span>
+        <section class="card" aria-label="Acciones Rápidas de Caja">
+          <span class="section-kicker">Operaciones de Caja</span>
           <div class="quick-actions">
-            <!-- Acción 1: Registrar Movimiento (Ingreso/Gasto directo) -->
-            <a class="btn-primary" href="movimientos.html" title="Registrar un nuevo ingreso o gasto">
-              + Registrar Movimiento
+            <!-- Acción 1: Registrar venta unitaria -->
+            <a class="btn-primary" href="movimientos.html?tipo=venta" title="Registrar venta de productos por unidad">
+              + Registrar venta
             </a>
-            <!-- Acción 2: Revisar Cuentas por Cobrar -->
-            <a class="btn-secondary" href="cuentas-cobrar.html" title="Ir al listado y gestión de cobros">
-              Revisar Cobros
+            <!-- Acción 2: Registrar compra de mercadería -->
+            <a class="btn-secondary" href="movimientos.html?tipo=compra" title="Registrar compra de productos en cajas o paquetes">
+              + Registrar compra
             </a>
-            <!-- Acción 3: Resumen Mensual consolidado -->
-            <a class="btn-secondary" href="#resumen-mensual" title="Consultar informe financiero del mes">
-              Resumen Mensual
+            <!-- Acción 3: Registrar otro gasto operativo -->
+            <a class="btn-secondary" href="movimientos.html?tipo=gasto" title="Registrar otro gasto como transporte o embalaje">
+              + Registrar otro gasto
+            </a>
+            <!-- Acción 4: Revisar cuentas por cobrar -->
+            <a class="btn-secondary" href="cuentas-cobrar.html" title="Revisar dinero pendiente de clientes">
+              Revisar cobros
+            </a>
+            <!-- Acción 5: Ver resumen mensual consolidado -->
+            <a class="btn-secondary" href="#resumen-mensual" title="Consultar resumen del mes">
+              Ver resumen mensual
             </a>
           </div>
         </section>
 
         <!-- -----------------------------------------------------------------------
              SELECTOR DE PERÍODO TEMPORAL
-             Filtra ventas, gastos y cobros por rango de fechas
              ----------------------------------------------------------------------- -->
         <section class="period" aria-label="Selector de período">
           <div class="period__copy">
             <span class="section-kicker">Período</span>
-            <!-- [DATO DIRECTO / FILTRO]: Mes calendario seleccionado (Noviembre 2026) -->
             <h1 class="period__title">Mes actual (Noviembre 2026)</h1>
           </div>
           <button class="period__selector" type="button" aria-label="Cambiar período">
@@ -72,82 +77,64 @@
         </section>
 
         <!-- -----------------------------------------------------------------------
-             INDICADORES CLAVE (KPIS FINANCIEROS)
+             INDICADORES CLAVE (KPIS DE CAJA Y FINANZAS SENCILLAS)
              Métricas monetarias en Pesos Chilenos (CLP sin decimales)
              ----------------------------------------------------------------------- -->
         <!--
-          DOCUMENTACIÓN DE ORIGEN DE DATOS - KPIS:
-          1. Ventas Totales:
-             - [DATO CALCULADO]: SUM(Detalle_Venta.cantidad * Detalle_Venta.precio_venta).
-             - Filtro: Venta.fecha dentro del período actual.
-          2. Gastos de Insumos:
-             - [DATO DIRECTO / AGREGADO]: SUM(Gastos_Insumo.Monto).
-             - Filtro: Gastos_Insumo.Fecha dentro del período actual.
-          3. Resultado Estimado:
-             - [DATO CALCULADO]: Ventas Totales - Gastos de Insumos.
-             - REGLA DE NEGOCIO: No usar "Ganancia Neta", ya que el modelo actual solo
-               incluye costos de insumos y no considera sueldos, arriendos ni impuestos.
-          4. Total Pendiente por Cobrar:
-             - [DATO CALCULADO / AGREGADO]: SUM(Cuenta_por_cobrar.monto).
-             - [REQUIERE VALIDACIÓN BACKEND / ANÁLISIS DE DATOS]: Confirmar si el total
-               debe considerar solo facturas con Venta.por_cobrar = True o si toda fila
-               en Cuenta_por_cobrar se asume pendiente hasta registrar pago.
+          DOCUMENTACIÓN DE ORIGEN DE DATOS Y REGLAS DE NEGOCIO:
+          - Ventas del mes = movimientos de tipo INGRESO (Ventas pagadas).
+          - Compras y gastos = movimientos de tipo GASTO (Compras de productos + Otros gastos).
+          - Saldo del periodo = ingresos menos gastos (Flujo neto de caja).
+            REGLA: No usar "Resultado estimado", "Ganancia neta" ni "Margen bruto".
+          - Pendiente por cobrar = total acumulado de cuentas PENDIENTES y VENCIDAS.
         -->
         <section class="kpis kpis--four" aria-label="Indicadores clave del negocio">
-          <!-- KPI 1: Ventas Totales -->
+          <!-- KPI 1: Ventas del mes -->
           <article class="card kpi">
             <div class="kpi__icon" aria-hidden="true"></div>
-            <span class="kpi__label">Ventas Totales</span>
-            <!-- [DATO CALCULADO]: SUM(Detalle_Venta.cantidad * Detalle_Venta.precio_venta) -->
-            <strong class="section-title">$ 4.850.000</strong>
-            <span class="data-meta-sub">Desde Venta y Detalle_Venta</span>
+            <span class="kpi__label">Ventas del mes</span>
+            <!-- TODO BACKEND: Ventas = movimientos de tipo INGRESO -->
+            <strong class="section-title">$ 145.000</strong>
+            <span class="data-meta-sub">Dinero recibido por ventas</span>
           </article>
 
-          <!-- KPI 2: Gastos de Insumos -->
+          <!-- KPI 2: Compras y gastos -->
           <article class="card kpi">
             <div class="kpi__icon" aria-hidden="true"></div>
-            <span class="kpi__label">Gastos de Insumos</span>
-            <!-- [DATO DIRECTO / AGREGADO]: SUM(Gastos_Insumo.Monto) -->
-            <strong class="section-title">$ 1.920.000</strong>
-            <span class="data-meta-sub">Desde Gastos_Insumo</span>
+            <span class="kpi__label">Compras y gastos</span>
+            <!-- TODO BACKEND: Compras y gastos = movimientos de tipo GASTO -->
+            <strong class="section-title">$ 85.500</strong>
+            <span class="data-meta-sub">Dinero destinado a productos y otros gastos</span>
           </article>
 
-          <!-- KPI 3: Resultado Estimado (Énfasis) -->
-          <!-- REGLA DE NEGOCIO: No usar "Ganancia neta" -->
+          <!-- KPI 3: Saldo del periodo (Énfasis) -->
           <article class="card kpi kpi--emphasis">
             <div class="kpi__icon" aria-hidden="true"></div>
-            <span class="kpi__label">Resultado Estimado</span>
-            <!-- [DATO CALCULADO]: Ventas Totales ($ 4.850.000) - Gastos de Insumos ($ 1.920.000) -->
-            <strong class="section-title" style="color: #ffffff;">$ 2.930.000</strong>
-            <span class="data-meta-sub" style="color: #c8c8cc;">Ventas menos gastos insumo</span>
+            <span class="kpi__label">Saldo del periodo</span>
+            <!-- TODO BACKEND: Saldo = ingresos menos gastos ($ 145.000 - $ 85.500) -->
+            <strong class="section-title" style="color: #ffffff;">$ 59.500</strong>
+            <span class="data-meta-sub" style="color: #c8c8cc;">Diferencia entre entradas y salidas</span>
           </article>
 
-          <!-- KPI 4: Total Pendiente por Cobrar -->
+          <!-- KPI 4: Pendiente por cobrar -->
           <article class="card kpi">
             <div class="kpi__icon" aria-hidden="true"></div>
-            <span class="kpi__label">Pendiente por Cobrar</span>
-            <!-- [DATO CALCULADO]: SUM(Cuenta_por_cobrar.monto) activas -->
-            <strong class="section-title">$ 1.480.000</strong>
-            <span class="data-meta-sub">Desde Cuenta_por_cobrar</span>
+            <span class="kpi__label">Pendiente por cobrar</span>
+            <!-- TODO BACKEND: Pendiente por cobrar = total de cuentas PENDIENTES y VENCIDAS ($ 38.500) -->
+            <strong class="section-title">$ 38.500</strong>
+            <span class="data-meta-sub">Dinero que todavía deben tus clientes</span>
           </article>
         </section>
 
         <!-- -----------------------------------------------------------------------
-             GRÁFICO PLACEHOLDER: VENTAS VS GASTOS DE INSUMOS
+             GRÁFICO: ENTRADAS Y SALIDAS DEL MES
              Comparativa de barras semanal en escala de grises
              ----------------------------------------------------------------------- -->
-        <!--
-          DOCUMENTACIÓN DE ORIGEN DE DATOS - GRÁFICO:
-          - Barra Oscura (Ventas):
-            [DATO CALCULADO]: SUM(Detalle_Venta.cantidad * Detalle_Venta.precio_venta) agrupado por semana.
-          - Barra Media (Gastos):
-            [DATO DIRECTO / AGREGADO]: SUM(Gastos_Insumo.Monto) agrupado por semana.
-        -->
-        <section class="card chart" aria-label="Comparativa de ventas y gastos de insumos">
+        <section class="card chart" aria-label="Comparativa de entradas y salidas del mes">
           <div class="section-head">
             <div>
               <span class="section-kicker">Evolución</span>
-              <h2 class="section-title">Ventas vs Gastos de Insumos</h2>
+              <h2 class="section-title">Entradas y salidas del mes</h2>
             </div>
             <div class="legend">
               <span class="legend__item">
@@ -156,35 +143,35 @@
               </span>
               <span class="legend__item">
                 <span class="swatch swatch--mid"></span>
-                <span>Gastos de Insumos</span>
+                <span>Compras y gastos</span>
               </span>
             </div>
           </div>
 
-          <div class="chart__canvas" role="img" aria-label="Gráfico de barras comparativo de ventas y gastos por semana">
+          <div class="chart__canvas" role="img" aria-label="Gráfico de barras comparativo de ventas y compras/gastos por semana">
             <div class="chart__bars">
               <!-- Semana 1 -->
               <div class="bar-group">
-                <div class="bar bar--dark" style="--h: 75%;" title="Ventas S1: $ 1.200.000"></div>
-                <div class="bar bar--mid" style="--h: 45%;" title="Gastos S1: $ 480.000"></div>
+                <div class="bar bar--dark" style="--h: 65%;" title="Ventas S1: $ 36.000"></div>
+                <div class="bar bar--mid" style="--h: 50%;" title="Compras y gastos S1: $ 27.500"></div>
                 <span class="bar-group__label">Sem 1</span>
               </div>
               <!-- Semana 2 -->
               <div class="bar-group">
-                <div class="bar bar--dark" style="--h: 60%;" title="Ventas S2: $ 950.000"></div>
-                <div class="bar bar--mid" style="--h: 55%;" title="Gastos S2: $ 520.000"></div>
+                <div class="bar bar--dark" style="--h: 55%;" title="Ventas S2: $ 31.000"></div>
+                <div class="bar bar--mid" style="--h: 40%;" title="Compras y gastos S2: $ 22.000"></div>
                 <span class="bar-group__label">Sem 2</span>
               </div>
               <!-- Semana 3 -->
               <div class="bar-group">
-                <div class="bar bar--dark" style="--h: 90%;" title="Ventas S3: $ 1.500.000"></div>
-                <div class="bar bar--mid" style="--h: 40%;" title="Gastos S3: $ 410.000"></div>
+                <div class="bar bar--dark" style="--h: 80%;" title="Ventas S3: $ 45.000"></div>
+                <div class="bar bar--mid" style="--h: 45%;" title="Compras y gastos S3: $ 24.000"></div>
                 <span class="bar-group__label">Sem 3</span>
               </div>
               <!-- Semana 4 -->
               <div class="bar-group">
-                <div class="bar bar--dark" style="--h: 70%;" title="Ventas S4: $ 1.200.000"></div>
-                <div class="bar bar--mid" style="--h: 50%;" title="Gastos S4: $ 510.000"></div>
+                <div class="bar bar--dark" style="--h: 60%;" title="Ventas S4: $ 33.000"></div>
+                <div class="bar bar--mid" style="--h: 30%;" title="Compras y gastos S4: $ 12.000"></div>
                 <span class="bar-group__label">Sem 4</span>
               </div>
             </div>
@@ -197,220 +184,163 @@
         </section>
 
         <!-- -----------------------------------------------------------------------
-             BLOQUE DE ACTIVIDAD Y DESEMPEÑO DEL PRODUCTO
-             Grid responsive: Productos más vendidos + Categoría y Unidad con mayor actividad
+             BLOQUE: RESUMEN DE OPERACIONES Y PRODUCTOS MÁS VENDIDOS
              ----------------------------------------------------------------------- -->
-        <!--
-          DOCUMENTACIÓN DE ORIGEN DE DATOS - DESEMPEÑO:
-          1. Productos más vendidos:
-             - [DATO DIRECTO]: Producto.producto, Producto.categoria.
-             - [DATO CALCULADO]: SUM(Detalle_Venta.cantidad) ORDER BY DESC.
-             - [DATO CALCULADO]: Importe = SUM(Detalle_Venta.cantidad * Detalle_Venta.precio_venta).
-          2. Categoría y Unidad de Negocio con mayor actividad:
-             - [DATO DIRECTO]: Producto.categoria, Producto.unidad_negocio.
-             - [REQUIERE VALIDACIÓN BACKEND / ANÁLISIS DE DATOS]:
-               Definir criterio formal de "Mayor actividad": ¿Se pondera por mayor volumen
-               de facturación ($), por mayor cantidad de unidades físicas vendidas, o por
-               frecuencia de órdenes en Venta? Se asume preliminarmente por unidades vendidas.
-        -->
         <div class="insights-grid">
-          <!-- Tarjeta: Productos Más Vendidos -->
-          <section class="card" aria-label="Productos más vendidos según cantidad">
+          <!-- Tarjeta 1: Resumen de Operaciones -->
+          <!-- TODO BACKEND: confirmar disponibilidad de producto y cantidad en las operaciones -->
+          <section class="card" aria-label="Resumen de operaciones del periodo">
             <div class="section-head">
               <div>
-                <span class="section-kicker">Ranking de Ventas</span>
-                <h2 class="section-title">Productos Más Vendidos</h2>
-              </div>
-              <span class="data-meta-sub">Por cantidad</span>
-            </div>
-
-            <ul class="ranking-list">
-              <!-- Item 1 -->
-              <li class="ranking-item">
-                <div>
-                  <!-- [DATO DIRECTO]: Producto.producto -->
-                  <strong>Torta Cuatro Leches</strong>
-                  <!-- [DATO DIRECTO]: Producto.categoria -->
-                  <span class="data-meta-sub">Categoría: Repostería Artesanal</span>
-                </div>
-                <div>
-                  <!-- [DATO CALCULADO]: SUM(Detalle_Venta.cantidad) -->
-                  <div class="data-value">84 un.</div>
-                  <!-- [DATO CALCULADO]: Importe total CLP sin decimales -->
-                  <span class="data-meta-sub">$ 1.050.000</span>
-                </div>
-              </li>
-
-              <!-- Item 2 -->
-              <li class="ranking-item">
-                <div>
-                  <!-- [DATO DIRECTO]: Producto.producto -->
-                  <strong>Pastel de Lúcuma Manjar</strong>
-                  <!-- [DATO DIRECTO]: Producto.categoria -->
-                  <span class="data-meta-sub">Categoría: Repostería Artesanal</span>
-                </div>
-                <div>
-                  <!-- [DATO CALCULADO]: SUM(Detalle_Venta.cantidad) -->
-                  <div class="data-value">65 un.</div>
-                  <!-- [DATO CALCULADO]: Importe total CLP sin decimales -->
-                  <span class="data-meta-sub">$ 780.000</span>
-                </div>
-              </li>
-
-              <!-- Item 3 -->
-              <li class="ranking-item">
-                <div>
-                  <!-- [DATO DIRECTO]: Producto.producto -->
-                  <strong>Croissant Mantequilla (Pack x6)</strong>
-                  <!-- [DATO DIRECTO]: Producto.categoria -->
-                  <span class="data-meta-sub">Categoría: Panadería Fina</span>
-                </div>
-                <div>
-                  <!-- [DATO CALCULADO]: SUM(Detalle_Venta.cantidad) -->
-                  <div class="data-value">52 un.</div>
-                  <!-- [DATO CALCULADO]: Importe total CLP sin decimales -->
-                  <span class="data-meta-sub">$ 416.000</span>
-                </div>
-              </li>
-
-              <!-- Item 4 -->
-              <li class="ranking-item">
-                <div>
-                  <!-- [DATO DIRECTO]: Producto.producto -->
-                  <strong>Caja Alfajores Artesanales</strong>
-                  <!-- [DATO DIRECTO]: Producto.categoria -->
-                  <span class="data-meta-sub">Categoría: Confitería</span>
-                </div>
-                <div>
-                  <!-- [DATO CALCULADO]: SUM(Detalle_Venta.cantidad) -->
-                  <div class="data-value">40 un.</div>
-                  <!-- [DATO CALCULADO]: Importe total CLP sin decimales -->
-                  <span class="data-meta-sub">$ 240.000</span>
-                </div>
-              </li>
-            </ul>
-          </section>
-
-          <!-- Tarjeta: Mayor Actividad por Categoría y Unidad de Negocio -->
-          <section class="card" aria-label="Mayor actividad por categoría y unidad de negocio">
-            <div class="section-head">
-              <div>
-                <span class="section-kicker">Segmentación ER</span>
-                <h2 class="section-title">Líderes de Actividad</h2>
+                <span class="section-kicker">Actividad de Caja</span>
+                <h2 class="section-title">Resumen de operaciones</h2>
               </div>
               <span class="data-meta-sub">Mes actual</span>
             </div>
 
             <div class="ranking-list">
-              <!-- Categoría Líder -->
               <div class="activity-box">
-                <span class="section-kicker">Categoría con Mayor Actividad</span>
-                <!-- [DATO DIRECTO]: Producto.categoria -->
-                <strong style="font-size: 16px;">Repostería Artesanal</strong>
-                <!-- [DATO CALCULADO]: Porcentaje de unidades vendidas y recaudación -->
-                <span class="data-meta-sub">149 unidades vendidas (58% del volumen total)</span>
-                <!-- [REQUIERE VALIDACIÓN BACKEND / ANÁLISIS DE DATOS]: Confirmar fórmula de ponderación de actividad -->
-                <span class="data-meta-sub">Importe acumulado: $ 1.830.000</span>
+                <span class="section-kicker">Flujo Comercial</span>
+                <div class="op-preview-box__row">
+                  <span>Ventas registradas</span>
+                  <strong>18 ventas</strong>
+                </div>
+                <div class="op-preview-box__row">
+                  <span>Compras registradas</span>
+                  <strong>5 compras</strong>
+                </div>
               </div>
 
-              <!-- Unidad de Negocio Líder -->
               <div class="activity-box">
-                <span class="section-kicker">Unidad de Negocio Principal</span>
-                <!-- [DATO DIRECTO]: Producto.unidad_negocio -->
-                <strong style="font-size: 16px;">Venta Minorista / Tienda</strong>
-                <!-- [DATO CALCULADO]: Cruzado con Venta y Detalle_Venta -->
-                <span class="data-meta-sub">72% de las transacciones totales</span>
-                <!-- [REQUIERE VALIDACIÓN BACKEND / ANÁLISIS DE DATOS]: Cruzar con unidad mayorista / eventos especiales -->
-                <span class="data-meta-sub">Participación estimada: $ 3.492.000</span>
+                <span class="section-kicker">Volumen y Cobranza</span>
+                <div class="op-preview-box__row">
+                  <span>Unidades vendidas</span>
+                  <strong>42 unidades</strong>
+                </div>
+                <div class="op-preview-box__row">
+                  <span>Cuentas pendientes</span>
+                  <strong>3 cuentas ($ 38.500)</strong>
+                </div>
               </div>
             </div>
+          </section>
+
+          <!-- Tarjeta 2: Productos Más Vendidos (Información prevista) -->
+          <!-- TODO DATOS: validar cálculo y normalización de precio_venta antes de mostrar importes comerciales -->
+          <section class="card" aria-label="Productos más vendidos previstos">
+            <div class="section-head">
+              <div>
+                <span class="section-kicker">Demanda de Productos</span>
+                <h2 class="section-title">Productos Más Vendidos</h2>
+              </div>
+              <span class="data-meta-sub">Por unidades</span>
+            </div>
+
+            <ul class="ranking-list">
+              <!-- Item 1: Aceite vegetal 1L -->
+              <li class="ranking-item">
+                <div>
+                  <strong>Aceite vegetal de 1 litro</strong>
+                  <span class="data-meta-sub">Abarrotes básicos • Presentación individual</span>
+                </div>
+                <div>
+                  <div class="data-value">19 un.</div>
+                  <span class="data-meta-sub">Venta frecuente</span>
+                </div>
+              </li>
+
+              <!-- Item 2: Arroz 1kg -->
+              <li class="ranking-item">
+                <div>
+                  <strong>Arroz de 1 kilo</strong>
+                  <span class="data-meta-sub">Abarrotes básicos • Paquete unitario</span>
+                </div>
+                <div>
+                  <div class="data-value">14 un.</div>
+                  <span class="data-meta-sub">Venta frecuente</span>
+                </div>
+              </li>
+
+              <!-- Item 3: Azúcar 1kg -->
+              <li class="ranking-item">
+                <div>
+                  <strong>Azúcar de 1 kilo</strong>
+                  <span class="data-meta-sub">Abarrotes básicos • Bolsa unitaria</span>
+                </div>
+                <div>
+                  <div class="data-value">10 un.</div>
+                  <span class="data-meta-sub">Venta regular</span>
+                </div>
+              </li>
+
+              <!-- Item 4: Fideos 400g -->
+              <li class="ranking-item">
+                <div>
+                  <strong>Fideos de 400 gramos</strong>
+                  <span class="data-meta-sub">Pastas y fideos • Paquete</span>
+                </div>
+                <div>
+                  <div class="data-value">8 un.</div>
+                  <span class="data-meta-sub">Venta regular</span>
+                </div>
+              </li>
+            </ul>
           </section>
         </div>
 
         <!-- -----------------------------------------------------------------------
-             SECCIÓN: LISTA DE CUENTAS POR COBRAR
-             Campos ER: Cliente, Factura, Monto, Vencimiento
-             Estados calculados:
-             - Vigente: vencimiento futuro
-             - Próxima a vencer: criterio pendiente de confirmación (ej: <= 7 días)
-             - Vencida: vencimiento anterior a la fecha actual (ej: hoy es Nov 2026)
+             SECCIÓN: CUENTAS POR COBRAR (DINERO QUE TE DEBEN)
              ----------------------------------------------------------------------- -->
-        <!--
-          DOCUMENTACIÓN DE ORIGEN DE DATOS - CUENTAS POR COBRAR:
-          - Cliente: [DATO DIRECTO] Cliente.nombre a través de Cuenta_por_cobrar.id_cliente.
-          - Factura: [DATO DIRECTO] Cuenta_por_cobrar.id_factura (FK Venta.id_factura).
-          - Monto: [DATO DIRECTO] Cuenta_por_cobrar.monto (CLP sin decimales).
-          - Vencimiento: [DATO DIRECTO] Cuenta_por_cobrar.fecha_vencimiento.
-          - Estado de cobranza:
-            * [DATO CALCULADO] Vigente: Cuenta_por_cobrar.fecha_vencimiento > HOY + umbral_alerta.
-            * [DATO CALCULADO / REQUIERE VALIDACIÓN BACKEND]: Próxima a vencer:
-              Regla pendiente de confirmación por el equipo (ejemplo: faltan 7 días o menos para el vencimiento).
-            * [DATO CALCULADO] Vencida: Cuenta_por_cobrar.fecha_vencimiento < HOY.
-        -->
         <section class="card" aria-label="Cuentas por cobrar del negocio">
           <div class="section-head">
             <div>
-              <span class="section-kicker">Cuentas Pendientes</span>
+              <span class="section-kicker">Dinero que te deben</span>
               <h2 class="section-title">Cuentas por Cobrar</h2>
             </div>
-            <a class="ghost-link" href="reportes.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
-              Ver detalle →
+            <!-- Enlace corregido a cuentas-cobrar.html -->
+            <a class="ghost-link" href="cuentas-cobrar.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
+              Ver todas →
             </a>
           </div>
 
-          <!-- Vista Mobile (Cards / Rows) -->
+          <!-- Vista Mobile (Cards) -->
           <ul class="receivables-list receivables-mobile">
-            <!-- Cuenta 1: Vencida -->
+            <!-- Cuenta 1: Claudia Rojas (Pendiente) -->
             <li class="receivables-item">
               <div>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <strong>Distribuidora Valle Central SpA</strong>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.id_factura -->
-                <span class="data-meta-sub">Factura #1042</span>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.fecha_vencimiento (anterior a la fecha actual) -->
-                <span class="data-meta-sub">Vencimiento: 18 Oct 2026</span>
+                <strong>Claudia Rojas</strong>
+                <span class="data-meta-sub">Venta de 4 botellas de aceite • Venta #0024</span>
+                <span class="data-meta-sub">Vence en 8 días (11 Nov 2026)</span>
               </div>
               <div style="text-align: right;">
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.monto en CLP sin decimales -->
-                <div class="data-value">$ 650.000</div>
-                <!-- [DATO CALCULADO]: Estado Vencida (fecha_vencimiento < hoy) -->
+                <div class="data-value">$ 12.000</div>
+                <span class="badge-status badge-status--pendiente">Pendiente</span>
+              </div>
+            </li>
+
+            <!-- Cuenta 2: Almacén San Pedro (Vencida) -->
+            <li class="receivables-item">
+              <div>
+                <strong>Almacén San Pedro</strong>
+                <span class="data-meta-sub">Venta de productos surtidos • Venta #0019</span>
+                <span class="data-meta-sub" style="font-weight: 600;">Venció hace 10 días (25 Oct 2026)</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 18.000</div>
                 <span class="badge-status badge-status--vencida">Vencida</span>
               </div>
             </li>
 
-            <!-- Cuenta 2: Próxima a vencer -->
+            <!-- Cuenta 3: Minimarket Central (Pendiente) -->
             <li class="receivables-item">
               <div>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <strong>Cafetería del Centro</strong>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.id_factura -->
-                <span class="data-meta-sub">Factura #1055</span>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.fecha_vencimiento -->
-                <span class="data-meta-sub">Vencimiento: 05 Nov 2026</span>
+                <strong>Minimarket Central</strong>
+                <span class="data-meta-sub">Venta de aceite vegetal • Venta #0026</span>
+                <span class="data-meta-sub">Vence en 15 días (19 Nov 2026)</span>
               </div>
               <div style="text-align: right;">
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.monto en CLP sin decimales -->
-                <div class="data-value">$ 420.000</div>
-                <!-- [DATO CALCULADO]: Próxima a vencer [REQUIERE VALIDACIÓN BACKEND]: Criterio pendiente (ej: vence en 3 días) -->
-                <span class="badge-status badge-status--proxima">Próxima a vencer</span>
-              </div>
-            </li>
-
-            <!-- Cuenta 3: Vigente -->
-            <li class="receivables-item">
-              <div>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <strong>Pastelería La Espiga</strong>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.id_factura -->
-                <span class="data-meta-sub">Factura #1068</span>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.fecha_vencimiento (futuro) -->
-                <span class="data-meta-sub">Vencimiento: 28 Nov 2026</span>
-              </div>
-              <div style="text-align: right;">
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.monto en CLP sin decimales -->
-                <div class="data-value">$ 410.000</div>
-                <!-- [DATO CALCULADO]: Estado Vigente (vencimiento holgado futuro) -->
-                <span class="badge-status badge-status--vigente">Vigente</span>
+                <div class="data-value">$ 8.500</div>
+                <span class="badge-status badge-status--pendiente">Pendiente</span>
               </div>
             </li>
           </ul>
@@ -419,185 +349,163 @@
           <table class="table-responsive-desktop" aria-label="Tabla de cuentas por cobrar">
             <thead>
               <tr>
-                <th>Cliente</th>
-                <th>Factura</th>
-                <th>Vencimiento</th>
-                <th>Estado</th>
-                <th>Monto (CLP)</th>
+                <th scope="col">Cliente</th>
+                <th scope="col">Documento</th>
+                <th scope="col">Vencimiento</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Monto pendiente</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Fila 1: Vencida -->
+              <!-- Fila 1: Claudia Rojas -->
               <tr>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <td><strong>Distribuidora Valle Central SpA</strong></td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.id_factura -->
-                <td>#1042</td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.fecha_vencimiento -->
-                <td>18 Oct 2026</td>
-                <!-- [DATO CALCULADO]: Vencida -->
+                <td><strong>Claudia Rojas</strong><br><span class="data-meta-sub">Venta de 4 botellas de aceite</span></td>
+                <td>Venta #0024</td>
+                <td>11 Nov 2026 <span class="data-meta-sub">Vence en 8 días</span></td>
+                <td><span class="badge-status badge-status--pendiente">Pendiente</span></td>
+                <td><strong>$ 12.000</strong></td>
+              </tr>
+              <!-- Fila 2: Almacén San Pedro -->
+              <tr>
+                <td><strong>Almacén San Pedro</strong><br><span class="data-meta-sub">Venta de productos surtidos</span></td>
+                <td>Venta #0019</td>
+                <td>25 Oct 2026 <span class="data-meta-sub" style="font-weight: 600;">Venció hace 10 días</span></td>
                 <td><span class="badge-status badge-status--vencida">Vencida</span></td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.monto -->
-                <td><strong>$ 650.000</strong></td>
+                <td><strong>$ 18.000</strong></td>
               </tr>
-              <!-- Fila 2: Próxima a vencer -->
+              <!-- Fila 3: Minimarket Central -->
               <tr>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <td><strong>Cafetería del Centro</strong></td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.id_factura -->
-                <td>#1055</td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.fecha_vencimiento -->
-                <td>05 Nov 2026</td>
-                <!-- [DATO CALCULADO / REQUIERE VALIDACIÓN BACKEND]: Próxima a vencer (umbral pendiente) -->
-                <td><span class="badge-status badge-status--proxima">Próxima a vencer</span></td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.monto -->
-                <td><strong>$ 420.000</strong></td>
-              </tr>
-              <!-- Fila 3: Vigente -->
-              <tr>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <td><strong>Pastelería La Espiga</strong></td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.id_factura -->
-                <td>#1068</td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.fecha_vencimiento -->
-                <td>28 Nov 2026</td>
-                <!-- [DATO CALCULADO]: Vigente -->
-                <td><span class="badge-status badge-status--vigente">Vigente</span></td>
-                <!-- [DATO DIRECTO]: Cuenta_por_cobrar.monto -->
-                <td><strong>$ 410.000</strong></td>
+                <td><strong>Minimarket Central</strong><br><span class="data-meta-sub">Venta de aceite vegetal</span></td>
+                <td>Venta #0026</td>
+                <td>19 Nov 2026 <span class="data-meta-sub">Vence en 15 días</span></td>
+                <td><span class="badge-status badge-status--pendiente">Pendiente</span></td>
+                <td><strong>$ 8.500</strong></td>
               </tr>
             </tbody>
           </table>
         </section>
 
         <!-- -----------------------------------------------------------------------
-             SECCIÓN: LISTA DE VENTAS RECIENTES
-             Campos ER: Fecha, Factura, Cliente, Tipo de compra, Importe
+             SECCIÓN: OPERACIONES RECIENTES (ANTES VENTAS RECIENTES)
              ----------------------------------------------------------------------- -->
-        <!--
-          DOCUMENTACIÓN DE ORIGEN DE DATOS - VENTAS RECIENTES:
-          - Fecha: [DATO DIRECTO] Venta.fecha.
-          - Factura: [DATO DIRECTO] Venta.id_factura.
-          - Cliente: [DATO DIRECTO] Cliente.nombre a través de Venta.id_cliente.
-          - Tipo de compra: [DATO DIRECTO] Venta.tipo_compra (ej: Transferencia, Efectivo, Crédito).
-          - Importe: [DATO CALCULADO] SUM(Detalle_Venta.cantidad * Detalle_Venta.precio_venta)
-            agrupado por Venta.id_factura. Montos en CLP sin decimales.
-        -->
-        <section class="card" aria-label="Listado de ventas recientes">
+        <section class="card" aria-label="Listado de operaciones recientes">
           <div class="section-head">
             <div>
               <span class="section-kicker">Últimos Movimientos</span>
-              <h2 class="section-title">Ventas Recientes</h2>
+              <h2 class="section-title">Operaciones recientes</h2>
             </div>
             <a class="ghost-link" href="movimientos.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
               Ver todas →
             </a>
           </div>
 
-          <!-- Vista Mobile (Cards / Rows) -->
+          <!-- Vista Mobile (Cards) -->
           <ul class="sales-list sales-mobile">
-            <!-- Venta 1 -->
+            <!-- Operación 1: Venta pagada -->
             <li class="sales-item">
               <div>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <strong>Almacén Las Rosas</strong>
-                <!-- [DATO DIRECTO]: Venta.id_factura y Venta.tipo_compra -->
-                <span class="data-meta-sub">Factura #1089 • Transferencia</span>
-                <!-- [DATO DIRECTO]: Venta.fecha -->
-                <span class="data-meta-sub">Fecha: 02 Nov 2026</span>
+                <span class="badge-op badge-op--venta">Venta</span>
+                <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
+                <span class="data-meta-sub">3 botellas • Venta #0025 • Efectivo</span>
+                <span class="data-meta-sub">Fecha: 04 Nov 2026</span>
               </div>
               <div style="text-align: right;">
-                <!-- [DATO CALCULADO]: SUM(Detalle_Venta.cantidad * Detalle_Venta.precio_venta) -->
-                <div class="data-value">$ 185.000</div>
-                <span class="data-meta-sub">Cobrada</span>
+                <div class="data-value">$ 9.000</div>
+                <span class="badge-status badge-status--pagada">Venta pagada</span>
               </div>
             </li>
 
-            <!-- Venta 2 -->
+            <!-- Operación 2: Venta pendiente -->
             <li class="sales-item">
               <div>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <strong>Banquetería Sabores SpA</strong>
-                <!-- [DATO DIRECTO]: Venta.id_factura y Venta.tipo_compra -->
-                <span class="data-meta-sub">Factura #1088 • Crédito 30 días</span>
-                <!-- [DATO DIRECTO]: Venta.fecha -->
+                <span class="badge-op badge-op--venta">Venta</span>
+                <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
+                <span class="data-meta-sub">4 botellas • Venta #0024 • Claudia Rojas</span>
+                <span class="data-meta-sub">Fecha: 03 Nov 2026</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 12.000</div>
+                <span class="badge-status badge-status--pendiente">Pendiente de pago</span>
+              </div>
+            </li>
+
+            <!-- Operación 3: Compra -->
+            <li class="sales-item">
+              <div>
+                <span class="badge-op badge-op--compra">Compra</span>
+                <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
+                <span class="data-meta-sub">12 botellas (1 caja) • Compra #0012</span>
                 <span class="data-meta-sub">Fecha: 01 Nov 2026</span>
               </div>
               <div style="text-align: right;">
-                <!-- [DATO CALCULADO]: SUM(Detalle_Venta.cantidad * Detalle_Venta.precio_venta) -->
-                <div class="data-value">$ 450.000</div>
-                <span class="data-meta-sub">Por cobrar</span>
+                <div class="data-value">$ 24.000</div>
+                <span class="data-meta-sub">Compra registrada</span>
               </div>
             </li>
 
-            <!-- Venta 3 -->
+            <!-- Operación 4: Otro gasto -->
             <li class="sales-item">
               <div>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <strong>Café Bistro Central</strong>
-                <!-- [DATO DIRECTO]: Venta.id_factura y Venta.tipo_compra -->
-                <span class="data-meta-sub">Factura #1087 • Débito</span>
-                <!-- [DATO DIRECTO]: Venta.fecha -->
-                <span class="data-meta-sub">Fecha: 30 Oct 2026</span>
+                <span class="badge-op badge-op--gasto">Otro gasto</span>
+                <strong style="margin-left: 6px;">Transporte para retirar mercadería</strong>
+                <span class="data-meta-sub">Flete retiro insumos • Gasto #0008</span>
+                <span class="data-meta-sub">Fecha: 31 Oct 2026</span>
               </div>
               <div style="text-align: right;">
-                <!-- [DATO CALCULADO]: SUM(Detalle_Venta.cantidad * Detalle_Venta.precio_venta) -->
-                <div class="data-value">$ 98.000</div>
-                <span class="data-meta-sub">Cobrada</span>
+                <div class="data-value">$ 3.500</div>
+                <span class="data-meta-sub">Gasto registrado</span>
               </div>
             </li>
           </ul>
 
           <!-- Vista Tablet/Desktop (Tabla estructurada) -->
-          <table class="table-responsive-desktop" aria-label="Tabla de ventas recientes">
+          <table class="table-responsive-desktop" aria-label="Tabla de operaciones recientes">
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Factura</th>
-                <th>Cliente</th>
-                <th>Tipo de Compra</th>
-                <th>Importe (CLP)</th>
+                <th scope="col">Fecha</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Producto / Descripción</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Estado de pago</th>
+                <th scope="col">Monto</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Venta 1 -->
+              <!-- Fila 1: Venta pagada -->
               <tr>
-                <!-- [DATO DIRECTO]: Venta.fecha -->
-                <td>02 Nov 2026</td>
-                <!-- [DATO DIRECTO]: Venta.id_factura -->
-                <td>#1089</td>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <td><strong>Almacén Las Rosas</strong></td>
-                <!-- [DATO DIRECTO]: Venta.tipo_compra -->
-                <td>Transferencia</td>
-                <!-- [DATO CALCULADO]: Importe calculado desde Detalle_Venta -->
-                <td><strong>$ 185.000</strong></td>
+                <td>04 Nov 2026</td>
+                <td><span class="badge-op badge-op--venta">Venta</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Venta #0025</span></td>
+                <td>3 un.</td>
+                <td><span class="badge-status badge-status--pagada">Venta pagada</span></td>
+                <td><strong>$ 9.000</strong></td>
               </tr>
-              <!-- Venta 2 -->
+              <!-- Fila 2: Venta pendiente -->
               <tr>
-                <!-- [DATO DIRECTO]: Venta.fecha -->
+                <td>03 Nov 2026</td>
+                <td><span class="badge-op badge-op--venta">Venta</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Venta #0024 • Claudia Rojas</span></td>
+                <td>4 un.</td>
+                <td><span class="badge-status badge-status--pendiente">Pendiente de pago</span></td>
+                <td><strong>$ 12.000</strong></td>
+              </tr>
+              <!-- Fila 3: Compra -->
+              <tr>
                 <td>01 Nov 2026</td>
-                <!-- [DATO DIRECTO]: Venta.id_factura -->
-                <td>#1088</td>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <td><strong>Banquetería Sabores SpA</strong></td>
-                <!-- [DATO DIRECTO]: Venta.tipo_compra -->
-                <td>Crédito 30 días</td>
-                <!-- [DATO CALCULADO]: Importe calculado desde Detalle_Venta -->
-                <td><strong>$ 450.000</strong></td>
+                <td><span class="badge-op badge-op--compra">Compra</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Compra #0012 • 1 caja</span></td>
+                <td>12 un.</td>
+                <td><span class="data-meta-sub">Compra registrada</span></td>
+                <td><strong>$ 24.000</strong></td>
               </tr>
-              <!-- Venta 3 -->
+              <!-- Fila 4: Otro gasto -->
               <tr>
-                <!-- [DATO DIRECTO]: Venta.fecha -->
-                <td>30 Oct 2026</td>
-                <!-- [DATO DIRECTO]: Venta.id_factura -->
-                <td>#1087</td>
-                <!-- [DATO DIRECTO]: Cliente.nombre -->
-                <td><strong>Café Bistro Central</strong></td>
-                <!-- [DATO DIRECTO]: Venta.tipo_compra -->
-                <td>Débito</td>
-                <!-- [DATO CALCULADO]: Importe calculado desde Detalle_Venta -->
-                <td><strong>$ 98.000</strong></td>
+                <td>31 Oct 2026</td>
+                <td><span class="badge-op badge-op--gasto">Otro gasto</span></td>
+                <td><strong>Transporte para retirar mercadería</strong><br><span class="data-meta-sub">Gasto #0008</span></td>
+                <td>—</td>
+                <td><span class="data-meta-sub">Gasto registrado</span></td>
+                <td><strong>$ 3.500</strong></td>
               </tr>
             </tbody>
           </table>
@@ -614,13 +522,13 @@
         </a>
         <a class="nav__item" href="movimientos.html">
           <span class="nav__icon" aria-hidden="true"></span>
-          <span>Movimientos</span>
+          <span>Compras y ventas</span>
         </a>
         <a class="nav__item" href="cuentas-cobrar.html">
           <span class="nav__icon" aria-hidden="true"></span>
           <span>Cobros</span>
         </a>
-        <a class="nav__item" href="#resumen-mensual">
+        <a class="nav__item" href="#resumen-mensual" title="Resumen mensual (Módulo de reportes en preparación)">
           <span class="nav__icon" aria-hidden="true"></span>
           <span>Reportes</span>
         </a>

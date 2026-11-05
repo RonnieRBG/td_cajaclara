@@ -8,9 +8,12 @@
   </head>
   <body>
     <div class="app">
-      <!-- Header -->
+      <!-- =========================================================================
+           ENCABEZADO GLOBAL
+           ========================================================================= -->
       <header class="header">
         <div class="brand">
+          <!-- Enlace corregido a dashboard.html -->
           <a class="logo" href="dashboard.html" aria-label="Volver al Dashboard">
             <span class="logo__mark"></span>
           </a>
@@ -19,57 +22,66 @@
         <div class="user">
           <div class="user__avatar" aria-hidden="true"></div>
           <div class="user__meta">
-            <span class="user__label">Emprendedor</span>
-            <span class="placeholder placeholder--text-sm"></span>
+            <span class="user__label">Negocio</span>
+            <strong style="font-size: 13px; color: var(--ink);">Almacén La Esquina</strong>
           </div>
         </div>
       </header>
 
-      <!-- Main Content -->
+      <!-- =========================================================================
+           CONTENIDO PRINCIPAL
+           ========================================================================= -->
       <main class="main">
-        <!-- Hero KPI: Total Pendiente por Cobrar -->
-        <section class="card kpi-hero" aria-label="Resumen de Cuentas por Cobrar">
+        <!-- Hero KPI: Total Dinero Pendiente por Cobrar -->
+        <section class="card kpi-hero" aria-label="Resumen de Dinero que te deben">
           <div class="kpi-hero__body">
             <div class="kpi-hero__header">
-              <span class="section-kicker">Métrica Clave</span>
-              <span class="kpi-hero__tag">4 cuentas activas</span>
+              <span class="section-kicker">Dinero que te deben</span>
+              <span class="kpi-hero__tag">3 cuentas activas</span>
             </div>
             <span class="kpi-hero__label">Total pendiente por cobrar</span>
-            <div class="kpi-hero__value">$ 2.450.000</div>
+            <div class="kpi-hero__value">$ 38.500</div>
             <div class="kpi-hero__breakdown">
               <div class="breakdown-item">
                 <span class="breakdown-dot breakdown-dot--vencido" aria-hidden="true"></span>
-                <span><strong>$ 650.000</strong> vencido (1)</span>
+                <span><strong>$ 18.000</strong> vencido (1)</span>
               </div>
               <div class="breakdown-divider" aria-hidden="true"></div>
               <div class="breakdown-item">
                 <span class="breakdown-dot breakdown-dot--pendiente" aria-hidden="true"></span>
-                <span><strong>$ 1.800.000</strong> por vencer (3)</span>
+                <span><strong>$ 20.500</strong> por vencer (2)</span>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- Search Bar and Status Filters -->
-        <section class="card filters-card" aria-label="Búsqueda y filtros">
+        <!-- Barra de Acción y Búsqueda / Filtros -->
+        <section class="card filters-card" aria-label="Búsqueda, acción y filtros de cobros">
+          <!-- Botón visible de creación de cuenta por cobrar -->
+          <div style="margin-bottom: 12px;">
+            <label class="btn-primary" for="sheet-nueva-cuenta" style="display: inline-block; cursor: pointer;">
+              + Nueva cuenta por cobrar
+            </label>
+          </div>
+
           <div class="search" role="search">
             <span class="search__icon" aria-hidden="true"></span>
             <input
               type="search"
               class="search__input"
               placeholder="Buscar por cliente o factura..."
-              aria-label="Buscar deudores"
+              aria-label="Buscar clientes o ventas pendientes"
             />
           </div>
 
-          <div class="filters" role="tablist" aria-label="Filtro por estado de deuda">
+          <div class="filters" role="tablist" aria-label="Filtro por estado de cuenta">
             <label class="chip">
               <input type="radio" name="filtro-deuda" checked />
-              <span>Todos (5)</span>
+              <span>Todos (4)</span>
             </label>
             <label class="chip">
               <input type="radio" name="filtro-deuda" />
-              <span>Pendientes (3)</span>
+              <span>Pendientes (2)</span>
             </label>
             <label class="chip">
               <input type="radio" name="filtro-deuda" />
@@ -82,250 +94,227 @@
           </div>
         </section>
 
-        <!-- Debtor List Section -->
-        <section class="card list-card" aria-label="Listado de clientes con deudas">
+        <!-- Sección de Listado de Cuentas por Cobrar -->
+        <section class="card list-card" aria-label="Listado de cuentas por cobrar">
           <div class="section-head">
             <div>
-              <span class="section-kicker">Detalle</span>
-              <h2 class="section-title">Clientes y Deudas</h2>
+              <span class="section-kicker">Detalle de Cobros</span>
+              <h2 class="section-title">Clientes y cuentas pendientes</h2>
             </div>
-            <span class="placeholder placeholder--text-sm"></span>
+            <span class="data-meta-sub">3 cuentas activas</span>
           </div>
 
-          <!-- Mobile Cards View (Visible on screens < 768px) -->
+          <!-- Vista Mobile (Cards con datos demostrativos del almacén) -->
           <ul class="debtor-cards">
-            <!-- Item 1: Vencida -->
+            <!-- Cuenta 1: Claudia Rojas (Pendiente) -->
             <li class="debtor-card">
               <div class="debtor-card__header">
                 <div class="debtor-card__title-group">
-                  <h3 class="debtor-card__name">Distribuidora Valle Central SpA</h3>
-                  <span class="debtor-card__doc">Factura #1042</span>
-                </div>
-                <span class="badge-status badge-status--vencida">Vencida</span>
-              </div>
-
-              <div class="debtor-card__grid">
-                <div>
-                  <span class="debtor-field__label">Monto</span>
-                  <span class="debtor-field__value">$ 650.000</span>
-                </div>
-                <div>
-                  <span class="debtor-field__label">Vencimiento</span>
-                  <span class="debtor-field__value debtor-field__value--vencido">18 Oct 2026</span>
-                  <span class="debtor-field__sub debtor-field__sub--vencido">Venció hace 10 días</span>
-                </div>
-              </div>
-
-              <div class="debtor-card__actions">
-                <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
-              </div>
-            </li>
-
-            <!-- Item 2: Pendiente (Próxima a vencer) -->
-            <li class="debtor-card">
-              <div class="debtor-card__header">
-                <div class="debtor-card__title-group">
-                  <h3 class="debtor-card__name">Cafetería del Centro</h3>
-                  <span class="debtor-card__doc">Factura #1055</span>
+                  <h3 class="debtor-card__name">Claudia Rojas</h3>
+                  <span class="debtor-card__doc">Venta #0024 • Venta de 4 botellas de aceite</span>
                 </div>
                 <span class="badge-status badge-status--pendiente">Pendiente</span>
               </div>
 
               <div class="debtor-card__grid">
                 <div>
-                  <span class="debtor-field__label">Monto</span>
-                  <span class="debtor-field__value">$ 920.000</span>
+                  <span class="debtor-field__label">Monto pendiente</span>
+                  <span class="debtor-field__value">$ 12.000</span>
+                  <span class="debtor-field__sub">Emisión: 03 Nov 2026</span>
                 </div>
                 <div>
-                  <span class="debtor-field__label">Vencimiento</span>
-                  <span class="debtor-field__value">05 Nov 2026</span>
+                  <span class="debtor-field__label">Fecha de pago</span>
+                  <span class="debtor-field__value">11 Nov 2026</span>
                   <span class="debtor-field__sub">Vence en 8 días</span>
                 </div>
               </div>
 
               <div class="debtor-card__actions">
                 <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
               </div>
             </li>
 
-            <!-- Item 3: Pendiente -->
+            <!-- Cuenta 2: Almacén San Pedro (Vencida) -->
             <li class="debtor-card">
               <div class="debtor-card__header">
                 <div class="debtor-card__title-group">
-                  <h3 class="debtor-card__name">Taller Creativo Norte</h3>
-                  <span class="debtor-card__doc">Boleta #0389</span>
+                  <h3 class="debtor-card__name">Almacén San Pedro</h3>
+                  <span class="debtor-card__doc">Venta #0019 • Venta de productos surtidos</span>
+                </div>
+                <span class="badge-status badge-status--vencida">Vencida</span>
+              </div>
+
+              <div class="debtor-card__grid">
+                <div>
+                  <span class="debtor-field__label">Monto pendiente</span>
+                  <span class="debtor-field__value">$ 18.000</span>
+                  <span class="debtor-field__sub">Emisión: 15 Oct 2026</span>
+                </div>
+                <div>
+                  <span class="debtor-field__label">Fecha de pago</span>
+                  <span class="debtor-field__value debtor-field__value--vencido">25 Oct 2026</span>
+                  <span class="debtor-field__sub debtor-field__sub--vencido">Venció hace 10 días</span>
+                </div>
+              </div>
+
+              <div class="debtor-card__actions">
+                <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
+                <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+              </div>
+            </li>
+
+            <!-- Cuenta 3: Minimarket Central (Pendiente) -->
+            <li class="debtor-card">
+              <div class="debtor-card__header">
+                <div class="debtor-card__title-group">
+                  <h3 class="debtor-card__name">Minimarket Central</h3>
+                  <span class="debtor-card__doc">Venta #0026 • Venta de aceite vegetal</span>
                 </div>
                 <span class="badge-status badge-status--pendiente">Pendiente</span>
               </div>
 
               <div class="debtor-card__grid">
                 <div>
-                  <span class="debtor-field__label">Monto</span>
-                  <span class="debtor-field__value">$ 480.000</span>
+                  <span class="debtor-field__label">Monto pendiente</span>
+                  <span class="debtor-field__value">$ 8.500</span>
+                  <span class="debtor-field__sub">Emisión: 02 Nov 2026</span>
                 </div>
                 <div>
-                  <span class="debtor-field__label">Vencimiento</span>
-                  <span class="debtor-field__value">12 Nov 2026</span>
+                  <span class="debtor-field__label">Fecha de pago</span>
+                  <span class="debtor-field__value">17 Nov 2026</span>
                   <span class="debtor-field__sub">Vence en 15 días</span>
                 </div>
               </div>
 
               <div class="debtor-card__actions">
                 <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
               </div>
             </li>
 
-            <!-- Item 4: Pendiente -->
-            <li class="debtor-card">
-              <div class="debtor-card__header">
-                <div class="debtor-card__title-group">
-                  <h3 class="debtor-card__name">Almacén & Minimarket Don Pedro</h3>
-                  <span class="debtor-card__doc">Factura #1060</span>
-                </div>
-                <span class="badge-status badge-status--pendiente">Pendiente</span>
-              </div>
-
-              <div class="debtor-card__grid">
-                <div>
-                  <span class="debtor-field__label">Monto</span>
-                  <span class="debtor-field__value">$ 400.000</span>
-                </div>
-                <div>
-                  <span class="debtor-field__label">Vencimiento</span>
-                  <span class="debtor-field__value">25 Nov 2026</span>
-                  <span class="debtor-field__sub">Vence en 28 días</span>
-                </div>
-              </div>
-
-              <div class="debtor-card__actions">
-                <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
-              </div>
-            </li>
-
-            <!-- Item 5: Pagada -->
+            <!-- Cuenta 4: Librería Horizonte (Pagada) -->
             <li class="debtor-card debtor-card--pagada">
               <div class="debtor-card__header">
                 <div class="debtor-card__title-group">
-                  <h3 class="debtor-card__name">Librería y Bazar Horizonte</h3>
-                  <span class="debtor-card__doc">Factura #1029</span>
+                  <h3 class="debtor-card__name">Librería Horizonte</h3>
+                  <span class="debtor-card__doc">Venta #0015 • Venta de aceite y abarrotes</span>
                 </div>
                 <span class="badge-status badge-status--pagada">Pagada</span>
               </div>
 
               <div class="debtor-card__grid">
                 <div>
-                  <span class="debtor-field__label">Monto</span>
-                  <span class="debtor-field__value">$ 310.000</span>
+                  <span class="debtor-field__label">Monto pagado</span>
+                  <span class="debtor-field__value">$ 15.000</span>
+                  <span class="debtor-field__sub">Emisión: 10 Oct 2026</span>
                 </div>
                 <div>
-                  <span class="debtor-field__label">Vencimiento</span>
+                  <span class="debtor-field__label">Fecha de pago</span>
                   <span class="debtor-field__value">14 Oct 2026</span>
-                  <span class="debtor-field__sub">Pagada el 15 Oct</span>
+                  <span class="debtor-field__sub">Pagada el 14 Oct</span>
                 </div>
               </div>
 
               <div class="debtor-card__actions">
                 <button type="button" class="btn-action-primary btn-action--disabled" disabled>Pago Registrado</button>
-                <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
               </div>
             </li>
           </ul>
 
-          <!-- Desktop Table View (Visible on screens >= 768px) -->
+          <!-- Vista Tablet/Desktop (Tabla estructurada) -->
           <div class="debtor-table-wrap">
             <table class="debtor-table">
               <thead>
                 <tr>
-                  <th scope="col">Nombre Deudor</th>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Producto / Descripción</th>
                   <th scope="col">Documento</th>
-                  <th scope="col">Monto</th>
-                  <th scope="col">Fecha Vencimiento</th>
+                  <th scope="col">Monto pendiente</th>
+                  <th scope="col">Fecha emisión</th>
+                  <th scope="col">Fecha esperada</th>
                   <th scope="col">Estado</th>
                   <th scope="col" style="text-align: right;">Acciones</th>
                 </tr>
               </thead>
               <tbody>
+                <!-- Fila 1: Claudia Rojas -->
                 <tr>
-                  <td><strong>Distribuidora Valle Central SpA</strong></td>
-                  <td><span class="debtor-card__doc">Factura #1042</span></td>
-                  <td><strong>$ 650.000</strong></td>
+                  <td><strong>Claudia Rojas</strong></td>
+                  <td>Venta de 4 botellas de aceite</td>
+                  <td><span class="debtor-card__doc">Venta #0024</span></td>
+                  <td><strong>$ 12.000</strong></td>
+                  <td>03 Nov 2026</td>
                   <td>
-                    <span>18 Oct 2026</span>
-                    <span class="debtor-field__sub debtor-field__sub--vencido">Venció hace 10 días</span>
-                  </td>
-                  <td><span class="badge-status badge-status--vencida">Vencida</span></td>
-                  <td class="actions-cell">
-                    <div class="actions-group">
-                      <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Cafetería del Centro</strong></td>
-                  <td><span class="debtor-card__doc">Factura #1055</span></td>
-                  <td><strong>$ 920.000</strong></td>
-                  <td>
-                    <span>05 Nov 2026</span>
+                    <span>11 Nov 2026</span>
                     <span class="debtor-field__sub">Vence en 8 días</span>
                   </td>
                   <td><span class="badge-status badge-status--pendiente">Pendiente</span></td>
                   <td class="actions-cell">
                     <div class="actions-group">
                       <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                      <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
                     </div>
                   </td>
                 </tr>
+
+                <!-- Fila 2: Almacén San Pedro -->
                 <tr>
-                  <td><strong>Taller Creativo Norte</strong></td>
-                  <td><span class="debtor-card__doc">Boleta #0389</span></td>
-                  <td><strong>$ 480.000</strong></td>
+                  <td><strong>Almacén San Pedro</strong></td>
+                  <td>Venta de productos surtidos</td>
+                  <td><span class="debtor-card__doc">Venta #0019</span></td>
+                  <td><strong>$ 18.000</strong></td>
+                  <td>15 Oct 2026</td>
                   <td>
-                    <span>12 Nov 2026</span>
+                    <span>25 Oct 2026</span>
+                    <span class="debtor-field__sub debtor-field__sub--vencido">Venció hace 10 días</span>
+                  </td>
+                  <td><span class="badge-status badge-status--vencida">Vencida</span></td>
+                  <td class="actions-cell">
+                    <div class="actions-group">
+                      <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
+                      <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Fila 3: Minimarket Central -->
+                <tr>
+                  <td><strong>Minimarket Central</strong></td>
+                  <td>Venta de aceite vegetal</td>
+                  <td><span class="debtor-card__doc">Venta #0026</span></td>
+                  <td><strong>$ 8.500</strong></td>
+                  <td>02 Nov 2026</td>
+                  <td>
+                    <span>17 Nov 2026</span>
                     <span class="debtor-field__sub">Vence en 15 días</span>
                   </td>
                   <td><span class="badge-status badge-status--pendiente">Pendiente</span></td>
                   <td class="actions-cell">
                     <div class="actions-group">
                       <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                      <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
                     </div>
                   </td>
                 </tr>
+
+                <!-- Fila 4: Librería Horizonte -->
                 <tr>
-                  <td><strong>Almacén & Minimarket Don Pedro</strong></td>
-                  <td><span class="debtor-card__doc">Factura #1060</span></td>
-                  <td><strong>$ 400.000</strong></td>
-                  <td>
-                    <span>25 Nov 2026</span>
-                    <span class="debtor-field__sub">Vence en 28 días</span>
-                  </td>
-                  <td><span class="badge-status badge-status--pendiente">Pendiente</span></td>
-                  <td class="actions-cell">
-                    <div class="actions-group">
-                      <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Librería y Bazar Horizonte</strong></td>
-                  <td><span class="debtor-card__doc">Factura #1029</span></td>
-                  <td><strong>$ 310.000</strong></td>
+                  <td><strong>Librería Horizonte</strong></td>
+                  <td>Venta de aceite y abarrotes</td>
+                  <td><span class="debtor-card__doc">Venta #0015</span></td>
+                  <td><strong>$ 15.000</strong></td>
+                  <td>10 Oct 2026</td>
                   <td>
                     <span>14 Oct 2026</span>
-                    <span class="debtor-field__sub">Pagada el 15 Oct</span>
+                    <span class="debtor-field__sub">Pagada el 14 Oct</span>
                   </td>
                   <td><span class="badge-status badge-status--pagada">Pagada</span></td>
                   <td class="actions-cell">
                     <div class="actions-group">
                       <button type="button" class="btn-action-primary btn-action--disabled" disabled>Pago Registrado</button>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                      <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
                     </div>
                   </td>
                 </tr>
@@ -335,7 +324,9 @@
         </section>
       </main>
 
-      <!-- Navigation (Mobile Bottom Bar / Desktop Sidebar) -->
+      <!-- =========================================================================
+           BARRA DE NAVEGACIÓN PRINCIPAL
+           ========================================================================= -->
       <nav class="nav" aria-label="Navegación principal">
         <a class="nav__item" href="dashboard.html">
           <span class="nav__icon" aria-hidden="true"></span>
@@ -343,20 +334,23 @@
         </a>
         <a class="nav__item" href="movimientos.html">
           <span class="nav__icon" aria-hidden="true"></span>
-          <span>Movimientos</span>
+          <span>Compras y ventas</span>
         </a>
         <a class="nav__item nav__item--active" href="cuentas-cobrar.html" aria-current="page">
           <span class="nav__icon" aria-hidden="true"></span>
           <span>Cobros</span>
         </a>
-        <a class="nav__item" href="#">
+        <a class="nav__item" href="#resumen-mensual" title="Resumen mensual (Módulo de reportes en preparación)">
           <span class="nav__icon" aria-hidden="true"></span>
           <span>Reportes</span>
         </a>
       </nav>
     </div>
 
-    <!-- Interactive Sheet 1: Registrar Pago Modal -->
+    <!-- =========================================================================
+         INTERACTIVE SHEET 1: REGISTRAR PAGO DE CLIENTE (MODAL DE COBRO)
+         ========================================================================= -->
+    <!-- TODO BACKEND: confirmar si el MVP permitirá pagos parciales -->
     <input class="sheet-toggle" type="checkbox" id="sheet-pago" />
     <div class="sheet" role="dialog" aria-labelledby="sheet-pago-title">
       <label class="sheet__backdrop" for="sheet-pago" aria-label="Cerrar modal"></label>
@@ -374,63 +368,68 @@
 
         <div class="sheet-meta-card">
           <div>
-            <span class="sheet-meta-label">Cliente Deudor</span>
-            <div class="sheet-meta-value">Distribuidora Valle Central SpA</div>
+            <span class="sheet-meta-label">Cliente</span>
+            <div class="sheet-meta-value">Claudia Rojas</div>
+            <span class="data-meta-sub">Venta #0024 • 4 botellas de aceite</span>
           </div>
           <div style="text-align: right;">
-            <span class="sheet-meta-label">Deuda Total</span>
-            <div class="sheet-meta-value">$ 650.000</div>
+            <span class="sheet-meta-label">Monto pendiente</span>
+            <div class="sheet-meta-value">$ 12.000</div>
           </div>
         </div>
 
+        <!-- Solo Pago Total permitido en el flujo del micronegocio -->
         <fieldset class="field">
           <legend>Tipo de Pago</legend>
-          <div class="type-options">
+          <div class="type-options" style="grid-template-columns: 1fr;">
             <label class="type-option">
               <input type="radio" name="tipo_pago" checked />
-              <span>Pago Total ($ 650.000)</span>
-            </label>
-            <label class="type-option">
-              <input type="radio" name="tipo_pago" />
-              <span>Abono Parcial</span>
+              <span>Pago Total ($ 12.000)</span>
             </label>
           </div>
         </fieldset>
 
         <label class="field">
-          <span>Monto Recibido</span>
+          <span>Fecha de pago</span>
           <span class="field__box">
-            <input type="text" class="form-input" value="$ 650.000" />
+            <input type="text" class="form-input" value="04/11/2026" />
           </span>
         </label>
 
         <label class="field">
-          <span>Método de Pago</span>
+          <span>Método de pago</span>
           <span class="field__box">
-            <input type="text" class="form-input" value="Transferencia Bancaria" />
+            <select class="form-select" aria-label="Método de pago">
+              <option value="Efectivo" selected>Efectivo</option>
+              <option value="Transferencia">Transferencia Bancaria</option>
+              <option value="Debito">Tarjeta de Débito</option>
+            </select>
             <span class="chevron" aria-hidden="true"></span>
           </span>
         </label>
 
         <label class="field">
-          <span>Fecha de Recepción</span>
-          <span class="field__box">
-            <input type="text" class="form-input" value="28/10/2026" />
-          </span>
-        </label>
-
-        <label class="field">
-          <span>Nota o Referencia (Opcional)</span>
+          <span>Referencia o nota (Opcional)</span>
           <span class="field__box field__box--area">
-            <input type="text" class="form-input" placeholder="N° de comprobante o banco..." />
+            <input type="text" class="form-input" placeholder="N° de comprobante o nota de pago..." />
           </span>
         </label>
 
-        <button class="btn-primary" type="button">Confirmar Pago</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
+          <button class="btn-primary" type="button" onclick="document.getElementById('sheet-pago').checked = false;">
+            Confirmar pago
+          </button>
+          <label class="btn-secondary" for="sheet-pago" style="width: 100%; text-align: center; cursor: pointer;">
+            Cancelar
+          </label>
+        </div>
       </form>
     </div>
 
-    <!-- Interactive Sheet 2: Contactar Modal -->
+    <!-- =========================================================================
+         INTERACTIVE SHEET 2: CONTACTAR CLIENTE (SIMULACIÓN PROTOTIPO)
+         ========================================================================= -->
+    <!-- TODO BACKEND/FRONTEND: las acciones de contacto son simulaciones del prototipo -->
     <input class="sheet-toggle" type="checkbox" id="sheet-contactar" />
     <div class="sheet" role="dialog" aria-labelledby="sheet-contactar-title">
       <label class="sheet__backdrop" for="sheet-contactar" aria-label="Cerrar modal"></label>
@@ -438,7 +437,7 @@
         <div class="sheet__head">
           <div>
             <span class="section-kicker">Comunicación</span>
-            <h2 class="section-title" id="sheet-contactar-title">Contactar Deudor</h2>
+            <h2 class="section-title" id="sheet-contactar-title">Contactar cliente</h2>
           </div>
           <label class="sheet__close" for="sheet-contactar" aria-label="Cerrar">
             <span></span>
@@ -449,50 +448,133 @@
         <div class="sheet-meta-card">
           <div>
             <span class="sheet-meta-label">Cliente</span>
-            <div class="sheet-meta-value">Distribuidora Valle Central SpA</div>
+            <div class="sheet-meta-value">Claudia Rojas</div>
+            <span class="data-meta-sub">Venta #0024 • Vence el 11 Nov 2026</span>
           </div>
           <div style="text-align: right;">
-            <span class="sheet-meta-label">Saldo Vencido</span>
-            <div class="sheet-meta-value">$ 650.000</div>
+            <span class="sheet-meta-label">Monto pendiente</span>
+            <div class="sheet-meta-value">$ 12.000</div>
           </div>
         </div>
 
         <div class="contact-options">
           <div class="contact-card">
-            <div class="contact-card__icon" aria-hidden="true">WA</div>
-            <div class="contact-card__copy">
-              <span class="contact-card__title">Enviar mensaje por WhatsApp</span>
-              <span class="contact-card__desc">Mensaje predeterminado con detalle de deuda y datos de cuenta</span>
-            </div>
-          </div>
-
-          <div class="contact-card">
             <div class="contact-card__icon" aria-hidden="true">TEL</div>
             <div class="contact-card__copy">
-              <span class="contact-card__title">Llamar por Teléfono</span>
-              <span class="contact-card__desc">+56 9 8765 4321 · Contacto comercial</span>
+              <span class="contact-card__title">Ver teléfono del cliente</span>
+              <span class="contact-card__desc">+56 9 8765 4321 · Claudia Rojas</span>
             </div>
           </div>
 
           <div class="contact-card">
-            <div class="contact-card__icon" aria-hidden="true">EM</div>
+            <div class="contact-card__icon" aria-hidden="true">MSG</div>
             <div class="contact-card__copy">
-              <span class="contact-card__title">Enviar Estado de Cuenta por Correo</span>
-              <span class="contact-card__desc">Adjunta comprobante PDF y botón de aviso de transferencia</span>
+              <span class="contact-card__title">Copiar mensaje de cobro</span>
+              <span class="contact-card__desc">"Hola Claudia, te recordamos el saldo de $12.000 de Venta #0024 en Almacén La Esquina"</span>
             </div>
           </div>
 
           <div class="contact-card">
-            <div class="contact-card__icon" aria-hidden="true">CP</div>
+            <div class="contact-card__icon" aria-hidden="true">DAT</div>
             <div class="contact-card__copy">
-              <span class="contact-card__title">Copiar Datos de Transferencia</span>
-              <span class="contact-card__desc">Banco, N° Cuenta Corriente y RUT al portapapeles</span>
+              <span class="contact-card__title">Copiar datos de contacto y cuenta</span>
+              <span class="contact-card__desc">Banco Estado, Cuenta RUT: 12.345.678-9 • Almacén La Esquina</span>
             </div>
           </div>
         </div>
 
-        <label class="btn-secondary" for="sheet-contactar" style="width: 100%; text-align: center;">Cancelar</label>
+        <label class="btn-secondary" for="sheet-contactar" style="width: 100%; text-align: center; cursor: pointer;">
+          Cerrar
+        </label>
       </div>
+    </div>
+
+    <!-- =========================================================================
+         INTERACTIVE SHEET 3: NUEVA CUENTA POR COBRAR (MODAL DE REGISTRO)
+         ========================================================================= -->
+    <!-- TODO BACKEND: confirmar campos comerciales adicionales en CuentaPorCobrar -->
+    <input class="sheet-toggle" type="checkbox" id="sheet-nueva-cuenta" />
+    <div class="sheet" role="dialog" aria-labelledby="sheet-nueva-cuenta-title">
+      <label class="sheet__backdrop" for="sheet-nueva-cuenta" aria-label="Cerrar modal"></label>
+      <form class="sheet__panel card" action="#" method="get">
+        <div class="sheet__head">
+          <div>
+            <span class="section-kicker">Cuentas por Cobrar</span>
+            <h2 class="section-title" id="sheet-nueva-cuenta-title">Nueva cuenta por cobrar</h2>
+          </div>
+          <label class="sheet__close" for="sheet-nueva-cuenta" aria-label="Cerrar">
+            <span></span>
+            <span></span>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Nombre del cliente</span>
+          <span class="field__box">
+            <input type="text" class="form-input" placeholder="Ej: Claudia Rojas..." required />
+          </span>
+        </label>
+
+        <label class="field">
+          <span>Contacto (Opcional)</span>
+          <span class="field__box">
+            <input type="tel" class="form-input" placeholder="+56 9 8765 4321" />
+          </span>
+        </label>
+
+        <label class="field">
+          <span>Producto o descripción de la venta</span>
+          <span class="field__box">
+            <input type="text" class="form-input" placeholder="Ej: Venta de 4 botellas de aceite..." required />
+          </span>
+        </label>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <label class="field">
+            <span>Monto pendiente</span>
+            <span class="field__box">
+              <input type="text" class="form-input" placeholder="$ 12.000" required />
+            </span>
+          </label>
+          <label class="field">
+            <span>N° Transacción (Opcional)</span>
+            <span class="field__box">
+              <input type="text" class="form-input" placeholder="Venta #0024" />
+            </span>
+          </label>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <label class="field">
+            <span>Fecha de emisión</span>
+            <span class="field__box">
+              <input type="text" class="form-input" value="04/11/2026" />
+            </span>
+          </label>
+          <label class="field">
+            <span>Fecha esperada de pago</span>
+            <span class="field__box">
+              <input type="text" class="form-input" placeholder="11/11/2026" required />
+            </span>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Nota o recordatorio (Opcional)</span>
+          <span class="field__box field__box--area">
+            <input type="text" class="form-input" placeholder="Información adicional sobre el pago o el cliente..." />
+          </span>
+        </label>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
+          <button class="btn-primary" type="button" onclick="document.getElementById('sheet-nueva-cuenta').checked = false;">
+            Guardar cuenta
+          </button>
+          <label class="btn-secondary" for="sheet-nueva-cuenta" style="width: 100%; text-align: center; cursor: pointer;">
+            Cancelar
+          </label>
+        </div>
+      </form>
     </div>
   </body>
 </html>

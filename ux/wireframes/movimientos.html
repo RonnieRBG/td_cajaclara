@@ -3,221 +3,291 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CajaClara — Movimientos</title>
+    <title>CajaClara — Compras y ventas</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app">
+      <!-- =========================================================================
+           ENCABEZADO GLOBAL
+           ========================================================================= -->
       <header class="header">
         <div class="brand">
-          <a class="logo" href="index.html" aria-label="CajaClara">
+          <!-- Enlace corregido a dashboard.html -->
+          <a class="logo" href="dashboard.html" aria-label="Volver al Dashboard">
             <span class="logo__mark"></span>
           </a>
-          <h1 class="page-title">Movimientos</h1>
+          <h1 class="page-title">Compras y ventas</h1>
         </div>
         <div class="user">
           <div class="user__avatar" aria-hidden="true"></div>
           <div class="user__meta">
-            <span class="user__label">Usuario</span>
-            <span class="placeholder placeholder--text-sm"></span>
+            <span class="user__label">Negocio</span>
+            <strong style="font-size: 13px; color: var(--ink);">Almacén La Esquina</strong>
           </div>
         </div>
       </header>
 
+      <!-- =========================================================================
+           CONTENIDO PRINCIPAL
+           ========================================================================= -->
       <main class="main">
-        <section class="toolbar" aria-label="Acciones">
-          <label class="btn-primary" for="sheet-nuevo">Nuevo Movimiento</label>
+        <!-- Toolbar con acción principal de registrar operación -->
+        <section class="toolbar" aria-label="Acciones de operaciones">
+          <label class="btn-primary" for="sheet-nuevo">+ Nueva operación</label>
         </section>
 
-        <section class="card filters-card" aria-label="Búsqueda y filtros">
+        <!-- Búsqueda, periodo y filtros por tipo de operación -->
+        <section class="card filters-card" aria-label="Búsqueda y filtros de operaciones">
           <div class="search" role="search">
             <span class="search__icon" aria-hidden="true"></span>
-            <span class="placeholder placeholder--text-md search__field"></span>
+            <input
+              type="search"
+              class="search__input"
+              placeholder="Buscar por producto, descripción o N°..."
+              aria-label="Buscar operaciones por producto, descripción o número"
+            />
           </div>
 
-          <div class="filters" role="tablist" aria-label="Filtro de tipo">
+          <!-- Selector visual de periodo temporal -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 10px;">
+            <span class="section-kicker" style="margin: 0;">Periodo mostrado</span>
+            <button class="chip" type="button" style="border: 1px solid var(--line); border-radius: 999px; background: var(--surface); padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer;">
+              <span>Noviembre 2026 ▼</span>
+            </button>
+          </div>
+
+          <div class="filters" role="tablist" aria-label="Filtro por tipo de operación">
             <label class="chip">
-              <input type="radio" name="filtro" checked />
-              <span>Todos</span>
+              <input type="radio" name="filtro-operacion" checked />
+              <span>Todas (5)</span>
             </label>
             <label class="chip">
-              <input type="radio" name="filtro" />
-              <span>Ingresos</span>
+              <input type="radio" name="filtro-operacion" />
+              <span>Ventas (3)</span>
             </label>
             <label class="chip">
-              <input type="radio" name="filtro" />
-              <span>Gastos</span>
+              <input type="radio" name="filtro-operacion" />
+              <span>Compras (1)</span>
+            </label>
+            <label class="chip">
+              <input type="radio" name="filtro-operacion" />
+              <span>Otros gastos (1)</span>
+            </label>
+            <label class="chip">
+              <input type="radio" name="filtro-operacion" />
+              <span>Por cobrar (2)</span>
             </label>
           </div>
         </section>
 
-        <section class="card list-card" aria-label="Listado de movimientos">
+        <!-- Listado de Compras y Ventas -->
+        <section class="card list-card" aria-label="Listado de compras y ventas">
           <div class="section-head">
             <div>
-              <span class="section-kicker">Registro</span>
-              <h2 class="section-title">Movimientos</h2>
+              <span class="section-kicker">Registro de Caja</span>
+              <h2 class="section-title">Registro de operaciones</h2>
             </div>
-            <span class="placeholder placeholder--text-sm"></span>
+            <span class="data-meta-sub">5 registros en Noviembre 2026</span>
           </div>
 
+          <!-- Vista Mobile (Cards con datos del escenario coherente) -->
           <ul class="movement-list">
+            <!-- Operación 1: Venta pagada -->
             <li class="movement-row">
               <span class="summary__dot"></span>
               <div class="movement-row__body">
                 <div class="movement-row__top">
-                  <span class="movement-row__label">Fecha</span>
-                  <span class="placeholder placeholder--date"></span>
+                  <span class="movement-row__label">04 Nov 2026 • Venta #0025</span>
+                  <span class="badge-op badge-op--venta">Venta</span>
                 </div>
                 <div class="movement-row__grid">
                   <div>
-                    <span class="movement-row__label">Categoría</span>
-                    <span class="placeholder placeholder--text-sm"></span>
+                    <span class="movement-row__label">Producto / Detalle</span>
+                    <strong>Aceite vegetal de 1 litro</strong>
+                    <span class="data-meta-sub">3 unidades vendidas</span>
                   </div>
                   <div>
-                    <span class="movement-row__label">Descripción</span>
-                    <span class="placeholder placeholder--text-md"></span>
+                    <span class="movement-row__label">Estado</span>
+                    <span class="badge-status badge-status--pagada">Venta pagada</span>
                   </div>
                   <div class="movement-row__amount">
                     <span class="movement-row__label">Monto</span>
-                    <span class="placeholder placeholder--amount"></span>
+                    <span class="data-value">$ 9.000</span>
                   </div>
                 </div>
               </div>
             </li>
+
+            <!-- Operación 2: Venta pendiente (Claudia Rojas) -->
             <li class="movement-row">
               <span class="summary__dot summary__dot--mid"></span>
               <div class="movement-row__body">
                 <div class="movement-row__top">
-                  <span class="movement-row__label">Fecha</span>
-                  <span class="placeholder placeholder--date"></span>
+                  <span class="movement-row__label">03 Nov 2026 • Venta #0024</span>
+                  <span class="badge-op badge-op--venta">Venta</span>
                 </div>
                 <div class="movement-row__grid">
                   <div>
-                    <span class="movement-row__label">Categoría</span>
-                    <span class="placeholder placeholder--text-sm"></span>
+                    <span class="movement-row__label">Producto / Cliente</span>
+                    <strong>Aceite vegetal de 1 litro</strong>
+                    <span class="data-meta-sub">4 unidades • Cliente: Claudia Rojas</span>
                   </div>
                   <div>
-                    <span class="movement-row__label">Descripción</span>
-                    <span class="placeholder placeholder--text-md"></span>
+                    <span class="movement-row__label">Estado</span>
+                    <span class="badge-status badge-status--pendiente">Pendiente de pago</span>
                   </div>
                   <div class="movement-row__amount">
                     <span class="movement-row__label">Monto</span>
-                    <span class="placeholder placeholder--amount"></span>
+                    <span class="data-value">$ 12.000</span>
                   </div>
                 </div>
               </div>
             </li>
+
+            <!-- Operación 3: Compra (12 botellas) -->
             <li class="movement-row">
-              <span class="summary__dot"></span>
+              <span class="summary__dot summary__dot--mid"></span>
               <div class="movement-row__body">
                 <div class="movement-row__top">
-                  <span class="movement-row__label">Fecha</span>
-                  <span class="placeholder placeholder--date"></span>
+                  <span class="movement-row__label">01 Nov 2026 • Compra #0012</span>
+                  <span class="badge-op badge-op--compra">Compra</span>
                 </div>
                 <div class="movement-row__grid">
                   <div>
-                    <span class="movement-row__label">Categoría</span>
-                    <span class="placeholder placeholder--text-sm"></span>
+                    <span class="movement-row__label">Producto / Proveedor</span>
+                    <strong>Aceite vegetal de 1 litro</strong>
+                    <span class="data-meta-sub">12 botellas (1 caja) • Distribuidora</span>
                   </div>
                   <div>
-                    <span class="movement-row__label">Descripción</span>
-                    <span class="placeholder placeholder--text-md"></span>
+                    <span class="movement-row__label">Estado</span>
+                    <span class="data-meta-sub">Compra registrada</span>
                   </div>
                   <div class="movement-row__amount">
                     <span class="movement-row__label">Monto</span>
-                    <span class="placeholder placeholder--amount"></span>
+                    <span class="data-value">$ 24.000</span>
                   </div>
                 </div>
               </div>
             </li>
+
+            <!-- Operación 4: Otro gasto (Transporte) -->
             <li class="movement-row">
               <span class="summary__dot summary__dot--light"></span>
               <div class="movement-row__body">
                 <div class="movement-row__top">
-                  <span class="movement-row__label">Fecha</span>
-                  <span class="placeholder placeholder--date"></span>
+                  <span class="movement-row__label">31 Oct 2026 • Gasto #0008</span>
+                  <span class="badge-op badge-op--gasto">Otro gasto</span>
                 </div>
                 <div class="movement-row__grid">
                   <div>
-                    <span class="movement-row__label">Categoría</span>
-                    <span class="placeholder placeholder--text-sm"></span>
+                    <span class="movement-row__label">Categoría / Detalle</span>
+                    <strong>Transporte</strong>
+                    <span class="data-meta-sub">Flete retiro mercadería</span>
                   </div>
                   <div>
-                    <span class="movement-row__label">Descripción</span>
-                    <span class="placeholder placeholder--text-md"></span>
+                    <span class="movement-row__label">Estado</span>
+                    <span class="data-meta-sub">Gasto registrado</span>
                   </div>
                   <div class="movement-row__amount">
                     <span class="movement-row__label">Monto</span>
-                    <span class="placeholder placeholder--amount"></span>
+                    <span class="data-value">$ 3.500</span>
                   </div>
                 </div>
               </div>
             </li>
+
+            <!-- Operación 5: Venta pendiente (Almacén San Pedro) -->
             <li class="movement-row">
               <span class="summary__dot summary__dot--mid"></span>
               <div class="movement-row__body">
                 <div class="movement-row__top">
-                  <span class="movement-row__label">Fecha</span>
-                  <span class="placeholder placeholder--date"></span>
+                  <span class="movement-row__label">28 Oct 2026 • Venta #0019</span>
+                  <span class="badge-op badge-op--venta">Venta</span>
                 </div>
                 <div class="movement-row__grid">
                   <div>
-                    <span class="movement-row__label">Categoría</span>
-                    <span class="placeholder placeholder--text-sm"></span>
+                    <span class="movement-row__label">Producto / Cliente</span>
+                    <strong>Productos surtidos</strong>
+                    <span class="data-meta-sub">Cliente: Almacén San Pedro</span>
                   </div>
                   <div>
-                    <span class="movement-row__label">Descripción</span>
-                    <span class="placeholder placeholder--text-md"></span>
+                    <span class="movement-row__label">Estado</span>
+                    <span class="badge-status badge-status--vencida">Vencida</span>
                   </div>
                   <div class="movement-row__amount">
                     <span class="movement-row__label">Monto</span>
-                    <span class="placeholder placeholder--amount"></span>
+                    <span class="data-value">$ 18.000</span>
                   </div>
                 </div>
               </div>
             </li>
           </ul>
 
+          <!-- Vista Tablet/Desktop (Tabla estructurada) -->
           <div class="table-wrap" aria-hidden="false">
             <table class="movement-table">
               <thead>
                 <tr>
-                  <th>Fecha</th>
-                  <th>Categoría</th>
-                  <th>Descripción</th>
-                  <th>Monto</th>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Producto / Descripción</th>
+                  <th scope="col">Cantidad</th>
+                  <th scope="col">Documento</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col" style="text-align: right;">Monto</th>
                 </tr>
               </thead>
               <tbody>
+                <!-- Fila 1: Venta pagada -->
                 <tr>
-                  <td><span class="placeholder placeholder--date"></span></td>
-                  <td><span class="placeholder placeholder--text-sm"></span></td>
-                  <td><span class="placeholder placeholder--text-md"></span></td>
-                  <td><span class="placeholder placeholder--amount"></span></td>
+                  <td>04 Nov 2026</td>
+                  <td><span class="badge-op badge-op--venta">Venta</span></td>
+                  <td><strong>Aceite vegetal de 1 litro</strong></td>
+                  <td>3 un.</td>
+                  <td>Venta #0025</td>
+                  <td><span class="badge-status badge-status--pagada">Venta pagada</span></td>
+                  <td style="text-align: right;"><strong>$ 9.000</strong></td>
                 </tr>
+                <!-- Fila 2: Venta pendiente -->
                 <tr>
-                  <td><span class="placeholder placeholder--date"></span></td>
-                  <td><span class="placeholder placeholder--text-sm"></span></td>
-                  <td><span class="placeholder placeholder--text-md"></span></td>
-                  <td><span class="placeholder placeholder--amount"></span></td>
+                  <td>03 Nov 2026</td>
+                  <td><span class="badge-op badge-op--venta">Venta</span></td>
+                  <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Cliente: Claudia Rojas</span></td>
+                  <td>4 un.</td>
+                  <td>Venta #0024</td>
+                  <td><span class="badge-status badge-status--pendiente">Pendiente de pago</span></td>
+                  <td style="text-align: right;"><strong>$ 12.000</strong></td>
                 </tr>
+                <!-- Fila 3: Compra -->
                 <tr>
-                  <td><span class="placeholder placeholder--date"></span></td>
-                  <td><span class="placeholder placeholder--text-sm"></span></td>
-                  <td><span class="placeholder placeholder--text-md"></span></td>
-                  <td><span class="placeholder placeholder--amount"></span></td>
+                  <td>01 Nov 2026</td>
+                  <td><span class="badge-op badge-op--compra">Compra</span></td>
+                  <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Distribuidora Mayorista</span></td>
+                  <td>12 un.</td>
+                  <td>Compra #0012</td>
+                  <td><span class="data-meta-sub">Compra registrada</span></td>
+                  <td style="text-align: right;"><strong>$ 24.000</strong></td>
                 </tr>
+                <!-- Fila 4: Otro gasto -->
                 <tr>
-                  <td><span class="placeholder placeholder--date"></span></td>
-                  <td><span class="placeholder placeholder--text-sm"></span></td>
-                  <td><span class="placeholder placeholder--text-md"></span></td>
-                  <td><span class="placeholder placeholder--amount"></span></td>
+                  <td>31 Oct 2026</td>
+                  <td><span class="badge-op badge-op--gasto">Otro gasto</span></td>
+                  <td><strong>Transporte para retirar mercadería</strong></td>
+                  <td>—</td>
+                  <td>Gasto #0008</td>
+                  <td><span class="data-meta-sub">Gasto registrado</span></td>
+                  <td style="text-align: right;"><strong>$ 3.500</strong></td>
                 </tr>
+                <!-- Fila 5: Venta pendiente (Almacén San Pedro) -->
                 <tr>
-                  <td><span class="placeholder placeholder--date"></span></td>
-                  <td><span class="placeholder placeholder--text-sm"></span></td>
-                  <td><span class="placeholder placeholder--text-md"></span></td>
-                  <td><span class="placeholder placeholder--amount"></span></td>
+                  <td>28 Oct 2026</td>
+                  <td><span class="badge-op badge-op--venta">Venta</span></td>
+                  <td><strong>Productos surtidos</strong><br><span class="data-meta-sub">Cliente: Almacén San Pedro</span></td>
+                  <td>—</td>
+                  <td>Venta #0019</td>
+                  <td><span class="badge-status badge-status--vencida">Vencida</span></td>
+                  <td style="text-align: right;"><strong>$ 18.000</strong></td>
                 </tr>
               </tbody>
             </table>
@@ -225,87 +295,434 @@
         </section>
       </main>
 
+      <!-- =========================================================================
+           BARRA DE NAVEGACIÓN PRINCIPAL
+           ========================================================================= -->
       <nav class="nav" aria-label="Navegación principal">
-        <a class="nav__item" href="index.html">
+        <a class="nav__item" href="dashboard.html">
           <span class="nav__icon" aria-hidden="true"></span>
           <span>Dashboard</span>
         </a>
         <a class="nav__item nav__item--active" href="movimientos.html" aria-current="page">
           <span class="nav__icon" aria-hidden="true"></span>
-          <span>Movimientos</span>
+          <span>Compras y ventas</span>
         </a>
         <a class="nav__item" href="cuentas-cobrar.html">
           <span class="nav__icon" aria-hidden="true"></span>
           <span>Cobros</span>
         </a>
-        <a class="nav__item" href="#">
+        <a class="nav__item" href="#resumen-mensual" title="Resumen mensual (Módulo de reportes en preparación)">
           <span class="nav__icon" aria-hidden="true"></span>
           <span>Reportes</span>
         </a>
       </nav>
     </div>
 
+    <!-- =========================================================================
+         INTERACTIVE SHEET: REGISTRO DE NUEVA OPERACIÓN (MODAL TIPO CAJA)
+         ========================================================================= -->
+    <!--
+      LIMITACIÓN TÉCNICA DOCUMENTADA (ACCESIBILIDAD / WIREFRAME):
+      Este prototipo utiliza un checkbox nativo (#sheet-nuevo) como disparador del modal
+      para operar sin dependencias de frameworks externos. Los labels asociados actúan
+      como botones de apertura/cierre.
+    -->
     <input class="sheet-toggle" type="checkbox" id="sheet-nuevo" />
     <div class="sheet" role="dialog" aria-labelledby="sheet-title">
       <label class="sheet__backdrop" for="sheet-nuevo" aria-label="Cerrar formulario"></label>
-      <form class="sheet__panel card" action="#" method="get">
+      <form class="sheet__panel card" action="#" method="get" id="form-nueva-operacion">
         <div class="sheet__head">
           <div>
-            <span class="section-kicker">Registro</span>
-            <h2 class="section-title" id="sheet-title">Nuevo Movimiento</h2>
+            <span class="section-kicker">Caja Registradora</span>
+            <h2 class="section-title" id="sheet-title">Nueva operación</h2>
           </div>
-          <label class="sheet__close" for="sheet-nuevo" aria-label="Cerrar">
+          <label class="sheet__close" for="sheet-nuevo" aria-label="Cerrar formulario">
             <span></span>
             <span></span>
           </label>
         </div>
 
+        <!-- Pregunta inicial obligatoria de negocio -->
         <fieldset class="field">
-          <legend>Tipo</legend>
-          <div class="type-options">
+          <legend>¿Qué quieres registrar?</legend>
+          <div class="type-options type-options--three">
             <label class="type-option">
-              <input type="radio" name="tipo" checked />
-              <span>Ingreso</span>
+              <input type="radio" name="tipo_operacion" id="op-tipo-venta" value="venta" checked />
+              <span>Venta</span>
             </label>
             <label class="type-option">
-              <input type="radio" name="tipo" />
-              <span>Gasto</span>
+              <input type="radio" name="tipo_operacion" id="op-tipo-compra" value="compra" />
+              <span>Compra</span>
+            </label>
+            <label class="type-option">
+              <input type="radio" name="tipo_operacion" id="op-tipo-gasto" value="gasto" />
+              <span>Otro gasto</span>
             </label>
           </div>
         </fieldset>
 
-        <label class="field">
-          <span>Categoría</span>
-          <span class="field__box">
-            <span class="placeholder placeholder--text-md"></span>
-            <span class="chevron" aria-hidden="true"></span>
-          </span>
-        </label>
+        <!-- =====================================================================
+             CAMPOS ESPECÍFICOS PARA VENTA
+             ===================================================================== -->
+        <!-- TODO BACKEND: producto, cantidad y precio unitario requieren confirmación en el modelo de operación -->
+        <div id="seccion-venta" class="form-seccion-tipo">
+          <label class="field">
+            <span>Producto</span>
+            <span class="field__box">
+              <input type="text" class="form-input" id="venta-producto" value="Aceite vegetal de 1 litro" placeholder="Nombre del producto..." />
+            </span>
+          </label>
 
-        <label class="field">
-          <span>Monto</span>
-          <span class="field__box">
-            <span class="placeholder placeholder--text-sm"></span>
-          </span>
-        </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <label class="field">
+              <span>Cantidad vendida</span>
+              <span class="field__box">
+                <input type="number" class="form-input" id="venta-cantidad" value="3" min="1" />
+              </span>
+            </label>
+            <label class="field">
+              <span>Precio por unidad</span>
+              <span class="field__box">
+                <input type="text" class="form-input" id="venta-precio-unitario" value="$ 3.000" />
+              </span>
+            </label>
+          </div>
 
-        <label class="field">
-          <span>Fecha</span>
-          <span class="field__box">
-            <span class="placeholder placeholder--date"></span>
-          </span>
-        </label>
+          <label class="field">
+            <span>Monto total de la venta</span>
+            <span class="field__box">
+              <input type="text" class="form-input" id="venta-monto" value="$ 9.000" />
+            </span>
+          </label>
 
-        <label class="field">
-          <span>Descripción</span>
-          <span class="field__box field__box--area">
-            <span class="placeholder placeholder--text-md"></span>
-            <span class="placeholder placeholder--text-sm"></span>
-          </span>
-        </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <label class="field">
+              <span>Fecha</span>
+              <span class="field__box">
+                <input type="text" class="form-input" id="venta-fecha" value="04/11/2026" />
+              </span>
+            </label>
+            <label class="field">
+              <span>N° Transacción (Opcional)</span>
+              <span class="field__box">
+                <input type="text" class="form-input" id="venta-doc" value="Venta #0025" placeholder="Ej: Venta #0025" />
+              </span>
+            </label>
+          </div>
 
-        <button class="btn-primary" type="button">Guardar</button>
+          <label class="field">
+            <span>Descripción (Opcional)</span>
+            <span class="field__box field__box--area">
+              <input type="text" class="form-input" id="venta-desc" placeholder="Detalle adicional de la venta..." />
+            </span>
+          </label>
+
+          <!-- Pregunta sobre estado del cobro -->
+          <fieldset class="field" style="margin-top: 6px;">
+            <legend>¿La venta fue pagada?</legend>
+            <div class="type-options">
+              <label class="type-option">
+                <input type="radio" name="venta_pagada" id="pago-si" value="si" checked />
+                <span>Sí, ya fue pagada</span>
+              </label>
+              <label class="type-option">
+                <input type="radio" name="venta_pagada" id="pago-no" value="no" />
+                <span>No, queda pendiente</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Campos condicionales si la venta queda pendiente de pago -->
+          <!-- TODO BACKEND: confirmar creación conjunta del Movimiento de ingreso y la CuentaPorCobrar -->
+          <div id="seccion-cliente-pendiente" style="display: none; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-top: 8px; flex-direction: column; gap: 8px;">
+            <span class="section-kicker">Datos para Cuenta por Cobrar</span>
+            <label class="field">
+              <span>Nombre del cliente</span>
+              <span class="field__box" style="background: var(--surface);">
+                <input type="text" class="form-input" id="cliente-nombre" placeholder="Ej: Claudia Rojas" />
+              </span>
+            </label>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <label class="field">
+                <span>Contacto (Opcional)</span>
+                <span class="field__box" style="background: var(--surface);">
+                  <input type="tel" class="form-input" id="cliente-telefono" placeholder="+56 9..." />
+                </span>
+              </label>
+              <label class="field">
+                <span>Fecha esperada de pago</span>
+                <span class="field__box" style="background: var(--surface);">
+                  <input type="text" class="form-input" id="cliente-fecha-pago" placeholder="11/11/2026" />
+                </span>
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Nota o recordatorio (Opcional)</span>
+              <span class="field__box" style="background: var(--surface);">
+                <input type="text" class="form-input" id="cliente-nota" placeholder="Ej: Pagará la próxima semana..." />
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- =====================================================================
+             CAMPOS ESPECÍFICOS PARA COMPRA
+             ===================================================================== -->
+        <!-- TODO BACKEND: proveedor y detalle de producto todavía no forman parte del modelo confirmado -->
+        <div id="seccion-compra" class="form-seccion-tipo" style="display: none;">
+          <label class="field">
+            <span>Producto comprado</span>
+            <span class="field__box">
+              <input type="text" class="form-input" id="compra-producto" value="Aceite vegetal de 1 litro" placeholder="Producto comprado en caja o paquete..." />
+            </span>
+          </label>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <label class="field">
+              <span>Cantidad comprada</span>
+              <span class="field__box">
+                <input type="number" class="form-input" id="compra-cantidad" value="12" min="1" />
+              </span>
+            </label>
+            <label class="field">
+              <span>Precio por unidad</span>
+              <span class="field__box">
+                <input type="text" class="form-input" id="compra-precio-unitario" value="$ 2.000" />
+              </span>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Monto total de la compra</span>
+            <span class="field__box">
+              <input type="text" class="form-input" id="compra-monto" value="$ 24.000" />
+            </span>
+          </label>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <label class="field">
+              <span>Proveedor (Opcional)</span>
+              <span class="field__box">
+                <input type="text" class="form-input" id="compra-proveedor" placeholder="Distribuidora Mayorista" />
+              </span>
+            </label>
+            <label class="field">
+              <span>Fecha</span>
+              <span class="field__box">
+                <input type="text" class="form-input" id="compra-fecha" value="01/11/2026" />
+              </span>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Descripción (Opcional)</span>
+            <span class="field__box field__box--area">
+              <input type="text" class="form-input" id="compra-desc" placeholder="Detalle de bulto, lote o factura de compra..." />
+            </span>
+          </label>
+        </div>
+
+        <!-- =====================================================================
+             CAMPOS ESPECÍFICOS PARA OTRO GASTO
+             ===================================================================== -->
+        <div id="seccion-gasto" class="form-seccion-tipo" style="display: none;">
+          <label class="field">
+            <span>Categoría de gasto</span>
+            <span class="field__box">
+              <select class="form-select" id="gasto-categoria" aria-label="Categoría de gasto">
+                <option value="Transporte" selected>Transporte</option>
+                <option value="Embalaje">Embalaje</option>
+                <option value="Arriendo">Arriendo</option>
+                <option value="Servicios">Servicios</option>
+                <option value="Otros">Otros</option>
+              </select>
+              <span class="chevron" aria-hidden="true"></span>
+            </span>
+          </label>
+
+          <label class="field">
+            <span>Descripción del gasto</span>
+            <span class="field__box">
+              <input type="text" class="form-input" id="gasto-desc" value="Transporte para retirar mercadería" placeholder="Motivo o detalle del gasto..." />
+            </span>
+          </label>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <label class="field">
+              <span>Monto</span>
+              <span class="field__box">
+                <input type="text" class="form-input" id="gasto-monto" value="$ 3.500" />
+              </span>
+            </label>
+            <label class="field">
+              <span>Fecha</span>
+              <span class="field__box">
+                <input type="text" class="form-input" id="gasto-fecha" value="31/10/2026" />
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- =====================================================================
+             RESUMEN ANTES DE GUARDAR
+             ===================================================================== -->
+        <div class="op-preview-box" aria-label="Resumen de la operación">
+          <span class="op-preview-box__title">Resumen antes de guardar</span>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Tipo de operación</span>
+            <span class="op-preview-box__val" id="prev-tipo">Venta</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Producto / Detalle</span>
+            <span class="op-preview-box__val" id="prev-detalle">Aceite vegetal de 1 litro</span>
+          </div>
+          <div class="op-preview-box__row" id="prev-row-cantidad">
+            <span class="op-preview-box__label">Cantidad</span>
+            <span class="op-preview-box__val" id="prev-cantidad">3 unidades</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Monto total</span>
+            <span class="op-preview-box__val" id="prev-monto" style="font-size: 15px;">$ 9.000</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Fecha</span>
+            <span class="op-preview-box__val" id="prev-fecha">04/11/2026</span>
+          </div>
+          <div class="op-preview-box__row" id="prev-row-estado">
+            <span class="op-preview-box__label">Estado de pago</span>
+            <span class="op-preview-box__val" id="prev-estado">Venta pagada</span>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
+          <button class="btn-primary" type="button" onclick="document.getElementById('sheet-nuevo').checked = false;">
+            Guardar operación
+          </button>
+          <label class="btn-secondary" for="sheet-nuevo" style="width: 100%; text-align: center; cursor: pointer;">
+            Cancelar
+          </label>
+        </div>
       </form>
     </div>
+
+    <!-- =========================================================================
+         JAVASCRIPT VANILLA: PARÁMETROS DE URL Y CONTROL DEL FORMULARIO
+         Soporta ?tipo=venta, ?tipo=compra, ?tipo=gasto
+         ========================================================================= -->
+    <script>
+      (function () {
+        function actualizarFormulario(tipo) {
+          var secVenta = document.getElementById("seccion-venta");
+          var secCompra = document.getElementById("seccion-compra");
+          var secGasto = document.getElementById("seccion-gasto");
+          var prevTipo = document.getElementById("prev-tipo");
+          var prevDetalle = document.getElementById("prev-detalle");
+          var prevCantidad = document.getElementById("prev-cantidad");
+          var prevMonto = document.getElementById("prev-monto");
+          var prevFecha = document.getElementById("prev-fecha");
+          var prevEstado = document.getElementById("prev-estado");
+          var prevRowCant = document.getElementById("prev-row-cantidad");
+          var prevRowEst = document.getElementById("prev-row-estado");
+
+          if (!secVenta || !secCompra || !secGasto) return;
+
+          if (tipo === "compra") {
+            secVenta.style.display = "none";
+            secCompra.style.display = "block";
+            secGasto.style.display = "none";
+            if (prevTipo) prevTipo.textContent = "Compra";
+            if (prevDetalle) prevDetalle.textContent = "Aceite vegetal de 1 litro";
+            if (prevRowCant) prevRowCant.style.display = "flex";
+            if (prevCantidad) prevCantidad.textContent = "12 unidades";
+            if (prevMonto) prevMonto.textContent = "$ 24.000";
+            if (prevFecha) prevFecha.textContent = "01/11/2026";
+            if (prevRowEst) prevRowEst.style.display = "none";
+          } else if (tipo === "gasto") {
+            secVenta.style.display = "none";
+            secCompra.style.display = "none";
+            secGasto.style.display = "block";
+            if (prevTipo) prevTipo.textContent = "Otro gasto";
+            if (prevDetalle) prevDetalle.textContent = "Transporte para retirar mercadería";
+            if (prevRowCant) prevRowCant.style.display = "none";
+            if (prevMonto) prevMonto.textContent = "$ 3.500";
+            if (prevFecha) prevFecha.textContent = "31/10/2026";
+            if (prevRowEst) prevRowEst.style.display = "none";
+          } else {
+            // Default Venta
+            secVenta.style.display = "block";
+            secCompra.style.display = "none";
+            secGasto.style.display = "none";
+            if (prevTipo) prevTipo.textContent = "Venta";
+            if (prevDetalle) prevDetalle.textContent = "Aceite vegetal de 1 litro";
+            if (prevRowCant) prevRowCant.style.display = "flex";
+            if (prevCantidad) prevCantidad.textContent = "3 unidades";
+            if (prevMonto) prevMonto.textContent = "$ 9.000";
+            if (prevFecha) prevFecha.textContent = "04/11/2026";
+            if (prevRowEst) prevRowEst.style.display = "flex";
+            var pagoNo = document.getElementById("pago-no");
+            if (prevEstado) {
+              prevEstado.textContent = (pagoNo && pagoNo.checked) ? "Pendiente de pago" : "Venta pagada";
+            }
+          }
+        }
+
+        // Manejo de cambio en radios de tipo
+        var radioVenta = document.getElementById("op-tipo-venta");
+        var radioCompra = document.getElementById("op-tipo-compra");
+        var radioGasto = document.getElementById("op-tipo-gasto");
+
+        if (radioVenta) radioVenta.addEventListener("change", function () { if (this.checked) actualizarFormulario("venta"); });
+        if (radioCompra) radioCompra.addEventListener("change", function () { if (this.checked) actualizarFormulario("compra"); });
+        if (radioGasto) radioGasto.addEventListener("change", function () { if (this.checked) actualizarFormulario("gasto"); });
+
+        // Manejo de venta pagada vs pendiente
+        var pagoSi = document.getElementById("pago-si");
+        var pagoNo = document.getElementById("pago-no");
+        var secCliente = document.getElementById("seccion-cliente-pendiente");
+        var prevEstado = document.getElementById("prev-estado");
+
+        function togglePagoPendiente() {
+          if (!secCliente) return;
+          if (pagoNo && pagoNo.checked) {
+            secCliente.style.display = "flex";
+            if (prevEstado) prevEstado.textContent = "Pendiente de pago (Claudia Rojas)";
+          } else {
+            secCliente.style.display = "none";
+            if (prevEstado) prevEstado.textContent = "Venta pagada";
+          }
+        }
+
+        if (pagoSi) pagoSi.addEventListener("change", togglePagoPendiente);
+        if (pagoNo) pagoNo.addEventListener("change", togglePagoPendiente);
+
+        // Lectura de parámetros URL (?tipo=venta, ?tipo=compra, ?tipo=gasto)
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var tipoParam = params.get("tipo");
+          if (tipoParam) {
+            tipoParam = tipoParam.toLowerCase().trim();
+            var sheet = document.getElementById("sheet-nuevo");
+            if (tipoParam === "venta" && radioVenta) {
+              radioVenta.checked = true;
+              actualizarFormulario("venta");
+              if (sheet) sheet.checked = true;
+            } else if (tipoParam === "compra" && radioCompra) {
+              radioCompra.checked = true;
+              actualizarFormulario("compra");
+              if (sheet) sheet.checked = true;
+            } else if (tipoParam === "gasto" && radioGasto) {
+              radioGasto.checked = true;
+              actualizarFormulario("gasto");
+              if (sheet) sheet.checked = true;
+            }
+          }
+        } catch (e) {
+          // Si el navegador no soporta URLSearchParams o hay error, la app sigue operando normalmente
+        }
+      })();
+    </script>
   </body>
 </html>
