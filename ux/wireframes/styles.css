@@ -192,6 +192,24 @@ body {
   margin-left: auto;
 }
 
+.list-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.w-full {
+  width: 100%;
+}
+
 /* --------------------------------------------------------------------------
    5. Placeholders Wireframe
    -------------------------------------------------------------------------- */
@@ -471,6 +489,19 @@ body {
   border: 1px solid var(--line);
 }
 
+/* Vigente: Fondo neutro y borde definido */
+.badge-status--vigente {
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--fill-mid);
+}
+
+/* Próxima: Fondo medio sólido */
+.badge-status--proxima {
+  background: var(--fill-mid);
+  color: #ffffff;
+}
+
 /* --------------------------------------------------------------------------
    9. Módulo: Dashboard (Selector, KPIs, Gráfico, Resumen)
    -------------------------------------------------------------------------- */
@@ -479,6 +510,11 @@ body {
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
+}
+
+.period__copy {
+  display: flex;
+  flex-direction: column;
 }
 
 .period__title {
@@ -498,6 +534,16 @@ body {
   border-radius: 999px;
   background: var(--surface);
   cursor: pointer;
+}
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chart__axis {
+  display: none;
 }
 
 .kpis {
@@ -648,6 +694,91 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* Dashboard: Acciones Rápidas y Grilla de 4 KPIs */
+.kpis--four {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.ranking-list,
+.activity-list,
+.sales-list,
+.receivables-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ranking-item,
+.activity-item,
+.sales-item,
+.receivables-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.ranking-item:first-child,
+.activity-item:first-child,
+.sales-item:first-child,
+.receivables-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.data-meta-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.data-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.activity-box {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.table-responsive-desktop {
+  display: none;
+}
+
+.ghost-link {
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ink);
 }
 
 /* --------------------------------------------------------------------------
@@ -907,6 +1038,10 @@ body {
   font-size: 11px;
   color: var(--ink-muted);
   margin-top: 2px;
+}
+
+.debtor-field__value--vencido {
+  color: var(--fill-dark);
 }
 
 .debtor-field__sub--vencido {
@@ -1223,6 +1358,13 @@ body {
    14. Media Queries Responsivas Unificadas
    -------------------------------------------------------------------------- */
 
+/* Mobile amplio / Pantallas medianas (>= 600px) */
+@media (min-width: 600px) {
+  .quick-actions {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 /* Tablet (>= 768px) */
 @media (min-width: 768px) {
   .app {
@@ -1245,6 +1387,48 @@ body {
   /* Dashboard */
   .kpis {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .kpis--four {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .insights-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .receivables-mobile,
+  .sales-mobile {
+    display: none;
+  }
+
+  .table-responsive-desktop {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table-responsive-desktop th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding: 8px 10px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .table-responsive-desktop td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+
+  .table-responsive-desktop th:last-child,
+  .table-responsive-desktop td:last-child {
+    text-align: right;
   }
 
   .kpi--emphasis {

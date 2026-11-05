@@ -5,146 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CajaClara — Dashboard</title>
     <link rel="stylesheet" href="styles.css" />
-    <style>
-      /* Ajustes complementarios específicos del Dashboard manteniendo escala de grises y mobile-first */
-      .kpis--four {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-
-      .quick-actions {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 8px;
-      }
-
-      .insights-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 16px;
-      }
-
-      .badge-status--vigente {
-        background: var(--bg);
-        color: var(--ink);
-        border: 1px solid var(--fill-mid);
-      }
-
-      .badge-status--proxima {
-        background: var(--fill-mid);
-        color: #ffffff;
-      }
-
-      .ranking-list,
-      .activity-list,
-      .sales-list,
-      .receivables-list {
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .ranking-item,
-      .activity-item,
-      .sales-item,
-      .receivables-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 0;
-        border-top: 1px solid var(--line);
-      }
-
-      .ranking-item:first-child,
-      .activity-item:first-child,
-      .sales-item:first-child,
-      .receivables-item:first-child {
-        border-top: 0;
-        padding-top: 0;
-      }
-
-      .data-meta-sub {
-        display: block;
-        font-size: 11px;
-        color: var(--ink-muted);
-        margin-top: 2px;
-      }
-
-      .data-value {
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--ink);
-        text-align: right;
-        white-space: nowrap;
-      }
-
-      .activity-box {
-        background: var(--bg);
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        padding: 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .table-responsive-desktop {
-        display: none;
-      }
-
-      @media (min-width: 600px) {
-        .quick-actions {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      @media (min-width: 768px) {
-        .kpis--four {
-          grid-template-columns: repeat(4, 1fr);
-        }
-
-        .insights-grid {
-          grid-template-columns: 1fr 1fr;
-        }
-
-        .receivables-mobile,
-        .sales-mobile {
-          display: none;
-        }
-
-        .table-responsive-desktop {
-          display: table;
-          width: 100%;
-          border-collapse: collapse;
-        }
-
-        .table-responsive-desktop th {
-          text-align: left;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          color: var(--ink-muted);
-          padding: 8px 10px 12px;
-          border-bottom: 1px solid var(--line);
-        }
-
-        .table-responsive-desktop td {
-          padding: 12px 10px;
-          border-bottom: 1px solid var(--line);
-          font-size: 13px;
-          vertical-align: middle;
-        }
-
-        .table-responsive-desktop th:last-child,
-        .table-responsive-desktop td:last-child {
-          text-align: right;
-        }
-      }
-    </style>
   </head>
   <body>
     <div class="app">
@@ -493,8 +353,8 @@
               <span class="section-kicker">Cuentas Pendientes</span>
               <h2 class="section-title">Cuentas por Cobrar</h2>
             </div>
-            <a class="ghost-link" href="cuentas-cobrar.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
-              Ver todas →
+            <a class="ghost-link" href="reportes.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
+              Ver detalle →
             </a>
           </div>
 
