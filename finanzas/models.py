@@ -1,46 +1,204 @@
-from django.db import models
-from django.contrib.auth.models import User
+from decimal import Decimal
 
-class Categoria(models.Model):
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.db.models import DecimalField, ExpressionWrapper, F
+
+CERO = Decimal("0.00")
+
+
+class TipoCompra(models.Model):
     TIPO_CHOICES = [
-        ('INGRESO', 'Ingreso'),
-        ('GASTO', 'Gasto'),
+        ("FISICA", "Física"),
+        ("ONLINE", "En línea"),
     ]
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='categorias')
-    nombre = models.CharField(max_length=50) # Ej: Ventas, Proveedores, Insumos
-    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+
+   
+    tipo_compra = models.CharField(max_length=50, primary_key=True, choices=TIPO_CHOICES)
+    descripcion = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = ('usuario', 'nombre', 'tipo')
+        verbose_name = "Tipo de compra"
+        verbose_name_plural = "Tipos de compra"
 
     def __str__(self):
-        return f"{self.nombre} ({self.get_tipo_display()})"
+        return self.get_tipo_compra_display()
 
-class Movimiento(models.Model):
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='movimientos')
-    categoria = models.ForeignKey(Categoria, on_delete=models.RESTRICT)
-    transaccion_id = models.CharField(max_length=50, blank=True, null=True)
-    monto = models.DecimalField(max_digits=12, decimal_places=0) # CLP, sin decimales
-    fecha = models.DateField()
-    descripcion = models.TextField(blank=True, null=True)
-    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+class Cliente(models.Model):
+    cliente_id = models.CharField(max_length=50, primary_key=True)
+    nombre = models.CharField(max_length=150, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Cliente"
+        verbose_name_plural = "Clientes"
 
     def __str__(self):
-        return f"Movimiento {self.transaccion_id or self.id}: ${self.monto} ({self.fecha})"
+        return self.nombre or f"Cliente {self.cliente_id}"
 
-class CuentaPorCobrar(models.Model):
-    ESTADO_CHOICES = [
-        ('PENDIENTE', 'Pendiente'),
-        ('PAGADA', 'Pagada'),
-        ('VENCIDA', 'Vencida'),
+
+class Producto(models.Model):
+    no_parte = models.CharField(max_length=50, primary_key=True)
+    producto = models.CharField(max_length=200)
+
+   
+    precio_venta = models.DecimalField(
+        max_digits=12, decimal_places=2, default=CERO, validators=[MinValueValidator(CERO)]
+    )
+    costo_venta = models.DecimalField(
+        max_digits=12, decimal_places=2, default=CERO, validators=[MinValueValidator(CERO)]
+    )
+
+    class Meta:
+        verbose_name = "Producto"
+        verbose_name_plural = "Productos"
+
+    def __str__(self):
+        return f"{self.producto} ({self.no_parte})"
+
+
+class Factura(models.Model):
+    factura = models.CharField(max_length=50, primary_key=True)
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.SET_NULL,  # si se borra el cliente, la factura se conserva
+        null=True,
+        blank=True,
+        related_name="facturas",
+    )
+    fecha = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Factura"
+        verbose_name_plural = "Facturas"
+        ordering = ["-fecha"]
+
+    def __str__(self):
+        return f"Factura #{self.factura}"
+
+
+class Replicacion(models.Model):
+    """Metadato técnico: de qué carga/replicación (ETL) proviene cada registro."""
+
+    replica_id = models.IntegerField(primary_key=True)
+    source_row_id = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Replicación"
+        verbose_name_plural = "Replicaciones"
+
+    def __str__(self):
+        return f"Replica #{self.replica_id}"
+
+
+
+class DetalleVentaQuerySet(models.QuerySet):
+    def con_totales(self):
+        """Agrega total_venta, total_costo y utilidad calculados por la base de datos,
+        de modo que se pueden usar en filter(), order_by() y aggregate()."""
+        monto = DecimalField(max_digits=14, decimal_places=2)
+        return self.annotate(
+            total_venta=ExpressionWrapper(F("cantidad") * F("precio_unitario"), output_field=monto),
+            total_costo=ExpressionWrapper(F("cantidad") * F("costo_unitario"), output_field=monto),
+        ).annotate(
+            utilidad=ExpressionWrapper(F("total_venta") - F("total_costo"), output_field=monto),
+        )
+
+
+class DetalleVentaManager(models.Manager.from_queryset(DetalleVentaQuerySet)):
+    def get_queryset(self):
+        # Trae factura y producto en la misma consulta (JOIN) 
+        return super().get_queryset().select_related("factura", "no_parte", "tipo_compra")
+
+
+class DetalleVenta(models.Model):
+    ESTADO_PAGO_CHOICES = [
+        ("PAGADO", "Pagado"),
+        ("PENDIENTE", "Pendiente"),
+        ("ANULADO", "Anulado"),
     ]
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cuentas_por_cobrar')
-    deudor = models.CharField(max_length=100)
-    monto = models.DecimalField(max_digits=12, decimal_places=0) # CLP
-    fecha_emision = models.DateField(auto_now_add=True)
-    fecha_vencimiento = models.DateField()
-    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='PENDIENTE')
-    notas_contacto = models.TextField(blank=True, null=True)
+
+   
+    id = models.CharField(max_length=24, primary_key=True, db_column="_id")
+
+    factura = models.ForeignKey(
+        Factura,
+        on_delete=models.CASCADE,  
+        db_column="factura",
+        related_name="detalles",
+    )
+   
+    no_parte = models.ForeignKey(
+        Producto,
+        on_delete=models.PROTECT,
+        db_column="no_parte",
+        related_name="ventas",
+    )
+    tipo_compra = models.ForeignKey(
+        TipoCompra,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="tipo_compra",
+        related_name="ventas",
+    )
+    replica = models.ForeignKey(
+        Replicacion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="replica_id",
+        related_name="ventas",
+    )
+
+   
+    fecha = models.DateTimeField(blank=True, null=True)
+    cantidad = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    estado_pago = models.CharField(max_length=15, choices=ESTADO_PAGO_CHOICES, default="PAGADO")
+    source_row_id = models.IntegerField(blank=True, null=True)
+
+    precio_unitario = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(CERO)]
+    )
+    costo_unitario = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(CERO)]
+    )
+
+    objects = DetalleVentaManager()
+
+    class Meta:
+        verbose_name = "Detalle de venta"
+        verbose_name_plural = "Detalles de venta"
+        ordering = ["-fecha"]
+        indexes = [
+            models.Index(fields=["fecha"]),
+            models.Index(fields=["estado_pago"]),
+        ]
+
+    def save(self, *args, **kwargs):
+      
+        if self.precio_unitario is None:
+            self.precio_unitario = self.no_parte.precio_venta
+        if self.costo_unitario is None:
+            self.costo_unitario = self.no_parte.costo_venta
+       
+        if self.fecha is None:
+            self.fecha = self.factura.fecha
+        super().save(*args, **kwargs)
+
+   
+    @property
+    def total_linea_venta(self):
+        return (self.cantidad or 0) * (self.precio_unitario or CERO)
+
+    @property
+    def total_linea_costo(self):
+        return (self.cantidad or 0) * (self.costo_unitario or CERO)
+
+    @property
+    def utilidad_linea(self):
+        return self.total_linea_venta - self.total_linea_costo
 
     def __str__(self):
-        return f"Deudor: {self.deudor} - ${self.monto} [{self.estado}]"
+     
+        return f"Venta {self.id} - Factura {self.factura_id}"

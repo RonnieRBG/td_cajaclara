@@ -16,10 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from finanzas.views import ResumenFinancieroView
+from finanzas.views import ExportarExcelView, ResumenAgrupadoView, ResumenFinancieroView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Endpoint : 
     path('api/finanzas/resumen-mensual/', ResumenFinancieroView.as_view(), name='resumen-mensual'),
+    path('api/finanzas/resumen-agrupado/', ResumenAgrupadoView.as_view(), name='resumen-agrupado'),
+    path('api/finanzas/exportar-excel/', ExportarExcelView.as_view(), name='exportar-excel'),
 ]

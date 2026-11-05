@@ -1,6 +1,9 @@
 from django.contrib import admin
-from .models import Categoria, Movimiento, CuentaPorCobrar
+from .models import TipoCompra, Cliente, Producto, Factura, Replicacion, DetalleVenta
 
-admin.site.register(Categoria)
-admin.site.register(Movimiento)
-admin.site.register(CuentaPorCobrar)
+admin.site.register(TipoCompra)
+admin.site.register(Cliente)
+admin.site.register(Producto)
+admin.site.register(Factura)
+admin.site.register(Replicacion)
+admin.site.register(DetalleVenta)
