@@ -55,15 +55,20 @@
           </div>
         </section>
 
-        <!-- Barra de Acción y Búsqueda / Filtros -->
+        <!-- Barra de Acción, Búsqueda, Orden y Filtros -->
         <section class="card filters-card" aria-label="Búsqueda, acción y filtros de cobros">
           <!-- Botón visible de creación de cuenta por cobrar -->
-          <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; flex-wrap: wrap;">
             <label class="btn-primary" for="sheet-nueva-cuenta" style="display: inline-block; cursor: pointer;">
               + Nueva cuenta por cobrar
             </label>
+            <!-- Orden visual por fecha esperada de pago -->
+            <button class="chip" type="button" style="border: 1px solid var(--line); border-radius: 999px; background: var(--surface); padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;" title="Criterio de ordenación">
+              <span>Ordenar por: Fecha esperada ▼</span>
+            </button>
           </div>
 
+          <!-- Buscador por cliente -->
           <div class="search" role="search">
             <span class="search__icon" aria-hidden="true"></span>
             <input
@@ -77,7 +82,7 @@
           <div class="filters" role="tablist" aria-label="Filtro por estado de cuenta">
             <label class="chip">
               <input type="radio" name="filtro-deuda" checked />
-              <span>Todos (4)</span>
+              <span>Todas (4)</span>
             </label>
             <label class="chip">
               <input type="radio" name="filtro-deuda" />
@@ -101,7 +106,7 @@
               <span class="section-kicker">Detalle de Cobros</span>
               <h2 class="section-title">Clientes y cuentas pendientes</h2>
             </div>
-            <span class="data-meta-sub">3 cuentas activas</span>
+            <span class="data-meta-sub">3 cuentas activas • Ordenadas por vencimiento</span>
           </div>
 
           <!-- Vista Mobile (Cards con datos demostrativos del almacén) -->
@@ -111,7 +116,8 @@
               <div class="debtor-card__header">
                 <div class="debtor-card__title-group">
                   <h3 class="debtor-card__name">Claudia Rojas</h3>
-                  <span class="debtor-card__doc">Venta #0024 • Venta de 4 botellas de aceite</span>
+                  <span class="debtor-card__doc">Tel: +56 9 8765 4321 • Venta #0024</span>
+                  <span class="data-meta-sub">Venta de 4 botellas de aceite</span>
                 </div>
                 <span class="badge-status badge-status--pendiente">Pendiente</span>
               </div>
@@ -132,6 +138,10 @@
               <div class="debtor-card__actions">
                 <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
                 <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                <div class="debtor-card__actions-sub">
+                  <label class="btn-action-ghost" for="sheet-detalle-cuenta">Ver detalle</label>
+                  <a class="btn-action-ghost" href="movimientos.html" title="Ver operación asociada en Compras y ventas">Ver operación</a>
+                </div>
               </div>
             </li>
 
@@ -140,7 +150,8 @@
               <div class="debtor-card__header">
                 <div class="debtor-card__title-group">
                   <h3 class="debtor-card__name">Almacén San Pedro</h3>
-                  <span class="debtor-card__doc">Venta #0019 • Venta de productos surtidos</span>
+                  <span class="debtor-card__doc">Tel: +56 9 7654 3210 • Venta #0019</span>
+                  <span class="data-meta-sub">Venta de productos surtidos</span>
                 </div>
                 <span class="badge-status badge-status--vencida">Vencida</span>
               </div>
@@ -161,6 +172,10 @@
               <div class="debtor-card__actions">
                 <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
                 <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                <div class="debtor-card__actions-sub">
+                  <label class="btn-action-ghost" for="sheet-detalle-cuenta">Ver detalle</label>
+                  <a class="btn-action-ghost" href="movimientos.html" title="Ver operación asociada en Compras y ventas">Ver operación</a>
+                </div>
               </div>
             </li>
 
@@ -169,7 +184,8 @@
               <div class="debtor-card__header">
                 <div class="debtor-card__title-group">
                   <h3 class="debtor-card__name">Minimarket Central</h3>
-                  <span class="debtor-card__doc">Venta #0026 • Venta de aceite vegetal</span>
+                  <span class="debtor-card__doc">Tel: +56 9 6543 2109 • Venta #0026</span>
+                  <span class="data-meta-sub">Venta de aceite vegetal</span>
                 </div>
                 <span class="badge-status badge-status--pendiente">Pendiente</span>
               </div>
@@ -190,6 +206,10 @@
               <div class="debtor-card__actions">
                 <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
                 <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                <div class="debtor-card__actions-sub">
+                  <label class="btn-action-ghost" for="sheet-detalle-cuenta">Ver detalle</label>
+                  <a class="btn-action-ghost" href="movimientos.html" title="Ver operación asociada en Compras y ventas">Ver operación</a>
+                </div>
               </div>
             </li>
 
@@ -198,7 +218,8 @@
               <div class="debtor-card__header">
                 <div class="debtor-card__title-group">
                   <h3 class="debtor-card__name">Librería Horizonte</h3>
-                  <span class="debtor-card__doc">Venta #0015 • Venta de aceite y abarrotes</span>
+                  <span class="debtor-card__doc">Tel: +56 9 5432 1098 • Venta #0015</span>
+                  <span class="data-meta-sub">Venta de aceite y abarrotes</span>
                 </div>
                 <span class="badge-status badge-status--pagada">Pagada</span>
               </div>
@@ -219,16 +240,20 @@
               <div class="debtor-card__actions">
                 <button type="button" class="btn-action-primary btn-action--disabled" disabled>Pago Registrado</button>
                 <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                <div class="debtor-card__actions-sub">
+                  <label class="btn-action-ghost" for="sheet-detalle-cuenta">Ver detalle</label>
+                  <a class="btn-action-ghost" href="movimientos.html" title="Ver operación asociada en Compras y ventas">Ver operación</a>
+                </div>
               </div>
             </li>
           </ul>
 
-          <!-- Vista Tablet/Desktop (Tabla estructurada) -->
+          <!-- Vista Tablet/Desktop (Tabla estructurada con todas las columnas y acciones) -->
           <div class="debtor-table-wrap">
             <table class="debtor-table">
               <thead>
                 <tr>
-                  <th scope="col">Cliente</th>
+                  <th scope="col">Cliente / Contacto</th>
                   <th scope="col">Producto / Descripción</th>
                   <th scope="col">Documento</th>
                   <th scope="col">Monto pendiente</th>
@@ -241,7 +266,10 @@
               <tbody>
                 <!-- Fila 1: Claudia Rojas -->
                 <tr>
-                  <td><strong>Claudia Rojas</strong></td>
+                  <td>
+                    <strong>Claudia Rojas</strong>
+                    <span class="data-meta-sub">+56 9 8765 4321</span>
+                  </td>
                   <td>Venta de 4 botellas de aceite</td>
                   <td><span class="debtor-card__doc">Venta #0024</span></td>
                   <td><strong>$ 12.000</strong></td>
@@ -254,14 +282,19 @@
                   <td class="actions-cell">
                     <div class="actions-group">
                       <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                      <label class="btn-action-ghost" for="sheet-detalle-cuenta" title="Ver detalle de la cuenta">Detalle</label>
+                      <a class="btn-action-ghost" href="movimientos.html" title="Ver operación en Compras y ventas">Operación</a>
                     </div>
                   </td>
                 </tr>
 
                 <!-- Fila 2: Almacén San Pedro -->
                 <tr>
-                  <td><strong>Almacén San Pedro</strong></td>
+                  <td>
+                    <strong>Almacén San Pedro</strong>
+                    <span class="data-meta-sub">+56 9 7654 3210</span>
+                  </td>
                   <td>Venta de productos surtidos</td>
                   <td><span class="debtor-card__doc">Venta #0019</span></td>
                   <td><strong>$ 18.000</strong></td>
@@ -274,14 +307,19 @@
                   <td class="actions-cell">
                     <div class="actions-group">
                       <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                      <label class="btn-action-ghost" for="sheet-detalle-cuenta" title="Ver detalle de la cuenta">Detalle</label>
+                      <a class="btn-action-ghost" href="movimientos.html" title="Ver operación en Compras y ventas">Operación</a>
                     </div>
                   </td>
                 </tr>
 
                 <!-- Fila 3: Minimarket Central -->
                 <tr>
-                  <td><strong>Minimarket Central</strong></td>
+                  <td>
+                    <strong>Minimarket Central</strong>
+                    <span class="data-meta-sub">+56 9 6543 2109</span>
+                  </td>
                   <td>Venta de aceite vegetal</td>
                   <td><span class="debtor-card__doc">Venta #0026</span></td>
                   <td><strong>$ 8.500</strong></td>
@@ -294,14 +332,19 @@
                   <td class="actions-cell">
                     <div class="actions-group">
                       <label class="btn-action-primary" for="sheet-pago">Registrar Pago</label>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                      <label class="btn-action-ghost" for="sheet-detalle-cuenta" title="Ver detalle de la cuenta">Detalle</label>
+                      <a class="btn-action-ghost" href="movimientos.html" title="Ver operación en Compras y ventas">Operación</a>
                     </div>
                   </td>
                 </tr>
 
                 <!-- Fila 4: Librería Horizonte -->
                 <tr>
-                  <td><strong>Librería Horizonte</strong></td>
+                  <td>
+                    <strong>Librería Horizonte</strong>
+                    <span class="data-meta-sub">+56 9 5432 1098</span>
+                  </td>
                   <td>Venta de aceite y abarrotes</td>
                   <td><span class="debtor-card__doc">Venta #0015</span></td>
                   <td><strong>$ 15.000</strong></td>
@@ -314,7 +357,9 @@
                   <td class="actions-cell">
                     <div class="actions-group">
                       <button type="button" class="btn-action-primary btn-action--disabled" disabled>Pago Registrado</button>
-                      <label class="btn-action-secondary" for="sheet-contactar">Contactar cliente</label>
+                      <label class="btn-action-secondary" for="sheet-contactar">Contactar</label>
+                      <label class="btn-action-ghost" for="sheet-detalle-cuenta" title="Ver detalle de la cuenta">Detalle</label>
+                      <a class="btn-action-ghost" href="movimientos.html" title="Ver operación en Compras y ventas">Operación</a>
                     </div>
                   </td>
                 </tr>
@@ -360,7 +405,7 @@
             <span class="section-kicker">Gestión de Cobro</span>
             <h2 class="section-title" id="sheet-pago-title">Registrar Pago</h2>
           </div>
-          <label class="sheet__close" for="sheet-pago" aria-label="Cerrar">
+          <label class="sheet__close" for="sheet-pago" aria-label="Cerrar modal">
             <span></span>
             <span></span>
           </label>
@@ -429,7 +474,7 @@
     <!-- =========================================================================
          INTERACTIVE SHEET 2: CONTACTAR CLIENTE (SIMULACIÓN PROTOTIPO)
          ========================================================================= -->
-    <!-- TODO BACKEND/FRONTEND: las acciones de contacto son simulaciones del prototipo -->
+    <!-- TODO FRONTEND/BACKEND: las acciones de contacto son simulaciones del prototipo -->
     <input class="sheet-toggle" type="checkbox" id="sheet-contactar" />
     <div class="sheet" role="dialog" aria-labelledby="sheet-contactar-title">
       <label class="sheet__backdrop" for="sheet-contactar" aria-label="Cerrar modal"></label>
@@ -439,7 +484,7 @@
             <span class="section-kicker">Comunicación</span>
             <h2 class="section-title" id="sheet-contactar-title">Contactar cliente</h2>
           </div>
-          <label class="sheet__close" for="sheet-contactar" aria-label="Cerrar">
+          <label class="sheet__close" for="sheet-contactar" aria-label="Cerrar modal">
             <span></span>
             <span></span>
           </label>
@@ -477,7 +522,7 @@
           <div class="contact-card">
             <div class="contact-card__icon" aria-hidden="true">DAT</div>
             <div class="contact-card__copy">
-              <span class="contact-card__title">Copiar datos de contacto y cuenta</span>
+              <span class="contact-card__title">Ver datos de contacto y transferencia</span>
               <span class="contact-card__desc">Banco Estado, Cuenta RUT: 12.345.678-9 • Almacén La Esquina</span>
             </div>
           </div>
@@ -502,7 +547,7 @@
             <span class="section-kicker">Cuentas por Cobrar</span>
             <h2 class="section-title" id="sheet-nueva-cuenta-title">Nueva cuenta por cobrar</h2>
           </div>
-          <label class="sheet__close" for="sheet-nueva-cuenta" aria-label="Cerrar">
+          <label class="sheet__close" for="sheet-nueva-cuenta" aria-label="Cerrar modal">
             <span></span>
             <span></span>
           </label>
@@ -576,5 +621,86 @@
         </div>
       </form>
     </div>
+
+    <!-- =========================================================================
+         INTERACTIVE SHEET 4: VER DETALLE DE LA CUENTA (MODAL RESUMEN)
+         ========================================================================= -->
+    <input class="sheet-toggle" type="checkbox" id="sheet-detalle-cuenta" />
+    <div class="sheet" role="dialog" aria-labelledby="sheet-detalle-title">
+      <label class="sheet__backdrop" for="sheet-detalle-cuenta" aria-label="Cerrar modal"></label>
+      <div class="sheet__panel card">
+        <div class="sheet__head">
+          <div>
+            <span class="section-kicker">Ficha de Crédito</span>
+            <h2 class="section-title" id="sheet-detalle-title">Detalle de cuenta</h2>
+          </div>
+          <label class="sheet__close" for="sheet-detalle-cuenta" aria-label="Cerrar modal">
+            <span></span>
+            <span></span>
+          </label>
+        </div>
+
+        <div class="op-preview-box">
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Cliente</span>
+            <span class="op-preview-box__val">Claudia Rojas</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Contacto</span>
+            <span class="op-preview-box__val">+56 9 8765 4321</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Producto</span>
+            <span class="op-preview-box__val">Venta de 4 botellas de aceite</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Documento</span>
+            <span class="op-preview-box__val">Venta #0024</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Fecha de emisión</span>
+            <span class="op-preview-box__val">03 Nov 2026</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Fecha esperada de pago</span>
+            <span class="op-preview-box__val">11 Nov 2026 (En 8 días)</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Monto pendiente</span>
+            <span class="op-preview-box__val" style="font-size: 15px;">$ 12.000</span>
+          </div>
+          <div class="op-preview-box__row">
+            <span class="op-preview-box__label">Estado</span>
+            <span class="badge-status badge-status--pendiente">Pendiente</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <a class="btn-primary" href="movimientos.html" style="text-align: center; text-decoration: none;">
+            Ver en Compras y ventas
+          </a>
+          <label class="btn-secondary" for="sheet-detalle-cuenta" style="width: 100%; text-align: center; cursor: pointer;">
+            Cerrar
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         JAVASCRIPT VANILLA: LECTURA DE ?nueva=true PARA ABRIR MODAL AUTOMÁTICO
+         ========================================================================= -->
+    <script>
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          if (params.get("nueva") === "true") {
+            var sheet = document.getElementById("sheet-nueva-cuenta");
+            if (sheet) sheet.checked = true;
+          }
+        } catch (e) {
+          // Si el navegador no soporta URLSearchParams o hay error, no afecta la pantalla
+        }
+      })();
+    </script>
   </body>
 </html>

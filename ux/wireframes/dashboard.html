@@ -34,7 +34,7 @@
       <main class="main">
         <!-- -----------------------------------------------------------------------
              ACCIONES RÁPIDAS DE CAJA REGISTRADORA
-             Flujos prioritarios: registrar venta, compra, gasto, revisar cobros y resumen
+             Flujos prioritarios: registrar venta, compra, otro gasto y revisar cobros
              ----------------------------------------------------------------------- -->
         <section class="card" aria-label="Acciones Rápidas de Caja">
           <span class="section-kicker">Operaciones de Caja</span>
@@ -54,10 +54,6 @@
             <!-- Acción 4: Revisar cuentas por cobrar -->
             <a class="btn-secondary" href="cuentas-cobrar.html" title="Revisar dinero pendiente de clientes">
               Revisar cobros
-            </a>
-            <!-- Acción 5: Ver resumen mensual consolidado -->
-            <a class="btn-secondary" href="#resumen-mensual" title="Consultar resumen del mes">
-              Ver resumen mensual
             </a>
           </div>
         </section>
@@ -84,7 +80,7 @@
           DOCUMENTACIÓN DE ORIGEN DE DATOS Y REGLAS DE NEGOCIO:
           - Ventas del mes = movimientos de tipo INGRESO (Ventas pagadas).
           - Compras y gastos = movimientos de tipo GASTO (Compras de productos + Otros gastos).
-          - Saldo del periodo = ingresos menos gastos (Flujo neto de caja).
+          - Saldo del periodo = ingresos menos gastos (Flujo neto de caja del periodo).
             REGLA: No usar "Resultado estimado", "Ganancia neta" ni "Margen bruto".
           - Pendiente por cobrar = total acumulado de cuentas PENDIENTES y VENCIDAS.
         -->
@@ -127,7 +123,7 @@
         </section>
 
         <!-- -----------------------------------------------------------------------
-             GRÁFICO: ENTRADAS Y SALIDAS DEL MES
+             GRÁFICO PLACEHOLDER: ENTRADAS Y SALIDAS DEL MES
              Comparativa de barras semanal en escala de grises
              ----------------------------------------------------------------------- -->
         <section class="card chart" aria-label="Comparativa de entradas y salidas del mes">
@@ -184,7 +180,7 @@
         </section>
 
         <!-- -----------------------------------------------------------------------
-             BLOQUE: RESUMEN DE OPERACIONES Y PRODUCTOS MÁS VENDIDOS
+             BLOQUE: RESUMEN DE OPERACIONES Y DEMANDA DE PRODUCTOS
              ----------------------------------------------------------------------- -->
         <div class="insights-grid">
           <!-- Tarjeta 1: Resumen de Operaciones -->
@@ -225,7 +221,7 @@
             </div>
           </section>
 
-          <!-- Tarjeta 2: Productos Más Vendidos (Información prevista) -->
+          <!-- Tarjeta 2: Productos Más Vendidos (Demanda prevista) -->
           <!-- TODO DATOS: validar cálculo y normalización de precio_venta antes de mostrar importes comerciales -->
           <section class="card" aria-label="Productos más vendidos previstos">
             <div class="section-head">
@@ -289,17 +285,17 @@
         </div>
 
         <!-- -----------------------------------------------------------------------
-             SECCIÓN: CUENTAS POR COBRAR (DINERO QUE TE DEBEN)
+             SECCIÓN 7: COBROS QUE REQUIEREN ATENCIÓN
              ----------------------------------------------------------------------- -->
-        <section class="card" aria-label="Cuentas por cobrar del negocio">
+        <section class="card" aria-label="Cobros que requieren atención">
           <div class="section-head">
             <div>
-              <span class="section-kicker">Dinero que te deben</span>
-              <h2 class="section-title">Cuentas por Cobrar</h2>
+              <span class="section-kicker">Cuentas por Cobrar</span>
+              <h2 class="section-title">Cobros que requieren atención</h2>
             </div>
-            <!-- Enlace corregido a cuentas-cobrar.html -->
+            <!-- Enlace explícito a cuentas-cobrar.html -->
             <a class="ghost-link" href="cuentas-cobrar.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
-              Ver todas →
+              Ver todas las cuentas →
             </a>
           </div>
 
@@ -346,7 +342,7 @@
           </ul>
 
           <!-- Vista Tablet/Desktop (Tabla estructurada) -->
-          <table class="table-responsive-desktop" aria-label="Tabla de cuentas por cobrar">
+          <table class="table-responsive-desktop" aria-label="Tabla de cobros que requieren atención">
             <thead>
               <tr>
                 <th scope="col">Cliente</th>
@@ -386,7 +382,7 @@
         </section>
 
         <!-- -----------------------------------------------------------------------
-             SECCIÓN: OPERACIONES RECIENTES (ANTES VENTAS RECIENTES)
+             SECCIÓN 8: OPERACIONES RECIENTES
              ----------------------------------------------------------------------- -->
         <section class="card" aria-label="Listado de operaciones recientes">
           <div class="section-head">
@@ -394,19 +390,20 @@
               <span class="section-kicker">Últimos Movimientos</span>
               <h2 class="section-title">Operaciones recientes</h2>
             </div>
+            <!-- Enlace explícito a movimientos.html -->
             <a class="ghost-link" href="movimientos.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
-              Ver todas →
+              Ver todos los movimientos →
             </a>
           </div>
 
-          <!-- Vista Mobile (Cards) -->
+          <!-- Vista Mobile (Cards con datos demostrativos del almacén) -->
           <ul class="sales-list sales-mobile">
-            <!-- Operación 1: Venta pagada -->
+            <!-- Operación 1: Venta pagada (Almacén San Pedro) -->
             <li class="sales-item">
               <div>
                 <span class="badge-op badge-op--venta">Venta</span>
                 <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
-                <span class="data-meta-sub">3 botellas • Venta #0025 • Efectivo</span>
+                <span class="data-meta-sub">3 botellas • Venta #0025 • Cliente: Almacén San Pedro</span>
                 <span class="data-meta-sub">Fecha: 04 Nov 2026</span>
               </div>
               <div style="text-align: right;">
@@ -415,12 +412,12 @@
               </div>
             </li>
 
-            <!-- Operación 2: Venta pendiente -->
+            <!-- Operación 2: Venta pendiente (Claudia Rojas) -->
             <li class="sales-item">
               <div>
                 <span class="badge-op badge-op--venta">Venta</span>
                 <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
-                <span class="data-meta-sub">4 botellas • Venta #0024 • Claudia Rojas</span>
+                <span class="data-meta-sub">4 botellas • Venta #0024 • Cliente: Claudia Rojas</span>
                 <span class="data-meta-sub">Fecha: 03 Nov 2026</span>
               </div>
               <div style="text-align: right;">
@@ -429,12 +426,12 @@
               </div>
             </li>
 
-            <!-- Operación 3: Compra -->
+            <!-- Operación 3: Compra (12 botellas) -->
             <li class="sales-item">
               <div>
                 <span class="badge-op badge-op--compra">Compra</span>
                 <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
-                <span class="data-meta-sub">12 botellas (1 caja) • Compra #0012</span>
+                <span class="data-meta-sub">12 botellas (1 caja) • Compra #0012 • Distribuidora</span>
                 <span class="data-meta-sub">Fecha: 01 Nov 2026</span>
               </div>
               <div style="text-align: right;">
@@ -443,12 +440,12 @@
               </div>
             </li>
 
-            <!-- Operación 4: Otro gasto -->
+            <!-- Operación 4: Otro gasto (Transporte) -->
             <li class="sales-item">
               <div>
                 <span class="badge-op badge-op--gasto">Otro gasto</span>
                 <strong style="margin-left: 6px;">Transporte para retirar mercadería</strong>
-                <span class="data-meta-sub">Flete retiro insumos • Gasto #0008</span>
+                <span class="data-meta-sub">Flete retiro mercadería • Gasto #0008</span>
                 <span class="data-meta-sub">Fecha: 31 Oct 2026</span>
               </div>
               <div style="text-align: right;">
@@ -471,20 +468,20 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Fila 1: Venta pagada -->
+              <!-- Fila 1: Venta pagada (Almacén San Pedro) -->
               <tr>
                 <td>04 Nov 2026</td>
                 <td><span class="badge-op badge-op--venta">Venta</span></td>
-                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Venta #0025</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Venta #0025 • Cliente: Almacén San Pedro</span></td>
                 <td>3 un.</td>
                 <td><span class="badge-status badge-status--pagada">Venta pagada</span></td>
                 <td><strong>$ 9.000</strong></td>
               </tr>
-              <!-- Fila 2: Venta pendiente -->
+              <!-- Fila 2: Venta pendiente (Claudia Rojas) -->
               <tr>
                 <td>03 Nov 2026</td>
                 <td><span class="badge-op badge-op--venta">Venta</span></td>
-                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Venta #0024 • Claudia Rojas</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Venta #0024 • Cliente: Claudia Rojas</span></td>
                 <td>4 un.</td>
                 <td><span class="badge-status badge-status--pendiente">Pendiente de pago</span></td>
                 <td><strong>$ 12.000</strong></td>
@@ -493,7 +490,7 @@
               <tr>
                 <td>01 Nov 2026</td>
                 <td><span class="badge-op badge-op--compra">Compra</span></td>
-                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Compra #0012 • 1 caja</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Compra #0012 • 12 botellas (1 caja)</span></td>
                 <td>12 un.</td>
                 <td><span class="data-meta-sub">Compra registrada</span></td>
                 <td><strong>$ 24.000</strong></td>

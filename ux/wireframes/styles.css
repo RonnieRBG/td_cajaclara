@@ -1086,6 +1086,36 @@ body {
   gap: 8px;
 }
 
+.debtor-card__actions-sub {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.btn-action-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-action-ghost:hover {
+  background: var(--surface);
+  border-color: var(--fill-mid);
+}
+
 /* Debtor Table (Desktop View) */
 .debtor-table-wrap {
   display: none;
