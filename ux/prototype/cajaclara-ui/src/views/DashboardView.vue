@@ -146,7 +146,7 @@ const handleModalSuccess = (data) => {
 .dashboard-view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-8);
   position: relative;
 }
 
@@ -157,7 +157,7 @@ const handleModalSuccess = (data) => {
   right: var(--space-6);
   background-color: var(--color-slate-900);
   color: white;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xl);
   display: flex;
@@ -174,22 +174,33 @@ const handleModalSuccess = (data) => {
   flex-shrink: 0;
 }
 
+/* Section Quick Actions */
+.section-quick-actions {
+  width: 100%;
+}
+
 /* Section KPIs */
+.section-kpis {
+  width: 100%;
+}
+
 .kpis-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 @media (min-width: 640px) {
   .kpis-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
   }
 }
 
 @media (min-width: 1024px) {
   .kpis-grid {
     grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-5);
   }
 }
 
@@ -197,20 +208,21 @@ const handleModalSuccess = (data) => {
 .analytics-row {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-6);
+  gap: var(--space-8);
+  align-items: start;
 }
 
 @media (min-width: 1024px) {
   .analytics-row {
-    grid-template-columns: 1.45fr 1fr;
-    align-items: start;
+    grid-template-columns: 1.4fr 1fr;
+    gap: var(--space-8);
   }
 }
 
 .analytics-col-main {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-8);
 }
 
 .analytics-col-side {

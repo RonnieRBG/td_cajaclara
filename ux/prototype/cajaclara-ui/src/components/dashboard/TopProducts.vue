@@ -75,7 +75,7 @@ const getBarWidth = (units) => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -89,7 +89,8 @@ const getBarWidth = (units) => {
 .card-subtitle {
   font-size: 0.8rem;
   color: var(--color-text-muted);
-  margin: 2px 0 0 0;
+  margin: 3px 0 0 0;
+  line-height: 1.4;
 }
 
 .badge-tag {
@@ -105,14 +106,14 @@ const getBarWidth = (units) => {
 .products-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .product-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-1);
+  padding: var(--space-1) 0;
 }
 
 .product-rank {

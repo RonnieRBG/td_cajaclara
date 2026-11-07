@@ -89,7 +89,7 @@ const props = defineProps({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -113,14 +113,14 @@ const props = defineProps({
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .metric-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3);
+  padding: var(--space-4);
   background-color: var(--color-surface-subtle);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);

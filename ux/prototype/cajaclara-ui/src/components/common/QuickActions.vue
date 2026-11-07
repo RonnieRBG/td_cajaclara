@@ -93,15 +93,15 @@ defineEmits(['open-modal'])
 
 <style scoped>
 .quick-actions-bar {
-  padding: 16px 20px;
+  padding: var(--space-5) var(--space-6);
 }
 
 .quick-actions-bar__header {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-4);
 }
 
 .quick-actions-bar__title {
-  font-size: 15px;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--color-text-main);
   letter-spacing: -0.01em;
@@ -110,14 +110,14 @@ defineEmits(['open-modal'])
 .quick-actions-bar__grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: var(--space-4);
 }
 
 .quick-action-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-bg-subtle);

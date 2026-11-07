@@ -102,7 +102,7 @@ const handlePay = (item) => {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -142,20 +142,21 @@ const handlePay = (item) => {
 .card-subtitle {
   font-size: 0.8rem;
   color: var(--color-text-muted);
-  margin: 2px 0 0 0;
+  margin: 3px 0 0 0;
+  line-height: 1.4;
 }
 
 .collections-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .collection-item {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-3);
+  padding: var(--space-4);
   background-color: var(--color-surface-subtle);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);

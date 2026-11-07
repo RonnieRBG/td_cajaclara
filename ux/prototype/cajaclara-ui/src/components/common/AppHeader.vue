@@ -49,17 +49,17 @@
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
         </span>
-        <span class="app-header__period-label">{{ periodLabel }}</span>
+        <span class="app-header__period-label">{{ activePeriod }}</span>
         <span class="app-header__chevron" aria-hidden="true">▼</span>
       </div>
 
       <!-- Usuario y Avatar -->
       <div class="app-header__user">
         <div class="app-header__avatar" aria-hidden="true">
-          JT
+          {{ activeInitials }}
         </div>
         <div class="app-header__user-meta">
-          <strong class="app-header__user-name">{{ userName }}</strong>
+          <strong class="app-header__user-name">{{ activeUser }}</strong>
           <span class="app-header__user-role">Emprendedor</span>
         </div>
       </div>
@@ -68,7 +68,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   businessName: {
     type: String,
     default: 'Almacén La Esquina'
@@ -77,13 +79,29 @@ defineProps({
     type: String,
     default: 'Octubre de 2026'
   },
+  period: {
+    type: String,
+    default: ''
+  },
   userName: {
     type: String,
     default: 'Jorge Tamayo'
+  },
+  ownerName: {
+    type: String,
+    default: ''
+  },
+  ownerInitials: {
+    type: String,
+    default: 'JT'
   }
 })
 
 defineEmits(['toggle-sidebar'])
+
+const activePeriod = computed(() => props.period || props.periodLabel || 'Octubre de 2026')
+const activeUser = computed(() => props.ownerName || props.userName || 'Jorge Tamayo')
+const activeInitials = computed(() => props.ownerInitials || 'JT')
 </script>
 
 <style scoped>

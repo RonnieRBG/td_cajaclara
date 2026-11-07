@@ -136,14 +136,14 @@ const totalGastos = computed(() => {
 .cash-chart-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .chart-header {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -166,12 +166,13 @@ const totalGastos = computed(() => {
   font-size: 0.85rem;
   color: var(--color-text-muted);
   margin: var(--space-1) 0 0 0;
+  line-height: 1.4;
 }
 
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
+  gap: var(--space-5);
   font-size: 0.825rem;
 }
 
@@ -207,7 +208,7 @@ const totalGastos = computed(() => {
 .chart-container {
   position: relative;
   height: 220px;
-  margin-top: var(--space-4);
+  margin-top: var(--space-2);
   display: flex;
   flex-direction: column;
 }
@@ -327,8 +328,9 @@ const totalGastos = computed(() => {
 }
 
 .chart-footer-note {
-  min-height: 32px;
-  padding-top: var(--space-3);
+  min-height: 38px;
+  padding-top: var(--space-4);
+  margin-top: var(--space-2);
   border-top: 1px solid var(--color-border);
   display: flex;
   align-items: center;

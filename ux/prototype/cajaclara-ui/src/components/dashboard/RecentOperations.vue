@@ -131,14 +131,14 @@ const getOperationIcon = (tipo) => {
 .recent-operations-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .card-header {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding-bottom: var(--space-3);
+  padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -178,13 +178,14 @@ const getOperationIcon = (tipo) => {
 .card-subtitle {
   font-size: 0.8rem;
   color: var(--color-text-muted);
-  margin: 2px 0 0 0;
+  margin: 3px 0 0 0;
+  line-height: 1.4;
 }
 
 .operations-table-wrap {
   overflow-x: auto;
-  margin: 0 calc(var(--space-4) * -1);
-  padding: 0 var(--space-4);
+  margin: 0 calc(var(--space-6) * -1);
+  padding: 0 var(--space-6);
 }
 
 .operations-table {
@@ -201,12 +202,12 @@ const getOperationIcon = (tipo) => {
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-3);
   border-bottom: 1px solid var(--color-border);
 }
 
 .operations-table td {
-  padding: var(--space-3);
+  padding: var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }

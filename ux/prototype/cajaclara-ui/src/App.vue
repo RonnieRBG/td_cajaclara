@@ -85,10 +85,16 @@ const closeSidebar = () => {
 
 .app-main {
   flex: 1;
-  padding: var(--space-6) var(--space-6) var(--space-12) var(--space-6);
-  max-width: 1400px;
+  padding: var(--space-8) var(--space-8) var(--space-12) var(--space-8);
+  max-width: 1360px;
   width: 100%;
   margin: 0 auto;
+}
+
+@media (max-width: 1200px) {
+  .app-main {
+    padding: var(--space-6) var(--space-6) var(--space-12) var(--space-6);
+  }
 }
 
 @media (max-width: 1023px) {
@@ -97,13 +103,13 @@ const closeSidebar = () => {
   }
 
   .app-main {
-    padding: var(--space-4) var(--space-4) calc(var(--space-12) + 60px) var(--space-4);
+    padding: var(--space-6) var(--space-5) calc(var(--space-12) + 60px) var(--space-5);
   }
 }
 
 @media (max-width: 640px) {
   .app-main {
-    padding: var(--space-3) var(--space-3) calc(var(--space-10) + 60px) var(--space-3);
+    padding: var(--space-4) var(--space-4) calc(var(--space-10) + 60px) var(--space-4);
   }
 }
 </style>
