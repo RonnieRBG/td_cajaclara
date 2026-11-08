@@ -1,285 +1,141 @@
-# Caja Clara - Sistema de Gestión Financiera y Flujo de Caja
+# 💰 Caja Clara
 
-> **Proyecto Bootcamp Talento Digital** | Semana 2: Fundamentos de Backend & Primeros Endpoints
-> Plataforma para que microempresas, pymes y personas ordenen sus finanzas, controlen ingresos/gastos y gestionen cuentas por cobrar.
+**Una herramienta para que las pymes sepan, de un vistazo, cuánta plata entra, cuánta sale y cuánto les deben.**
 
-## Tabla de Contenidos
-
-1. [Sobre el Proyecto](#sobre-el-proyecto)
-2. [Estado (Semana 2)](#estado-semana-2)
-3. [Stack Tecnológico](#stack-tecnológico)
-4. [Estructura del Repositorio](#estructura-del-repositorio)
-5. [Instalación Local](#instalación-local)
-6. [Configuración y Pruebas](#configuración-y-pruebas)
-7. [Modelos de Base de Datos](#modelos-de-base-de-datos)
-8. [API REST](#api-rest)
-9. [Guía para UX / UI & Frontend](#guía-para-ux--ui--frontend)
-10. [Notas Técnicas y Decisiones Pendientes](#notas-técnicas-y-decisiones-pendientes)
-11. [Flujo de Trabajo con Git](#flujo-de-trabajo-con-git)
-12. [Roadmap (Semana 3)](#roadmap-semana-3)
+> Proyecto del Bootcamp **Talento Digital**. Este repositorio contiene el **backend** (el "motor" que guarda los datos y hace los cálculos). La documentación técnica de cada endpoint está en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
 
 ---
 
-## Sobre el Proyecto
+## 🤔 ¿Qué problema resuelve?
 
-Muchas pymes facturan pero no tienen liquidez, o no saben si su saldo mensual es positivo o negativo. **Caja Clara** resuelve esto con:
+Muchos negocios pequeños venden bien, pero igual les falta dinero a fin de mes. ¿Por qué? Porque no tienen claro:
 
-- Registro categorizado de ingresos y gastos en Pesos Chilenos (CLP).
-- Seguimiento de cuentas por cobrar para anticipar cobros y evitar morosidad.
-- Métricas instantáneas de flujo de caja.
+- **Cuánto ganan de verdad**: no es lo mismo vender que ganar; hay que restar lo que cuesta cada producto.
+- **Cuánto les deben**: ventas hechas que todavía no se cobran.
+- **Cómo van en el tiempo**: si este mes fue mejor o peor que el anterior.
 
-## Estado (Semana 2)
+Caja Clara junta toda esa información y la entrega ordenada, lista para mostrarse en un panel (dashboard).
 
-- [x] Proyecto Django (`cajaclara`) y app de dominio (`finanzas`).
-- [x] Modelos: Categorías, Movimientos y Cuentas por Cobrar.
-- [x] Registro en Django Admin (`/admin/`).
-- [x] CORS habilitado (solo desarrollo).
-- [x] Primer endpoint: resumen financiero mensual (`/api/finanzas/resumen-mensual/`).
+---
 
-> Esta sección quedará obsoleta; conviene moverla a un `CHANGELOG.md` más adelante.
+## ⚙️ ¿Cómo funciona?
 
-## Stack Tecnológico
-
-| Capa          | Tecnología                     | Versión |
-| :------------ | :----------------------------- | :------ |
-| Lenguaje      | Python                         | 3.10+   |
-| Framework     | Django                         | 6.1.2   |
-| API REST      | Django REST Framework          | 3.18.3  |
-| CORS          | django-cors-headers            | 4.9.0   |
-| BD local      | SQLite                         | 3       |
-| BD producción | PostgreSQL (`psycopg2-binary`) | 2.9.13  |
-
-> Las versiones deben coincidir con `requirements.txt`.
-
-## Estructura del Repositorio
+Piensa en Caja Clara como una cadena de tres piezas:
 
 ```text
-TalentoDigital/
-├── cajaclara/          # Configuración global (settings, urls, asgi, wsgi)
-├── finanzas/           # App principal
-│   ├── migrations/     # Historial del esquema de BD
-│   ├── admin.py        # Modelos en el panel de control
-│   ├── models.py       # Categoria, Movimiento, CuentaPorCobrar
-│   ├── tests.py        # Pruebas unitarias
-│   └── views.py        # Controladores de la API
-├── .env.example        # Plantilla de variables de entorno
-├── .gitignore          # Excluye db.sqlite3, venv/, .env
-├── manage.py
-├── requirements.txt
-└── README.md
+  📂 Datos del negocio  ──►  🧠 Backend (este repo)  ──►  🖥️ Pantalla (frontend)
+  ventas, clientes,         guarda, calcula y           muestra gráficos,
+  productos, gastos         responde preguntas          tarjetas y tablas
 ```
 
-## Instalación Local
+1. **Los datos entran.** Hoy usamos un set de ejemplo de un supermercado: unas 100 mil ventas entre 2010 y 2022, 2 mil clientes, 7 mil productos, 20 mil gastos y 15 mil cuentas por cobrar. Están en la carpeta `data/` como archivos CSV.
+2. **El backend los ordena y calcula.** Cada venta se conecta con su cliente, sus productos y su costo. Con eso el sistema calcula ingresos, costos, utilidad, margen y deudas pendientes.
+3. **El frontend pregunta y muestra.** La pantalla le hace "preguntas" al backend (por ejemplo, *"¿cuánto vendimos en 2012 en la tienda física?"*) y recibe la respuesta lista para dibujar.
 
-```bash
-# 1. Clonar
-git clone <URL_DEL_REPOSITORIO>
-cd TalentoDigital
+### ¿Qué información guarda?
 
-# 2. Entorno virtual
-python -m venv venv
-.\venv\Scripts\activate          # Windows (PowerShell)
-source venv/bin/activate         # macOS / Linux
+| Concepto | En palabras simples |
+| :-- | :-- |
+| **Clientes** | Quién compra: nombre y teléfono. |
+| **Productos** | Qué se vende, su categoría, precio y costo. |
+| **Facturas** | Cada compra: fecha, cliente y si fue en tienda física o en línea. |
+| **Detalle de venta** | Qué productos iban en cada factura y en qué cantidad. |
+| **Cuentas por cobrar** | Ventas que el cliente aún no paga, con su fecha límite. |
+| **Gastos de insumo** | Lo que el negocio gastó en reponer productos. |
 
-# 3. Dependencias y variables de entorno
-pip install -r requirements.txt
-cp .env.example .env             # Windows (cmd): copy .env.example .env
+### ¿Qué puede responder hoy?
 
-# 4. Base de datos, superusuario y servidor
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
+- 📊 **Resumen financiero**: ingresos, costos, flujo de caja neto y margen, filtrando por fechas y por canal (físico u online).
+- 📈 **Evolución en el tiempo**: los mismos números agrupados por día, mes, trimestre o año, ideal para gráficos.
+- 🧾 **Listados con búsqueda**: clientes, productos, facturas, ventas, gastos y deudas (incluye filtro de deudas vencidas).
+- 📥 **Exportar a Excel**: descarga del resumen en una planilla.
+- 🎛️ **Opciones para filtros**: categorías, canales y el rango de fechas disponible, para armar los menús de la pantalla.
 
-El servidor queda en **http://127.0.0.1:8000/**. Si el entorno está activo verás `(venv)` en la terminal.
-
-## Configuración y Pruebas
-
-Los valores sensibles van en `.env`, nunca en Git. Plantilla `.env.example`:
-
-```dotenv
-DJANGO_SECRET_KEY=cambia-esto-por-una-clave-larga-y-aleatoria
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
-
-# Solo PostgreSQL (producción)
-DB_NAME=cajaclara
-DB_USER=postgres
-DB_PASSWORD=
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-Lectura en `settings.py`:
-
-```python
-import os
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "clave-solo-para-desarrollo")
-DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
-```
-
-Para PostgreSQL, usa `django.db.backends.postgresql` en `DATABASES` con las variables `DB_*` y ejecuta `migrate`.
-
-**Pruebas:** `python manage.py test` (o `python manage.py test finanzas`).
-
-## Modelos de Base de Datos
-
-Definidos en `finanzas/models.py`; todos se asocian al `User` de Django.
-
-**`Categoria`**: clasifica los movimientos.
-
-- `usuario` (FK), `nombre` (50), `tipo` (`INGRESO` | `GASTO`).
-- Un usuario no puede repetir nombre + tipo.
-
-**`Movimiento`**: cada transacción real. Su tipo (ingreso/gasto) lo define la categoría.
-
-- `usuario` (FK), `categoria` (FK), `transaccion_id` (50, opcional), `monto` (CLP, sin decimales), `fecha`, `descripcion` (opcional), `fecha_registro` (automático).
-
-**`CuentaPorCobrar`**: pagos pendientes de clientes.
-
-- `usuario` (FK), `deudor` (100), `monto` (CLP), `fecha_emision`, `fecha_vencimiento`, `notas_contacto` (opcional).
-- `estado`: `PENDIENTE` (por defecto) | `PAGADA` | `VENCIDA`. Es un campo almacenado: nada lo cambia solo al pasar la fecha de vencimiento (ver [Notas Técnicas](#notas-técnicas-y-decisiones-pendientes)).
-
-## API REST
-
-### `GET /api/finanzas/resumen-mensual/`
-
-Local: `http://127.0.0.1:8000/api/finanzas/resumen-mensual/` · Sin autenticación (solo desarrollo).
-
-> ⚠️ **Temporal:** el endpoint no filtra por el usuario que consulta; usa un usuario fijo (el primero en la base de datos). En la Semana 3 pasará a usar el usuario autenticado.
-
-**Funcionamiento:** toma el mes y año actuales (`now().date()`), filtra los `Movimiento` de ese período y calcula:
-
-- `total_ingresos`: suma de movimientos con categoría `INGRESO`.
-- `total_gastos`: suma de movimientos con categoría `GASTO`.
-- `flujo_caja`: `total_ingresos - total_gastos` (puede ser negativo).
-
-**Respuesta `200 OK`:**
-
-```json
-{
-  "mes": 10,
-  "anio": 2026,
-  "total_ingresos": 2850000,
-  "total_gastos": 1420000,
-  "flujo_caja": 1430000
-}
-```
-
-> ⚠️ **Frontend:** DRF serializa `DecimalField` como string por defecto (`"2850000"`). Si la vista no convierte a `int`, usa `Number(...)` antes de operar. se necesita verificar la respuesta real con Postman y ajusta este ejemplo.
-
-**Error `400 Bad Request`** (no hay usuarios en la BD):
-
-```json
-{ "error": "No hay usuarios en la base de datos para probar." }
-```
-
-Solución: `python manage.py createsuperuser` y agregar movimientos desde `/admin/`.
-
-## Guía para UX / UI & Frontend
-
-Ya puedes maquetar con datos reales del resumen mensual.
-
-**CORS:** en desarrollo `CORS_ALLOW_ALL_ORIGINS = True`, se necesita consumir la API desde React/Vite u otro (`localhost:5173`, `localhost:3000`), HTML/JS vanilla o Postman/Insomnia. Se restringirá antes de producción.
-
-### Pantallas a diseñar
-
-**A. Dashboard** (se usa el endpoint actual)
-
-- Header con mes y año (ej: _"Octubre 2026"_).
-- 3 tarjetas KPI: 🟢 Total Ingresos, 🔴 Total Gastos, ⚖️ Flujo de Caja Neto (verde si es positivo, rojo si es negativo).
-- Gráfico de dona o barras: Ingresos vs. Gastos.
-
-**B. Movimientos** (endpoints pendientes; maquetar con datos de ejemplo)
-
-- Tabla: Fecha, Categoría, Descripción, N° Transacción, Monto, con badge de color por Ingreso/Gasto.
-- Formulario "Nuevo Movimiento": tipo (filtra categorías), categoría, monto en CLP, fecha, descripción y comprobante (opcionales).
-
-**C. Cuentas por Cobrar**
-
-- Listado con deudor, monto y fecha límite.
-- Badges: 🟡 `PENDIENTE`, 🟢 `PAGADA`, 🔴 `VENCIDA`.
-- Acciones rápidas: _"Registrar Pago"_ y _"Contactar"_.
-
-### Reglas de formato
-
-- Montos en **CLP sin decimales**. Si `flujo_caja` es negativo, mostrar una alerta sugiriendo revisar gastos.
-
-```javascript
-export const formatCLP = (amount) =>
-  new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    maximumFractionDigits: 0,
-  }).format(Number(amount)); // Number() por si la API entrega strings
-```
-
-### Ejemplo de consumo
-
-```javascript
-async function cargarResumenMensual() {
-  try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/finanzas/resumen-mensual/",
-    );
-    if (!response.ok) throw new Error("Error al obtener los datos");
-    const data = await response.json();
-    console.log("Datos del mes:", data);
-  } catch (error) {
-    console.error("Error en la petición:", error);
-  }
-}
-```
-
-## Notas Técnicas y Decisiones Pendientes
-
-**Seguridad (antes de producción)**
-
-- Endpoint sin autenticación: se corrige con Token/JWT en la Semana 3.
-- Reemplazar `CORS_ALLOW_ALL_ORIGINS` por `CORS_ALLOWED_ORIGINS` con los dominios del frontend.
-- `DEBUG=False`, `SECRET_KEY` única y `ALLOWED_HOSTS` definido, todo desde variables de entorno.
-
-**Zona horaria:** `now().date()`se puede desfasar el cambio de mes si `TIME_ZONE` no es `America/Santiago`. Recomendado:
-
-```python
-# settings.py
-TIME_ZONE = "America/Santiago"
-USE_TZ = True
-
-# views.py
-from django.utils import timezone
-hoy = timezone.localdate()
-```
-
-**Estado `VENCIDA` (decisión pendiente):** se necesita definir antes de crear los endpoints de `CuentaPorCobrar`:
-
-1. _Calculado:_ una cuenta `PENDIENTE` con `fecha_vencimiento` anterior a hoy se trata como vencida (siempre consistente, sin tareas programadas).
-2. _Almacenado:_ se actualiza con un _management command_ diario.
-
-## Flujo de Trabajo con Git
-
-1. **No trabajes sobre `main`:** crea una rama, ej. `git checkout -b feature/crud-movimientos` o `ui/dashboard-cards`.
-2. **No se suben a Git:** `db.sqlite3`, `venv/` y `.env` (cada integrante tiene los suyos).
-3. **Commits claros:** `feat: agregar endpoint de resumen mensual`, `style: mejorar badges de cuentas por cobrar`, `fix: corregir cálculo de flujo de caja`.
-4. **Sincroniza antes del Pull Request:**
-   ```bash
-   git checkout main && git pull origin main
-   git checkout feature/tu-rama && git merge main
-   ```
-
-## Roadmap (Semana 3)
-
-- [ ] Autenticación con Tokens / JWT (login y registro).
-- [ ] Resumen filtrado por usuario autenticado y por `?mes=X&anio=Y`.
-- [ ] CRUD completo de `Movimiento` y `Categoria`.
-- [ ] Endpoints de `CuentaPorCobrar` y cambio de estado (`PAGADA`).
-- [ ] Definir manejo de `VENCIDA` y configurar zona horaria `America/Santiago`.
-- [ ] Restringir CORS y endurecer configuración para producción.
-- [ ] Integración con el frontend del equipo de diseño.
-
-**Licencia:** pendiente de definir.
+> El detalle de cada consulta (rutas, parámetros y ejemplos de respuesta) está en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
 
 ---
 
-_Desarrollado por el equipo de Caja Clara en el Bootcamp Talento Digital._
+## 🚀 Probarlo en tu computador
+
+Necesitas **Python 3.10 o superior**. Son cinco pasos:
+
+```bash
+python -m venv venv                 # 1. Crear un entorno aislado
+venv\Scripts\activate               # 2. Activarlo (en Mac/Linux: source venv/bin/activate)
+pip install -r requirements.txt     # 3. Instalar lo necesario
+python manage.py migrate            # 4. Crear la base de datos
+python manage.py importar_csv       # 5. Cargar los datos de ejemplo
+```
+
+Luego enciende el servidor con `python manage.py runserver` y abre **http://127.0.0.1:8000/api/** en el navegador. Verás el catálogo de consultas disponibles.
+
+> La carga de datos puede tardar un par de minutos, porque son más de 240 mil registros.
+
+---
+
+## ✅ Estado actual
+
+| Pieza | Estado |
+| :-- | :-- |
+| Modelo de datos (clientes, productos, ventas, deudas, gastos) | ✅ Listo |
+| Carga automática de los CSV | ✅ Listo |
+| Consultas de resumen, evolución y listados | ✅ Listo |
+| Exportación a Excel | ✅ Listo |
+| Conexión con cualquier base de datos (SQLite, PostgreSQL, MySQL) | ✅ Listo |
+| Conexión real con el frontend | 🟡 Guía escrita, falta implementarla |
+| Usuarios, login y seguridad | 🔴 Pendiente |
+| Pruebas automáticas | 🔴 Pendiente |
+
+---
+
+## 📋 Lo que falta, equipo por equipo
+
+### 🗄️ Equipo de Base de Datos
+
+- [ ] **Elegir y crear la base de datos de producción** (se recomienda PostgreSQL) y entregar los datos de conexión al equipo backend. El sistema ya está preparado: basta con configurar unas variables, sin tocar el código.
+- [ ] **Cargar los datos** en esa base con el comando de importación y **revisar que los totales coincidan** con los del notebook de la Etapa 3 (`data/Etapa_3_Elaboración_de_Tablas.ipynb`).
+- [ ] **Definir respaldos**: cada cuánto se respalda la base y quién lo hace.
+- [ ] **Validar la calidad de los datos**: productos sin categoría (aparecen como *"Otros / sin clasificar"*), clientes sin contacto y fechas fuera de rango.
+
+### 🎨 Equipo de Frontend / UX
+
+- [ ] **Reemplazar los datos de prueba** (`dashboardMock.js`) por consultas reales al backend. La Parte 3 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md) trae el paso a paso.
+- [ ] **Ajustar el gráfico semanal**: el backend agrupa por día, mes, trimestre o año, **no por semana**. Hay que decidir si el gráfico pasa a mensual o si se pide la agrupación semanal al backend.
+- [ ] **Mostrar los montos en pesos chilenos** sin decimales (ej.: `$1.250.000`). Algunos montos llegan como texto y hay que convertirlos a número.
+- [ ] **Diseñar los estados de carga y error**: qué ve el usuario mientras cargan los datos o si el servidor no responde.
+- [ ] **Diseñar las pantallas de login y registro**, que vendrán con la autenticación.
+- [ ] **Conectar el botón "Exportar a Excel"**.
+
+### 🧠 Equipo de Backend
+
+- [ ] **Login y usuarios**: hoy cualquiera puede consultar la información. Se debe agregar inicio de sesión (por ejemplo, con tokens o JWT).
+- [ ] **Seguridad antes de publicar**: mover la clave secreta a un archivo `.env` (y agregar ese archivo al `.gitignore`), desactivar el modo de depuración y limitar quién puede conectarse (hosts y CORS).
+- [ ] **Hora de Chile**: el sistema usa hoy la hora UTC. Hay que cambiarla a `America/Santiago` para que los cortes de día y de mes calcen.
+- [ ] **Completar dependencias**: la exportación a Excel usa `pandas` y `openpyxl`, que no están en `requirements.txt`. Sin ellas, la instalación desde cero falla.
+- [ ] **Escribir pruebas automáticas** para los cálculos clave (ingresos, costos, margen y deudas vencidas).
+- [ ] **Permitir registrar datos nuevos**: hoy la API solo permite *leer*. Falta poder crear ventas, gastos y marcar deudas como pagadas.
+
+### 🤝 Decisiones que tomamos entre todos
+
+- [ ] ¿Qué base de datos y qué servicio usaremos para publicar la app?
+- [ ] ¿Cómo se marca una deuda como **vencida**? Hoy se calcula comparando la fecha límite con el día actual.
+- [ ] ¿El gráfico principal será semanal o mensual?
+- [ ] Licencia del proyecto.
+
+---
+
+## 🌿 Cómo colaborar
+
+- **Nadie trabaja directo en `main`.** El backend avanza en la rama `backend`; cada equipo usa su propia rama y los cambios se unen con un *Pull Request* revisado.
+- **No se suben** la base de datos local (`db.sqlite3`), el entorno (`venv/`) ni archivos con contraseñas (`.env`).
+- **Mensajes de commit claros**, por ejemplo: `feat: agregar login`, `fix: corregir cálculo de margen`, `docs: actualizar README`.
+
+---
+
+## 🛠️ Tecnologías
+
+**Python** · **Django** (estructura del backend) · **Django REST Framework** (la API) · **SQLite** en desarrollo y **PostgreSQL** en producción · **pandas** (exportación a Excel).
+
+---
+
+_Hecho por el equipo de Caja Clara en el Bootcamp Talento Digital._
