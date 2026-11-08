@@ -30,18 +30,18 @@ Piensa en Caja Clara como una cadena de tres piezas:
 
 1. **Los datos entran.** Hoy usamos un set de ejemplo de un supermercado: unas 100 mil ventas entre 2010 y 2022, 2 mil clientes, 7 mil productos, 20 mil gastos y 15 mil cuentas por cobrar. Están en la carpeta `data/` como archivos CSV.
 2. **El backend los ordena y calcula.** Cada venta se conecta con su cliente, sus productos y su costo. Con eso el sistema calcula ingresos, costos, utilidad, margen y deudas pendientes.
-3. **El frontend pregunta y muestra.** La pantalla le hace "preguntas" al backend (por ejemplo, *"¿cuánto vendimos en 2012 en la tienda física?"*) y recibe la respuesta lista para dibujar.
+3. **El frontend pregunta y muestra.** La pantalla le hace "preguntas" al backend (por ejemplo, _"¿cuánto vendimos en 2012 en la tienda física?"_) y recibe la respuesta lista para dibujar.
 
 ### ¿Qué información guarda?
 
-| Concepto | En palabras simples |
-| :-- | :-- |
-| **Clientes** | Quién compra: nombre y teléfono. |
-| **Productos** | Qué se vende, su categoría, precio y costo. |
-| **Facturas** | Cada compra: fecha, cliente y si fue en tienda física o en línea. |
-| **Detalle de venta** | Qué productos iban en cada factura y en qué cantidad. |
-| **Cuentas por cobrar** | Ventas que el cliente aún no paga, con su fecha límite. |
-| **Gastos de insumo** | Lo que el negocio gastó en reponer productos. |
+| Concepto               | En palabras simples                                               |
+| :--------------------- | :---------------------------------------------------------------- |
+| **Clientes**           | Quién compra: nombre y teléfono.                                  |
+| **Productos**          | Qué se vende, su categoría, precio y costo.                       |
+| **Facturas**           | Cada compra: fecha, cliente y si fue en tienda física o en línea. |
+| **Detalle de venta**   | Qué productos iban en cada factura y en qué cantidad.             |
+| **Cuentas por cobrar** | Ventas que el cliente aún no paga, con su fecha límite.           |
+| **Gastos de insumo**   | Lo que el negocio gastó en reponer productos.                     |
 
 ### ¿Qué puede responder hoy?
 
@@ -75,16 +75,16 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 
 ## ✅ Estado actual
 
-| Pieza | Estado |
-| :-- | :-- |
-| Modelo de datos (clientes, productos, ventas, deudas, gastos) | ✅ Listo |
-| Carga automática de los CSV | ✅ Listo |
-| Consultas de resumen, evolución y listados | ✅ Listo |
-| Exportación a Excel | ✅ Listo |
-| Conexión con cualquier base de datos (SQLite, PostgreSQL, MySQL) | ✅ Listo |
-| Conexión real con el frontend | 🟡 Guía escrita, falta implementarla |
-| Usuarios, login y seguridad | 🔴 Pendiente |
-| Pruebas automáticas | 🔴 Pendiente |
+| Pieza                                                            | Estado                               |
+| :--------------------------------------------------------------- | :----------------------------------- |
+| Modelo de datos (clientes, productos, ventas, deudas, gastos)    | ✅ Listo                             |
+| Carga automática de los CSV                                      | ✅ Listo                             |
+| Consultas de resumen, evolución y listados                       | ✅ Listo                             |
+| Exportación a Excel                                              | ✅ Listo                             |
+| Conexión con cualquier base de datos (SQLite, PostgreSQL, MySQL) | ✅ Listo                             |
+| Conexión real con el frontend                                    | 🟡 Guía escrita, falta implementarla |
+| Usuarios, login y seguridad                                      | 🔴 Pendiente                         |
+| Pruebas automáticas                                              | 🔴 Pendiente                         |
 
 ---
 
@@ -95,7 +95,7 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 - [ ] **Elegir y crear la base de datos de producción** (se recomienda PostgreSQL) y entregar los datos de conexión al equipo backend. El sistema ya está preparado: basta con configurar unas variables, sin tocar el código.
 - [ ] **Cargar los datos** en esa base con el comando de importación y **revisar que los totales coincidan** con los del notebook de la Etapa 3 (`data/Etapa_3_Elaboración_de_Tablas.ipynb`).
 - [ ] **Definir respaldos**: cada cuánto se respalda la base y quién lo hace.
-- [ ] **Validar la calidad de los datos**: productos sin categoría (aparecen como *"Otros / sin clasificar"*), clientes sin contacto y fechas fuera de rango.
+- [ ] **Validar la calidad de los datos**: productos sin categoría (aparecen como _"Otros / sin clasificar"_), clientes sin contacto y fechas fuera de rango.
 
 ### 🎨 Equipo de Frontend / UX
 
@@ -113,7 +113,7 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 - [ ] **Hora de Chile**: el sistema usa hoy la hora UTC. Hay que cambiarla a `America/Santiago` para que los cortes de día y de mes calcen.
 - [ ] **Completar dependencias**: la exportación a Excel usa `pandas` y `openpyxl`, que no están en `requirements.txt`. Sin ellas, la instalación desde cero falla.
 - [ ] **Escribir pruebas automáticas** para los cálculos clave (ingresos, costos, margen y deudas vencidas).
-- [ ] **Permitir registrar datos nuevos**: hoy la API solo permite *leer*. Falta poder crear ventas, gastos y marcar deudas como pagadas.
+- [ ] **Permitir registrar datos nuevos**: hoy la API solo permite _leer_. Falta poder crear ventas, gastos y marcar deudas como pagadas.
 
 ### 🤝 Decisiones que tomamos entre todos
 
@@ -124,10 +124,6 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 
 ---
 
-## 🌿 Cómo colaborar
-
-- **Nadie trabaja directo en `main`.** El backend avanza en la rama `backend`; cada equipo usa su propia rama y los cambios se unen con un *Pull Request* revisado.
-- **No se suben** la base de datos local (`db.sqlite3`), el entorno (`venv/`) ni archivos con contraseñas (`.env`).
 - **Mensajes de commit claros**, por ejemplo: `feat: agregar login`, `fix: corregir cálculo de margen`, `docs: actualizar README`.
 
 ---
