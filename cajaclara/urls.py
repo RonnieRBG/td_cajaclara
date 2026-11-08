@@ -16,11 +16,41 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from finanzas.views import ExportarExcelView, ResumenAgrupadoView, ResumenFinancieroView
+from finanzas.views import (
+    ApiCatalogView,
+    ClienteListView,
+    CuentaPorCobrarListView,
+    DetalleVentaListView,
+    ExportarExcelView,
+    FacturaListView,
+    GastoInsumoListView,
+    OpcionesFiltrosView,
+    ProductoListView,
+    ResumenAgrupadoView,
+    ResumenFinancieroView,
+)
 
 urlpatterns = [
+    # Panel de administración
     path('admin/', admin.site.urls),
+
+    # Catálogo de documentación de la API
+    path('api/', ApiCatalogView.as_view(), name='api-catalog'),
+    path('api/finanzas/', ApiCatalogView.as_view(), name='api-finanzas-catalog'),
+
+    # Opciones de filtros para el Frontend (categorías, unidades, fechas min/max)
+    path('api/finanzas/opciones-filtros/', OpcionesFiltrosView.as_view(), name='opciones-filtros'),
+
+    # Analítica y KPIs
     path('api/finanzas/resumen-mensual/', ResumenFinancieroView.as_view(), name='resumen-mensual'),
     path('api/finanzas/resumen-agrupado/', ResumenAgrupadoView.as_view(), name='resumen-agrupado'),
     path('api/finanzas/exportar-excel/', ExportarExcelView.as_view(), name='exportar-excel'),
+
+    # Entidades principales con paginación y búsqueda
+    path('api/finanzas/clientes/', ClienteListView.as_view(), name='cliente-list'),
+    path('api/finanzas/productos/', ProductoListView.as_view(), name='producto-list'),
+    path('api/finanzas/facturas/', FacturaListView.as_view(), name='factura-list'),
+    path('api/finanzas/ventas/', DetalleVentaListView.as_view(), name='detalleventa-list'),
+    path('api/finanzas/cuentas-por-cobrar/', CuentaPorCobrarListView.as_view(), name='cuentaporcobrar-list'),
+    path('api/finanzas/gastos/', GastoInsumoListView.as_view(), name='gastoinsumo-list'),
 ]

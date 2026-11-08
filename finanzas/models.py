@@ -28,6 +28,7 @@ class TipoCompra(models.Model):
 class Cliente(models.Model):
     cliente_id = models.CharField(max_length=50, primary_key=True)
     nombre = models.CharField(max_length=150, blank=True, null=True)
+    contacto = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         verbose_name = "Cliente"
@@ -40,6 +41,8 @@ class Cliente(models.Model):
 class Producto(models.Model):
     no_parte = models.CharField(max_length=50, primary_key=True)
     producto = models.CharField(max_length=200)
+    categoria = models.CharField(max_length=100, blank=True, default="Otros / sin clasificar")
+    unidad_negocio = models.CharField(max_length=100, blank=True, default="Supermercado")
 
    
     precio_venta = models.DecimalField(
@@ -67,6 +70,15 @@ class Factura(models.Model):
         related_name="facturas",
     )
     fecha = models.DateTimeField(blank=True, null=True)
+    tipo_compra = models.ForeignKey(
+        TipoCompra,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="facturas",
+    )
+    por_cobrar = models.BooleanField(default=False)
+    fecha_cobro = models.DateField(blank=True, null=True)
 
     class Meta:
         verbose_name = "Factura"
@@ -202,3 +214,55 @@ class DetalleVenta(models.Model):
     def __str__(self):
      
         return f"Venta {self.id} - Factura {self.factura_id}"
+
+
+class CuentaPorCobrar(models.Model):
+    factura = models.ForeignKey(
+        Factura,
+        on_delete=models.CASCADE,
+        related_name="cuentas_por_cobrar",
+        null=True,
+        blank=True,
+    )
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cuentas_por_cobrar",
+    )
+    monto = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(CERO)]
+    )
+    fecha_vencimiento = models.DateField()
+
+    class Meta:
+        verbose_name = "Cuenta por cobrar"
+        verbose_name_plural = "Cuentas por cobrar"
+        ordering = ["fecha_vencimiento"]
+
+    def __str__(self):
+        return f"Cuenta #{self.pk} - Factura {self.factura_id} - ${self.monto}"
+
+
+class GastoInsumo(models.Model):
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.CASCADE,
+        related_name="gastos",
+    )
+    fecha = models.DateField()
+    monto = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(CERO)]
+    )
+
+    class Meta:
+        verbose_name = "Gasto de insumo"
+        verbose_name_plural = "Gastos de insumo"
+        ordering = ["-fecha"]
+        indexes = [
+            models.Index(fields=["fecha"]),
+        ]
+
+    def __str__(self):
+        return f"Gasto #{self.pk} - {self.producto_id} - ${self.monto}"

@@ -4,14 +4,33 @@ from decimal import Decimal
 
 import pandas as pd
 from django.conf import settings
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDay, TruncMonth, TruncQuarter, TruncYear
 from django.http import HttpResponse
 from django.utils import timezone
+from rest_framework import generics
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import DetalleVenta, TipoCompra
+from .models import (
+    Cliente,
+    CuentaPorCobrar,
+    DetalleVenta,
+    Factura,
+    GastoInsumo,
+    Producto,
+    TipoCompra,
+)
+from .serializers import (
+    ClienteSerializer,
+    CuentaPorCobrarSerializer,
+    DetalleVentaSerializer,
+    FacturaSerializer,
+    GastoInsumoSerializer,
+    ProductoSerializer,
+    TipoCompraSerializer,
+)
 
 FORMATO_FECHA = "%d/%m/%Y"
 FORMATOS_ENTRADA = ("%d/%m/%Y", "%Y-%m-%d")
@@ -381,3 +400,390 @@ class ExportarExcelView(APIView):
 
         hoja.freeze_panes = "A2"
         hoja.auto_filter.ref = hoja.dimensions
+
+
+# ==============================================================================
+# PAGINACIÓN Y ENDPOINTS REST PARA EL EQUIPO DE FRONTEND
+# ==============================================================================
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 500
+
+
+class ClienteListView(generics.ListAPIView):
+    """
+    GET /api/finanzas/clientes/
+    Parámetros de consulta opcionales:
+      - search: Filtra por nombre, ID o teléfono de contacto.
+      - page: Número de página (default: 1).
+      - page_size: Registros por página (default: 50, máx: 500).
+    """
+    serializer_class = ClienteSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        qs = Cliente.objects.annotate(
+            total_facturas=Count("facturas", distinct=True),
+            total_deuda=Sum("cuentas_por_cobrar__monto"),
+        ).order_by("nombre")
+
+        search = self.request.query_params.get("search")
+        if search:
+            search = search.strip()
+            qs = qs.filter(
+                Q(nombre__icontains=search)
+                | Q(cliente_id__icontains=search)
+                | Q(contacto__icontains=search)
+            )
+        return qs
+
+
+class ProductoListView(generics.ListAPIView):
+    """
+    GET /api/finanzas/productos/
+    Parámetros de consulta opcionales:
+      - search: Filtra por nombre o N° de parte.
+      - categoria: Filtra por categoría exacta (ej: Abarrotes, Limpieza).
+      - unidad_negocio: Filtra por unidad de negocio.
+      - page, page_size: Paginación.
+    """
+    serializer_class = ProductoSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        qs = Producto.objects.all().order_by("producto")
+        params = self.request.query_params
+
+        search = params.get("search")
+        if search:
+            search = search.strip()
+            qs = qs.filter(Q(producto__icontains=search) | Q(no_parte__icontains=search))
+
+        categoria = params.get("categoria")
+        if categoria:
+            qs = qs.filter(categoria__iexact=categoria.strip())
+
+        unidad = params.get("unidad_negocio")
+        if unidad:
+            qs = qs.filter(unidad_negocio__iexact=unidad.strip())
+
+        return qs
+
+
+class FacturaListView(generics.ListAPIView):
+    """
+    GET /api/finanzas/facturas/
+    Parámetros de consulta opcionales:
+      - cliente: ID del cliente.
+      - tipo_compra: FISICA o ONLINE.
+      - por_cobrar: true o false.
+      - fecha_inicio: Formato DD/MM/AAAA o AAAA-MM-DD.
+      - fecha_fin: Formato DD/MM/AAAA o AAAA-MM-DD.
+      - page, page_size: Paginación.
+    """
+    serializer_class = FacturaSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        qs = (
+            Factura.objects.select_related("cliente", "tipo_compra")
+            .annotate(
+                total_venta=Sum(F("detalles__cantidad") * F("detalles__precio_unitario")),
+                items_count=Count("detalles"),
+            )
+            .order_by("-fecha")
+        )
+        params = self.request.query_params
+
+        cliente = params.get("cliente")
+        if cliente:
+            qs = qs.filter(cliente_id=cliente.strip())
+
+        tipo_compra = params.get("tipo_compra")
+        if tipo_compra:
+            qs = qs.filter(tipo_compra_id=tipo_compra.strip().upper())
+
+        por_cobrar = params.get("por_cobrar")
+        if por_cobrar is not None and por_cobrar != "":
+            qs = qs.filter(por_cobrar=por_cobrar.strip().lower() in ("true", "1", "si"))
+
+        fecha_ini = params.get("fecha_inicio")
+        if fecha_ini:
+            try:
+                dt_ini = _parsear_fecha(fecha_ini, "fecha_inicio")
+                qs = qs.filter(fecha__gte=_inicio_del_dia(dt_ini))
+            except FiltroInvalido:
+                pass
+
+        fecha_fin = params.get("fecha_fin")
+        if fecha_fin:
+            try:
+                dt_fin = _parsear_fecha(fecha_fin, "fecha_fin")
+                qs = qs.filter(fecha__lt=_inicio_del_dia(dt_fin + timedelta(days=1)))
+            except FiltroInvalido:
+                pass
+
+        return qs
+
+
+class DetalleVentaListView(generics.ListAPIView):
+    """
+    GET /api/finanzas/ventas/
+    Parámetros de consulta opcionales:
+      - factura: ID de la factura.
+      - producto: N° de parte del producto.
+      - tipo_compra: FISICA o ONLINE.
+      - estado_pago: PAGADO, PENDIENTE o ANULADO.
+      - page, page_size: Paginación.
+    """
+    serializer_class = DetalleVentaSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        qs = DetalleVenta.objects.select_related("no_parte", "tipo_compra", "factura").order_by("-fecha")
+        params = self.request.query_params
+
+        factura = params.get("factura")
+        if factura:
+            qs = qs.filter(factura_id=factura.strip())
+
+        producto = params.get("producto")
+        if producto:
+            qs = qs.filter(no_parte_id=producto.strip())
+
+        estado_pago = params.get("estado_pago")
+        if estado_pago:
+            qs = qs.filter(estado_pago=estado_pago.strip().upper())
+
+        tipo_compra = params.get("tipo_compra")
+        if tipo_compra:
+            qs = qs.filter(tipo_compra_id=tipo_compra.strip().upper())
+
+        return qs
+
+
+class CuentaPorCobrarListView(generics.ListAPIView):
+    """
+    GET /api/finanzas/cuentas-por-cobrar/
+    Parámetros de consulta opcionales:
+      - cliente: ID del cliente.
+      - factura: ID de la factura.
+      - vencidas: true para solo vencidas, false para solo no vencidas.
+      - page, page_size: Paginación.
+    """
+    serializer_class = CuentaPorCobrarSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        qs = CuentaPorCobrar.objects.select_related("cliente", "factura").order_by("fecha_vencimiento")
+        params = self.request.query_params
+
+        cliente = params.get("cliente")
+        if cliente:
+            qs = qs.filter(cliente_id=cliente.strip())
+
+        factura = params.get("factura")
+        if factura:
+            qs = qs.filter(factura_id=factura.strip())
+
+        vencidas = params.get("vencidas")
+        if vencidas is not None and vencidas != "":
+            hoy = timezone.localdate() if settings.USE_TZ else date.today()
+            if vencidas.strip().lower() in ("true", "1", "si"):
+                qs = qs.filter(fecha_vencimiento__lt=hoy)
+            else:
+                qs = qs.filter(fecha_vencimiento__gte=hoy)
+
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        # Inyectar totales calculados en la cabecera del JSON para widgets de dashboard
+        qs_filtrado = self.filter_queryset(self.get_queryset())
+        total_monto = qs_filtrado.aggregate(total=Sum("monto"))["total"] or Decimal("0")
+        response.data["resumen"] = {
+            "total_cuentas": qs_filtrado.count(),
+            "monto_total_por_cobrar": float(total_monto),
+        }
+        return response
+
+
+class GastoInsumoListView(generics.ListAPIView):
+    """
+    GET /api/finanzas/gastos/
+    Parámetros de consulta opcionales:
+      - producto: N° de parte del producto.
+      - categoria: Categoría del producto del gasto.
+      - fecha_inicio, fecha_fin: Rango de fechas.
+      - page, page_size: Paginación.
+    """
+    serializer_class = GastoInsumoSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        qs = GastoInsumo.objects.select_related("producto").order_by("-fecha")
+        params = self.request.query_params
+
+        producto = params.get("producto")
+        if producto:
+            qs = qs.filter(producto_id=producto.strip())
+
+        categoria = params.get("categoria")
+        if categoria:
+            qs = qs.filter(producto__categoria__iexact=categoria.strip())
+
+        fecha_ini = params.get("fecha_inicio")
+        if fecha_ini:
+            try:
+                dt_ini = _parsear_fecha(fecha_ini, "fecha_inicio")
+                qs = qs.filter(fecha__gte=dt_ini)
+            except FiltroInvalido:
+                pass
+
+        fecha_fin = params.get("fecha_fin")
+        if fecha_fin:
+            try:
+                dt_fin = _parsear_fecha(fecha_fin, "fecha_fin")
+                qs = qs.filter(fecha__lte=dt_fin)
+            except FiltroInvalido:
+                pass
+
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        qs_filtrado = self.filter_queryset(self.get_queryset())
+        total_gastos = qs_filtrado.aggregate(total=Sum("monto"))["total"] or Decimal("0")
+        response.data["resumen"] = {
+            "total_registros_gasto": qs_filtrado.count(),
+            "monto_total_gastos": float(total_gastos),
+        }
+        return response
+
+
+class OpcionesFiltrosView(APIView):
+    """
+    GET /api/finanzas/opciones-filtros/
+    Devuelve listas precomputadas de categorías, unidades de negocio,
+    tipos de compra y rango de fechas disponibles en la base de datos para
+    que el equipo de Frontend inicialice selects, filtros y calendarios.
+    """
+    def get(self, request):
+        from django.db.models import Max, Min
+
+        categorias = list(
+            Producto.objects.values_list("categoria", flat=True)
+            .distinct()
+            .order_by("categoria")
+        )
+        unidades = list(
+            Producto.objects.values_list("unidad_negocio", flat=True)
+            .distinct()
+            .order_by("unidad_negocio")
+        )
+        tipos_compra = [
+            {"codigo": codigo, "nombre": nombre}
+            for codigo, nombre in TipoCompra.TIPO_CHOICES
+        ]
+        estados_pago = [
+            {"codigo": codigo, "nombre": nombre}
+            for codigo, nombre in DetalleVenta.ESTADO_PAGO_CHOICES
+        ]
+
+        rango_fechas = Factura.objects.aggregate(
+            min_fecha=Min("fecha"),
+            max_fecha=Max("fecha"),
+        )
+
+        min_f = _a_fecha_local(rango_fechas.get("min_fecha"))
+        max_f = _a_fecha_local(rango_fechas.get("max_fecha"))
+
+        return Response({
+            "categorias": [c for c in categorias if c],
+            "unidades_negocio": [u for u in unidades if u],
+            "tipos_compra": tipos_compra,
+            "estados_pago": estados_pago,
+            "rango_fechas_disponible": {
+                "min": min_f.strftime("%Y-%m-%d") if min_f else None,
+                "max": max_f.strftime("%Y-%m-%d") if max_f else None,
+                "min_display": min_f.strftime(FORMATO_FECHA) if min_f else None,
+                "max_display": max_f.strftime(FORMATO_FECHA) if max_f else None,
+            },
+        })
+
+
+class ApiCatalogView(APIView):
+    """
+    GET /api/
+    Índice interactivo de la API para los equipos de Frontend y Base de Datos.
+    """
+    def get(self, request):
+        host = request.build_absolute_uri("/").rstrip("/")
+        return Response({
+            "nombre": "API Caja Clara - Módulo Finanzas Supermercado",
+            "version": "1.0",
+            "descripcion": "Endpoints REST listos para consumo del Frontend y agnósticos al motor de base de datos.",
+            "endpoints": {
+                "opciones_filtros": {
+                    "url": f"{host}/api/finanzas/opciones-filtros/",
+                    "metodo": "GET",
+                    "descripcion": "Metadatos para llenar dropdowns de categorías, unidades y rangos de fechas.",
+                },
+                "kpis_resumen": {
+                    "url": f"{host}/api/finanzas/resumen-mensual/",
+                    "metodo": "GET",
+                    "descripcion": "Resumen financiero de KPIs (ingresos, costos, utilidad, margen %, pagos pendientes).",
+                    "parametros": ["fecha_inicio", "fecha_fin", "tipo_compra"],
+                },
+                "serie_temporal": {
+                    "url": f"{host}/api/finanzas/resumen-agrupado/",
+                    "metodo": "GET",
+                    "descripcion": "Datos agrupados para gráficos (diaria, mensual, trimestral, anual).",
+                    "parametros": ["fecha_inicio", "fecha_fin", "agrupacion", "tipo_compra"],
+                },
+                "exportar_excel": {
+                    "url": f"{host}/api/finanzas/exportar-excel/",
+                    "metodo": "GET",
+                    "descripcion": "Descarga de archivo XLSX con formato contable.",
+                    "parametros": ["fecha_inicio", "fecha_fin", "tipo_compra"],
+                },
+                "clientes": {
+                    "url": f"{host}/api/finanzas/clientes/",
+                    "metodo": "GET",
+                    "descripcion": "Listado paginado de clientes con conteo de facturas y saldo deudor.",
+                    "parametros": ["search", "page", "page_size"],
+                },
+                "productos": {
+                    "url": f"{host}/api/finanzas/productos/",
+                    "metodo": "GET",
+                    "descripcion": "Listado paginado de productos.",
+                    "parametros": ["search", "categoria", "unidad_negocio", "page", "page_size"],
+                },
+                "facturas": {
+                    "url": f"{host}/api/finanzas/facturas/",
+                    "metodo": "GET",
+                    "descripcion": "Listado paginado de facturas/ventas con montos calculados.",
+                    "parametros": ["cliente", "tipo_compra", "por_cobrar", "fecha_inicio", "fecha_fin", "page", "page_size"],
+                },
+                "ventas_detalles": {
+                    "url": f"{host}/api/finanzas/ventas/",
+                    "metodo": "GET",
+                    "descripcion": "Listado paginado de líneas de venta individuales.",
+                    "parametros": ["factura", "producto", "tipo_compra", "estado_pago", "page", "page_size"],
+                },
+                "cuentas_por_cobrar": {
+                    "url": f"{host}/api/finanzas/cuentas-por-cobrar/",
+                    "metodo": "GET",
+                    "descripcion": "Listado paginado de cuentas por cobrar con indicador de vencimiento y total.",
+                    "parametros": ["cliente", "factura", "vencidas", "page", "page_size"],
+                },
+                "gastos": {
+                    "url": f"{host}/api/finanzas/gastos/",
+                    "metodo": "GET",
+                    "descripcion": "Listado paginado de gastos de insumos y costos asociados.",
+                    "parametros": ["producto", "categoria", "fecha_inicio", "fecha_fin", "page", "page_size"],
+                },
+            },
+        })
