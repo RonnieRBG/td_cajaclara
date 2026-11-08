@@ -1,27 +1,70 @@
-ad# 📘 Documentación Técnica de API y Desacoplamiento (Caja Clara)
+# 📘 Documentación de Integración — Caja Clara
 
-Este documento contiene las especificaciones para que el **Equipo de Base de Datos** y el **Equipo de Frontend** puedan conectar y desplegar sus partes de manera 100% independiente sin tocar el código backend.
+Guía para conectar las tres capas del proyecto (**Base de Datos → Backend Django → Frontend Vue 3**) de forma que cada equipo pueda trabajar y desplegar su parte de manera independiente.
 
 ---
 
-## 🗄️ PARTE 1: Guía para el Equipo de Base de Datos
+## 🧭 Índice
 
-El backend en Django ha sido configurado para ser **completamente agnóstico** al motor de base de datos relacional.
+0. [Visión general: cómo se conectan las piezas](#0-visión-general-cómo-se-conectan-las-piezas)
+1. [Equipo de Base de Datos](#parte-1--equipo-de-base-de-datos)
+2. [Equipo de Backend](#parte-2--equipo-de-backend)
+3. [Contrato de la API (referencia para ambos equipos)](#parte-3--contrato-de-la-api)
+4. [Equipo de Frontend](#parte-4--equipo-de-frontend)
+5. [Punto de acoplamiento: qué campos dependen de quién](#parte-5--punto-de-acoplamiento)
+6. [Prueba de integración en local](#parte-6--prueba-de-integración-en-local)
+7. [Anexo: pendientes y correcciones a futuro](#anexo--pendientes-y-correcciones-a-futuro)
 
-### 1. Variables de Entorno soportadas
+> **Convención de este documento**
+>
+> - 🟦 **BACKEND**
+> - 🟩 **FRONTEND**
+> - 🟨 **AMBOS**
+> - ⚠️ **Pxx** =(#anexo--pendientes-y-correcciones-a-futuro).
 
-Por defecto, el backend corre en desarrollo local con SQLite (`db.sqlite3`). Para conectar cualquier motor de base de datos de producción (PostgreSQL, MySQL, Google Cloud SQL, etc.), simplemente define las siguientes variables de entorno:
+---
 
-| Variable      | Descripción                               | Ejemplo (PostgreSQL)                       | Ejemplo (MySQL)            |
-| :------------ | :---------------------------------------- | :----------------------------------------- | :------------------------- |
-| `DB_ENGINE`   | Driver del motor de base de datos         | `django.db.backends.postgresql`            | `django.db.backends.mysql` |
-| `DB_NAME`     | Nombre de la base de datos                | `cajaclara_db`                             | `cajaclara_db`             |
-| `DB_USER`     | Usuario con permisos de lectura/escritura | `postgres` o `admin`                       | `root` o `app_user`        |
-| `DB_PASSWORD` | Contraseña del usuario                    | `tu_password_segura`                       | `tu_password_segura`       |
-| `DB_HOST`     | Host o IP del servidor de base de datos   | `localhost` o `10.x.x.x` o Cloud SQL Proxy | `127.0.0.1`                |
-| `DB_PORT`     | Puerto de conexión                        | `5432`                                     | `3306`                     |
+## 0. Visión general: cómo se conectan las piezas
 
-_Ejemplo en PowerShell para desarrollo/pruebas:_
+```
+┌──────────────────────┐   fetch /api/...   ┌──────────────────────┐   ORM Django   ┌──────────────────┐
+│  FRONTEND (Vue 3)    │ ─────────────────▶ │  BACKEND (Django/DRF)│ ─────────────▶ │  BASE DE DATOS   │
+│  localhost:5173      │                    │  127.0.0.1:8000      │                │  SQLite / Postgres│
+│                      │ ◀───────────────── │                      │ ◀───────────── │  / MySQL         │
+│  services/api.js     │       JSON         │  /api/finanzas/...   │                │                  │
+└──────────────────────┘                    └──────────────────────┘                └──────────────────┘
+        ▲                                             ▲
+        │ Proxy de Vite: /api → :8000                 │ Variables de entorno DB_*
+```
+
+**Idea clave:** el único punto de contacto entre frontend y backend es el **contrato de la API** (rutas, parámetros y nombres de campos JSON, Parte 3 y Parte 5). Mientras ese contrato no cambie, cada equipo puede modificar su código libremente.
+
+| Equipo        | Lo que entrega                                         | Lo que necesita del otro equipo          |
+| :------------ | :----------------------------------------------------- | :--------------------------------------- |
+| Base de datos | Servidor de BD accesible + credenciales                | Nada (el backend crea las tablas)        |
+| Backend       | Endpoints `/api/finanzas/...` que respetan el contrato | Credenciales de la BD (variables `DB_*`) |
+| Frontend      | Dashboard que consume la API                           | Backend corriendo en el puerto 8000      |
+
+---
+
+## Parte 1 — Equipo de Base de Datos
+
+El backend es **agnóstico al motor de base de datos**. No hay que tocar código Python para cambiar de motor: todo se controla con variables de entorno.
+
+### 1.1 Variables de entorno
+
+Si no se define ninguna, el backend usa SQLite (`db.sqlite3`) para desarrollo local.
+
+| Variable      | Para qué sirve                            | Ejemplo PostgreSQL                        | Ejemplo MySQL              |
+| :------------ | :---------------------------------------- | :---------------------------------------- | :------------------------- |
+| `DB_ENGINE`   | Driver del motor                          | `django.db.backends.postgresql`           | `django.db.backends.mysql` |
+| `DB_NAME`     | Nombre de la base de datos                | `cajaclara_db`                            | `cajaclara_db`             |
+| `DB_USER`     | Usuario con permisos de lectura/escritura | `postgres`                                | `app_user`                 |
+| `DB_PASSWORD` | Contraseña del usuario                    | `tu_password_segura`                      | `tu_password_segura`       |
+| `DB_HOST`     | Host o IP del servidor                    | `localhost`, `10.x.x.x` o Cloud SQL Proxy | `127.0.0.1`                |
+| `DB_PORT`     | Puerto                                    | `5432`                                    | `3306`                     |
+
+Ejemplo en **PowerShell**:
 
 ```powershell
 $env:DB_ENGINE="django.db.backends.postgresql"
@@ -32,70 +75,188 @@ $env:DB_HOST="127.0.0.1"
 $env:DB_PORT="5432"
 ```
 
-### 2. Aplicar el esquema y tablas (Migraciones)
+> 💡 Según el motor, el backend necesita el driver de Python instalado en su entorno virtual: `psycopg2-binary` (PostgreSQL) o `mysqlclient` (MySQL). `requirements.txt`.
 
-Una vez configuradas las variables de conexión hacia la base de datos de destino, ejecuta:
+### 1.2 Crear las tablas (migraciones)
+
+Con las variables ya definidas, ejecutar desde la carpeta del backend:
 
 ```bash
 python manage.py migrate
 ```
 
-Esto creará automáticamente todas las tablas relacionales, llaves foráneas e índices optimizados (`fecha`, `estado_pago`, etc.).
+Este comando crea todas las tablas, llaves foráneas e índices (por ejemplo, sobre `fecha` y `estado_pago`) a partir de los modelos de Django. **No hay que escribir SQL a mano.**
 
-### 3. Cargar el dataset inicial (Seeding / Ingesta)
+### 1.3 Cargar los datos iniciales
 
-Para poblar la base de datos con los 6 archivos CSV del supermercado:
+Para poblar la base con los 6 archivos CSV del supermercado:
 
 ```bash
 python manage.py importar_csv
 ```
 
-_Si se requiere vaciar la base de datos antes de importar de nuevo, usar:_
+Para vaciar las tablas y volver a importar desde cero:
 
 ```bash
 python manage.py importar_csv --limpiar
 ```
 
----
+### ✅ Checklist del equipo de Base de Datos
 
-## 🎨 PARTE 2: Guía para el Equipo de Frontend
-
-- **URL Base en desarrollo:** `http://localhost:8000`
-- **CORS:** Habilitado para todos los orígenes (`CORS_ALLOW_ALL_ORIGINS = True`). No habrá bloqueos de CORS en React, Vue, Angular o Next.js.
-- **Formato de fechas:** Acepta tanto `DD/MM/AAAA` como `AAAA-MM-DD`.
-- **Paginación estándar:** Todos los listados devuelven la estructura:
-  ```json
-  {
-    "count": 100067,
-    "next": "http://localhost:8000/api/finanzas/facturas/?page=2",
-    "previous": null,
-    "results": [ ... ]
-  }
-  ```
-  Puedes cambiar el tamaño de página usando `?page_size=20` (por defecto: 50, máximo: 500).
+- [ ] Servidor de BD creado y accesible desde la máquina donde corre Django.
+- [ ] Usuario con permisos de lectura y escritura sobre la base `DB_NAME`.
+- [ ] Variables `DB_*` entregadas al equipo de backend (por canal seguro, **nunca en el repositorio**).
+- [ ] `migrate` ejecutado sin errores.
+- [ ] `importar_csv` ejecutado y datos verificados (por ejemplo, que `facturas` tenga ~100.067 registros).
 
 ---
 
-### Catálogo de Endpoints
+## Parte 2 — Equipo de Backend
 
-#### 1. Metadatos y Dropdowns para la UI
+Esta sección esta lista **las piezas del código Django de las que depende el acoplamiento**. Si alguna se modifica, puede romper al frontend o a la base de datos.
 
-- **Ruta:** `GET /api/finanzas/opciones-filtros/`
-- **Descripción:** Retorna todas las categorías, unidades de negocio, tipos de compra y el rango mínimo/máximo de fechas en la BD para que inicialices tus `<select>` y selectores de fecha dinámicamente.
-- **Respuesta de ejemplo:**
+### 2.1 🟦 Configuración de base de datos (`settings.py`)
+
+El bloque `DATABASES` debe leer las variables de entorno y usar SQLite como respaldo. La forma esperada es:
+
+```python
+import os
+
+DATABASES = {
+    "default": {
+        "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.sqlite3"),
+        "NAME": os.environ.get("DB_NAME", BASE_DIR / "db.sqlite3"),
+        "USER": os.environ.get("DB_USER", ""),
+        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+        "HOST": os.environ.get("DB_HOST", ""),
+        "PORT": os.environ.get("DB_PORT", ""),
+    }
+}
+```
+
+**Regla:** no escribir credenciales directamente en este archivo.
+
+### 2.2 🟦 CORS (`settings.py`)
+
+Actualmente está abierto a cualquier origen para facilitar el desarrollo:
+
+```python
+INSTALLED_APPS = [
+    # ...
+    "corsheaders",
+]
+
+MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # debe ir lo más arriba posible
+    # ...
+]
+
+CORS_ALLOW_ALL_ORIGINS = True  # ⚠️ P07: solo para desarrollo
+```
+
+> Con el proxy de Vite (Parte 4.2), el navegador cree que le habla al mismo origen, así que en desarrollo CORS ni siquiera entra en juego. Sí importa si el frontend se despliega en otro dominio.
+
+### 2.3 🟦 Paginación (`settings.py` o clase propia)
+
+El frontend asume este comportamiento en **todos** los listados:
+
+- Tamaño por defecto: **50**.
+- Se puede cambiar con `?page_size=N`, con un **máximo de 500**.
+- Respuesta con las claves `count`, `next`, `previous` y `results`.
+
+Configuración equivalente en DRF:
+
+```python
+from rest_framework.pagination import PageNumberPagination
+
+class PaginacionEstandar(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 500
+```
+
+### 2.4 🟦 Formatos de fecha aceptados
+
+Todos los parámetros `fecha_inicio` y `fecha_fin` deben aceptar **los dos formatos**:
+
+- `DD/MM/AAAA` (formato chileno, por ejemplo `31/12/2012`)
+- `AAAA-MM-DD` (ISO, por ejemplo `2012-12-31`)
+
+El frontend envía el formato `DD/MM/AAAA` porque usa `min_display` y `max_display` de `opciones-filtros`.
+
+### 2.5 🟦 Serializers: el verdadero contrato
+
+**Los nombres de campo que devuelven los serializers son lo que el frontend lee.** Renombrar un campo (por ejemplo, `cliente_nombre` → `nombre_cliente`) rompe el dashboard sin dar error en el backend.
+
+La lista exacta de campos que el frontend consume está en la [Parte 5](#parte-5--punto-de-acoplamiento). Antes de cambiar un serializer, revisar esa tabla.
+
+### ✅ Checklist del equipo de Backend
+
+- [ ] `DATABASES` lee las variables `DB_*` (2.1).
+- [ ] Driver de la BD de producción incluido en `requirements.txt`.
+- [ ] `corsheaders` instalado y configurado (2.2).
+- [ ] Paginación con `page_size` configurable y máximo de 500 (2.3).
+- [ ] Filtros de fecha aceptan `DD/MM/AAAA` y `AAAA-MM-DD` (2.4).
+- [ ] Todos los campos marcados como 🟦 en la [Parte 5](#parte-5--punto-de-acoplamiento) existen en las respuestas (⚠️ ver P02 y P03).
+- [ ] Servidor corriendo en `127.0.0.1:8000`.
+
+---
+
+## Parte 3 — Contrato de la API
+
+Referencia común para **ambos equipos**. Todas las rutas cuelgan de:
+
+- **URL base en desarrollo:** `http://localhost:8000`
+- **Prefijo:** `/api/finanzas/`
+
+### Resumen de endpoints
+
+| #   | Método y ruta              | Para qué sirve                         | Paginado | Lo usa el dashboard |
+| :-- | :------------------------- | :------------------------------------- | :------: | :-----------------: |
+| 1   | `GET /opciones-filtros/`   | Valores para selects y rango de fechas |    No    |         ✅          |
+| 2   | `GET /resumen-mensual/`    | KPIs financieros de un rango de fechas |    No    |         ✅          |
+| 3   | `GET /resumen-agrupado/`   | Serie temporal para gráficos           |    No    |         ✅          |
+| 4   | `GET /exportar-excel/`     | Descarga de archivo `.xlsx`            |    No    |   (botón export)    |
+| 5   | `GET /clientes/`           | Listado de clientes                    |    Sí    |          —          |
+| 6   | `GET /productos/`          | Listado de productos                   |    Sí    |         ✅          |
+| 7   | `GET /facturas/`           | Listado de facturas (ventas)           |    Sí    |          —          |
+| 8   | `GET /ventas/`             | Líneas de venta detalladas             |    Sí    |         ✅          |
+| 9   | `GET /cuentas-por-cobrar/` | Deuda de clientes + resumen global     |    Sí    |         ✅          |
+| 10  | `GET /gastos/`             | Gastos de insumo + resumen global      |    Sí    |          —          |
+
+### Estructura de los listados paginados
 
 ```json
 {
-  "categorias": ["Abarrotes", "Carnes", "Lácteos", "Limpieza", ...],
+  "count": 100067,
+  "next": "http://localhost:8000/api/finanzas/facturas/?page=2",
+  "previous": null,
+  "results": [ ... ]
+}
+```
+
+Los endpoints 9 y 10 agregan además una clave `resumen` con totales globales, que **no depende de la página**.
+
+---
+
+### 1. Opciones de filtros
+
+`GET /api/finanzas/opciones-filtros/`
+
+Devuelve los valores para inicializar los `<select>` y los selectores de fecha. **El frontend lo llama primero** para saber qué rango de fechas pedir.
+
+```json
+{
+  "categorias": ["Abarrotes", "Carnes", "Lácteos", "Limpieza"],
   "unidades_negocio": ["Supermercado"],
   "tipos_compra": [
-    {"codigo": "FISICA", "nombre": "Física"},
-    {"codigo": "ONLINE", "nombre": "En línea"}
+    { "codigo": "FISICA", "nombre": "Física" },
+    { "codigo": "ONLINE", "nombre": "En línea" }
   ],
   "estados_pago": [
-    {"codigo": "PAGADO", "nombre": "Pagado"},
-    {"codigo": "PENDIENTE", "nombre": "Pendiente"},
-    {"codigo": "ANULADO", "nombre": "Anulado"}
+    { "codigo": "PAGADO", "nombre": "Pagado" },
+    { "codigo": "PENDIENTE", "nombre": "Pendiente" },
+    { "codigo": "ANULADO", "nombre": "Anulado" }
   ],
   "rango_fechas_disponible": {
     "min": "2010-01-05",
@@ -108,14 +269,15 @@ python manage.py importar_csv --limpiar
 
 ---
 
-#### 2. Resumen de KPIs Financieros
+### 2. Resumen de KPIs financieros
 
-- **Ruta:** `GET /api/finanzas/resumen-mensual/`
-- **Query Params opcionales:**
-  - `fecha_inicio`: Ej. `01/01/2010` o `2010-01-01`
-  - `fecha_fin`: Ej. `31/12/2012` o `2012-12-31`
-  - `tipo_compra`: `FISICA` u `ONLINE`
-- **Respuesta de ejemplo:**
+`GET /api/finanzas/resumen-mensual/` ⚠️ P06
+
+| Parámetro      | Obligatorio | Valores                              |
+| :------------- | :---------: | :----------------------------------- |
+| `fecha_inicio` |     No      | `01/01/2010` o `2010-01-01`          |
+| `fecha_fin`    |     No      | `31/12/2012` o `2012-12-31`          |
+| `tipo_compra`  |     No      | `FISICA` u `ONLINE` (omitir = todos) |
 
 ```json
 {
@@ -148,13 +310,14 @@ python manage.py importar_csv --limpiar
 
 ---
 
-#### 3. Serie Temporal para Gráficos
+### 3. Serie temporal para gráficos
 
-- **Ruta:** `GET /api/finanzas/resumen-agrupado/`
-- **Query Params opcionales:**
-  - `agrupacion`: `diaria`, `mensual`, `trimestral`, `anual` (default: `mensual`)
-  - `fecha_inicio`, `fecha_fin`, `tipo_compra`
-- **Respuesta de ejemplo:**
+`GET /api/finanzas/resumen-agrupado/`
+
+| Parámetro                                  | Obligatorio | Valores                                                         |
+| :----------------------------------------- | :---------: | :-------------------------------------------------------------- |
+| `agrupacion`                               |     No      | `diaria`, `mensual` (por defecto), `trimestral`, `anual` ⚠️ P01 |
+| `fecha_inicio`, `fecha_fin`, `tipo_compra` |     No      | Igual que el endpoint 2                                         |
 
 ```json
 {
@@ -183,21 +346,24 @@ python manage.py importar_csv --limpiar
 
 ---
 
-#### 4. Exportación Excel
+### 4. Exportación a Excel
 
-- **Ruta:** `GET /api/finanzas/exportar-excel/`
-- **Query Params:** Mismos que resumen (`fecha_inicio`, `fecha_fin`, `tipo_compra`).
-- **Respuesta:** Archivo binario `.xlsx` con encabezados formateados y celdas contables automáticas.
+`GET /api/finanzas/exportar-excel/`
+
+- **Parámetros:** los mismos del endpoint 2.
+- **Respuesta:** archivo binario `.xlsx` con encabezados formateados y celdas con formato contable.
+- **En el frontend:** no se usa `fetch`; se abre la URL directamente (por ejemplo, con `window.location.href` o un `<a href>`), y el navegador descarga el archivo.
 
 ---
 
-#### 5. Listado de Clientes
+### 5. Clientes
 
-- **Ruta:** `GET /api/finanzas/clientes/`
-- **Query Params opcionales:**
-  - `search`: Búsqueda textual por nombre, ID o teléfono.
-  - `page`, `page_size`: Paginación.
-- **Respuesta de ejemplo:**
+`GET /api/finanzas/clientes/`
+
+| Parámetro           | Valores                                |
+| :------------------ | :------------------------------------- |
+| `search`            | Texto: busca por nombre, ID o teléfono |
+| `page`, `page_size` | Paginación                             |
 
 ```json
 {
@@ -216,33 +382,42 @@ python manage.py importar_csv --limpiar
 }
 ```
 
----
-
-#### 6. Listado de Productos
-
-- **Ruta:** `GET /api/finanzas/productos/`
-- **Query Params opcionales:**
-  - `search`: Búsqueda por nombre o código `no_parte`.
-  - `categoria`: Ej. `Abarrotes`, `Lácteos`.
-  - `unidad_negocio`: Ej. `Supermercado`.
-  - `page`, `page_size`: Paginación.
+> ℹ️ Los montos en los listados vienen como **texto** (`"125000.00"`), no como número. El frontend debe convertirlos con `parseFloat()`.
 
 ---
 
-#### 7. Listado de Facturas (Ventas)
+### 6. Productos
 
-- **Ruta:** `GET /api/finanzas/facturas/`
-- **Query Params opcionales:**
-  - `cliente`: ID del cliente.
-  - `tipo_compra`: `FISICA` o `ONLINE`.
-  - `por_cobrar`: `true` o `false`.
-  - `fecha_inicio`, `fecha_fin`: Rango de fechas.
-  - `page`, `page_size`: Paginación.
-- **Respuesta de ejemplo:**
+`GET /api/finanzas/productos/` ⚠️ P03
+
+| Parámetro           | Valores                              |
+| :------------------ | :----------------------------------- |
+| `search`            | Busca por nombre o código `no_parte` |
+| `categoria`         | Por ejemplo, `Abarrotes`, `Lácteos`  |
+| `unidad_negocio`    | Por ejemplo, `Supermercado`          |
+| `page`, `page_size` | Paginación                           |
+
+> 🟦 **Falta documentar la respuesta de ejemplo.** El frontend espera al menos `no_parte`, `producto`, `total_vendido` y `precio_venta`.
+
+---
+
+### 7. Facturas (ventas)
+
+`GET /api/finanzas/facturas/`
+
+| Parámetro                   | Valores             |
+| :-------------------------- | :------------------ |
+| `cliente`                   | ID del cliente      |
+| `tipo_compra`               | `FISICA` u `ONLINE` |
+| `por_cobrar`                | `true` o `false`    |
+| `fecha_inicio`, `fecha_fin` | Rango de fechas     |
+| `page`, `page_size`         | Paginación          |
 
 ```json
 {
   "count": 100067,
+  "next": "http://localhost:8000/api/finanzas/facturas/?page=2",
+  "previous": null,
   "results": [
     {
       "factura": "INV7811414-20100105-F",
@@ -262,29 +437,36 @@ python manage.py importar_csv --limpiar
 
 ---
 
-#### 8. Líneas de Venta Detalladas
+### 8. Líneas de venta detalladas
 
-- **Ruta:** `GET /api/finanzas/ventas/`
-- **Query Params opcionales:**
-  - `factura`: ID de factura específico.
-  - `producto`: N° de parte.
-  - `estado_pago`: `PAGADO` o `PENDIENTE`.
-  - `page`, `page_size`: Paginación.
+`GET /api/finanzas/ventas/` ⚠️ P02
+
+| Parámetro           | Valores                |
+| :------------------ | :--------------------- |
+| `factura`           | ID de factura          |
+| `producto`          | N° de parte            |
+| `estado_pago`       | `PAGADO` o `PENDIENTE` |
+| `page`, `page_size` | Paginación             |
+
+> 🟦 **Falta documentar la respuesta de ejemplo.** El frontend espera al menos `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago` y `total_venta`.
 
 ---
 
-#### 9. Cuentas por Cobrar (Deuda)
+### 9. Cuentas por cobrar
 
-- **Ruta:** `GET /api/finanzas/cuentas-por-cobrar/`
-- **Query Params opcionales:**
-  - `cliente`: ID de cliente específico.
-  - `vencidas`: `true` para solo facturas con fecha de vencimiento pasada, `false` para vigentes.
-  - `page`, `page_size`: Paginación.
-- **Respuesta con resumen global inyectado:**
+`GET /api/finanzas/cuentas-por-cobrar/`
+
+| Parámetro           | Valores                                                           |
+| :------------------ | :---------------------------------------------------------------- |
+| `cliente`           | ID de cliente                                                     |
+| `vencidas`          | `true` = solo vencidas · `false` = solo vigentes · omitir = todas |
+| `page`, `page_size` | Paginación                                                        |
 
 ```json
 {
   "count": 14928,
+  "next": "http://localhost:8000/api/finanzas/cuentas-por-cobrar/?page=2",
+  "previous": null,
   "resumen": {
     "total_cuentas": 14928,
     "monto_total_por_cobrar": 57339252.0
@@ -306,19 +488,22 @@ python manage.py importar_csv --limpiar
 
 ---
 
-#### 10. Gastos de Insumo
+### 10. Gastos de insumo
 
-- **Ruta:** `GET /api/finanzas/gastos/`
-- **Query Params opcionales:**
-  - `producto`: N° de parte.
-  - `categoria`: Categoría de producto.
-  - `fecha_inicio`, `fecha_fin`: Rango de fechas.
-  - `page`, `page_size`: Paginación.
-- **Respuesta con resumen de gastos inyectado:**
+`GET /api/finanzas/gastos/`
+
+| Parámetro                   | Valores               |
+| :-------------------------- | :-------------------- |
+| `producto`                  | N° de parte           |
+| `categoria`                 | Categoría de producto |
+| `fecha_inicio`, `fecha_fin` | Rango de fechas       |
+| `page`, `page_size`         | Paginación            |
 
 ```json
 {
   "count": 20000,
+  "next": "...",
+  "previous": null,
   "resumen": {
     "total_registros_gasto": 20000,
     "monto_total_gastos": 24484481.0
@@ -329,28 +514,41 @@ python manage.py importar_csv --limpiar
 
 ---
 
-## ⚡ PARTE 3: Guía Específica de Conexión para el Repositorio Frontend (Vue 3 / Vite)
+## Parte 4 — Equipo de Frontend
 
-Esta sección detalla los cambios exactos que debe realizar el equipo de Frontend en la aplicación **`ux/prototype/cajaclara-ui/`** para reemplazar los datos estáticos de `dashboardMock.js` por llamadas reales a los endpoints del backend.
+Todos los cambios se hacen dentro de la aplicación Vue ubicada en la rama `ux`:
 
-### 1. Diagnóstico del Frontend Actual
+```
+ux/prototype/cajaclara-ui/
+├── vite.config.js                    ← Paso 1: MODIFICAR (agregar proxy)
+└── src/
+    ├── services/
+    │   └── api.js                    ← Paso 2: CREAR (archivo nuevo)
+    ├── views/
+    │   └── DashboardView.vue         ← Pasos 3 y 4: MODIFICAR (script y template)
+    ├── data/
+    │   └── dashboardMock.js          ← Deja de usarse (no borrar hasta validar)
+    └── components/                   ← NO se modifican (siguen recibiendo props)
+```
 
-En la rama `ux`, la aplicación Vue 3 importa los datos de forma síncrona desde:
+### 4.1 Situación actual
 
-- `src/views/DashboardView.vue` importa `mockData` desde `@/data/dashboardMock`.
-- Los componentes secundarios reciben estos datos como props:
-  - `StatCard.vue` $\leftarrow$ `mockData.kpis`
-  - `OperationsSummary.vue` $\leftarrow$ `mockData.operationsSummary`
-  - `CashChart.vue` $\leftarrow$ `mockData.weeklyFlow`
-  - `PriorityCollections.vue` $\leftarrow$ `mockData.priorityCollections`
-  - `RecentOperations.vue` $\leftarrow$ `mockData.recentOperations`
-  - `TopProducts.vue` $\leftarrow$ `mockData.topProducts`
+Hoy `DashboardView.vue` importa datos falsos de forma estática y los pasa como props:
 
----
+| Componente                | Recibe hoy                     |
+| :------------------------ | :----------------------------- |
+| `StatCard.vue`            | `mockData.kpis`                |
+| `OperationsSummary.vue`   | `mockData.operationsSummary`   |
+| `CashChart.vue`           | `mockData.weeklyFlow`          |
+| `PriorityCollections.vue` | `mockData.priorityCollections` |
+| `RecentOperations.vue`    | `mockData.recentOperations`    |
+| `TopProducts.vue`         | `mockData.topProducts`         |
 
-### 2. Paso 1: Configurar la URL Base o Proxy en Vite
+**Estrategia:** se reemplaza `mockData` por variables reactivas **con la misma forma** que el mock. Así, los componentes hijos no necesitan ningún cambio.
 
-Para evitar problemas de URLs absolutas en el código del frontend, edita `ux/prototype/cajaclara-ui/vite.config.js` y agrega la configuración del `proxy`:
+### 4.2 🟩 Paso 1 — Proxy en Vite (`vite.config.js`)
+
+**Qué hace:** toda petición del frontend que empiece con `/api` se reenvía a Django (`127.0.0.1:8000`). El código usa rutas relativas (`/api/finanzas/...`) y no hay que escribir la URL del backend en ningún componente.
 
 ```javascript
 import { fileURLToPath, URL } from "node:url";
@@ -366,6 +564,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // ▼▼▼ BLOQUE NUEVO ▼▼▼
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8000",
@@ -373,17 +572,19 @@ export default defineConfig({
         secure: false,
       },
     },
+    // ▲▲▲ FIN BLOQUE NUEVO ▲▲▲
   },
 });
 ```
 
-_Con este proxy, cualquier petición a `/api/...` se redirige automáticamente al servidor Django en el puerto 8000._
+> ⚠️ El proxy **solo funciona con `npm run dev`**. En un build de producción hay que resolver la URL del backend de otra forma (variable `VITE_API_URL` o servidor web que haga el reenvío).
 
----
+### 4.3 🟩 Paso 2 — Servicio de API (`src/services/api.js`, archivo nuevo)
 
-### 3. Paso 2: Crear el Módulo de Servicio API (`src/services/api.js`)
+**Qué hace:** centraliza todas las llamadas al backend. Si una ruta cambia, se corrige solo aquí.
 
-Crea un archivo nuevo en `ux/prototype/cajaclara-ui/src/services/api.js` para centralizar todas las peticiones al backend:
+- `request()` arma la URL agregando solo los parámetros que tienen valor, hace el `fetch` y lanza un error legible si la respuesta no es 2xx.
+- `apiService` expone un método por cada endpoint que usa el dashboard.
 
 ```javascript
 /**
@@ -394,6 +595,8 @@ const API_BASE = "/api/finanzas";
 
 async function request(endpoint, params = {}) {
   const url = new URL(endpoint, window.location.origin);
+
+  // Solo se agregan los parámetros con valor (se ignoran undefined, null y "")
   Object.keys(params).forEach((key) => {
     if (
       params[key] !== undefined &&
@@ -405,9 +608,7 @@ async function request(endpoint, params = {}) {
   });
 
   const res = await fetch(url.toString(), {
-    headers: {
-      Accept: "application/json",
-    },
+    headers: { Accept: "application/json" },
   });
 
   if (!res.ok) {
@@ -419,22 +620,22 @@ async function request(endpoint, params = {}) {
 }
 
 export const apiService = {
-  // 1. Opciones para selects y dropdowns (categorías, fechas min/max)
+  // Endpoint 1 — Opciones para selects y rango de fechas
   getOpcionesFiltros() {
     return request(`${API_BASE}/opciones-filtros/`);
   },
 
-  // 2. Indicadores KPI Financieros (Saldo, Ventas, Gastos, Pendientes)
+  // Endpoint 2 — KPIs (saldo, ventas, gastos, pendiente)
   getResumenFinanciero(filtros = {}) {
     return request(`${API_BASE}/resumen-mensual/`, filtros);
   },
 
-  // 3. Serie temporal para el gráfico de barras (entradas vs salidas)
+  // Endpoint 3 — Serie temporal para el gráfico
   getResumenAgrupado(agrupacion = "mensual", filtros = {}) {
     return request(`${API_BASE}/resumen-agrupado/`, { agrupacion, ...filtros });
   },
 
-  // 4. Cobros que requieren atención (cuentas por cobrar vencidas)
+  // Endpoint 9 — Cobros que requieren atención
   getCuentasPorCobrar(filtros = {}) {
     return request(`${API_BASE}/cuentas-por-cobrar/`, {
       page_size: 5,
@@ -442,17 +643,17 @@ export const apiService = {
     });
   },
 
-  // 5. Últimos movimientos de caja (ventas recientes)
+  // Endpoint 8 — Últimos movimientos
   getUltimosMovimientos(filtros = {}) {
     return request(`${API_BASE}/ventas/`, { page_size: 10, ...filtros });
   },
 
-  // 6. Catálogo de productos más demandados
+  // Endpoint 6 — Productos
   getProductos(filtros = {}) {
     return request(`${API_BASE}/productos/`, { page_size: 4, ...filtros });
   },
 
-  // 7. URL para descargar el archivo Excel
+  // Endpoint 4 — URL de descarga del Excel (no hace fetch, devuelve la URL)
   getUrlExportarExcel(filtros = {}) {
     const url = new URL(`${API_BASE}/exportar-excel/`, window.location.origin);
     Object.keys(filtros).forEach((key) => {
@@ -463,27 +664,16 @@ export const apiService = {
 };
 ```
 
----
+### 4.4 🟩 Paso 3 — Lógica del dashboard (`<script setup>` de `DashboardView.vue`)
 
-### 4. Paso 3: Tabla de Mapeo de Datos (API Backend $\rightarrow$ Props de Componentes)
+**Qué cambia:**
 
-| Componente Vue            | Variable Esperada en el Mock                   | Propiedad devuelta por la API                                                                                                                                                                                                       | Endpoint Backend                                     |
-| :------------------------ | :--------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------- |
-| **StatCard** (Saldo)      | `mockData.kpis.saldoPeriodo`                   | `resumen.flujo_caja_neto`                                                                                                                                                                                                           | `/api/finanzas/resumen-mensual/`                     |
-| **StatCard** (Ventas)     | `mockData.kpis.ventasMes`                      | `resumen.total_ingresos`                                                                                                                                                                                                            | `/api/finanzas/resumen-mensual/`                     |
-| **StatCard** (Gastos)     | `mockData.kpis.comprasGastos`                  | `resumen.total_costos`                                                                                                                                                                                                              | `/api/finanzas/resumen-mensual/`                     |
-| **StatCard** (Por Cobrar) | `mockData.kpis.pendienteCobrar`                | `resumen.por_estado_pago.PENDIENTE.ingresos`                                                                                                                                                                                        | `/api/finanzas/resumen-mensual/`                     |
-| **CashChart**             | `mockData.weeklyFlow`                          | `agrupado.periodos` $\rightarrow$ `[{ semana: p.periodo, ventas: p.ingresos, gastos: p.costos }]`                                                                                                                                   | `/api/finanzas/resumen-agrupado/?agrupacion=semanal` |
-| **OperationsSummary**     | `mockData.operationsSummary.totalVentas`       | `resumen.total_transacciones`                                                                                                                                                                                                       | `/api/finanzas/resumen-mensual/`                     |
-| **OperationsSummary**     | `mockData.operationsSummary.cuentasPendientes` | `cuentas.resumen.total_cuentas`                                                                                                                                                                                                     | `/api/finanzas/cuentas-por-cobrar/`                  |
-| **PriorityCollections**   | `mockData.priorityCollections`                 | `cuentas.results.map(c => ({ id: c.id, cliente: c.cliente_nombre, documento: c.factura, monto: parseFloat(c.monto), vencimientoTexto: c.vencida ? 'Vencida' : c.fecha_vencimiento, estado: c.vencida ? 'VENCIDA' : 'PENDIENTE' }))` | `/api/finanzas/cuentas-por-cobrar/?vencidas=true`    |
-| **RecentOperations**      | `mockData.recentOperations`                    | `ventas.results.map(v => ({ id: v.id, tipo: 'VENTA', concepto: v.categoria, detalle: v.producto_nombre, clienteProveedor: v.tipo_compra, fecha: v.fecha, estado: v.estado_pago, monto: parseFloat(v.total_venta) }))`               | `/api/finanzas/ventas/?page_size=5`                  |
-
----
-
-### 5. Paso 4: Adaptar `src/views/DashboardView.vue`
-
-En `ux/prototype/cajaclara-ui/src/views/DashboardView.vue`, sustituir la importación estática de `mockData` por un estado reactivo que carga los datos en el hook `onMounted`:
+1. Se **elimina** `import mockData from "@/data/dashboardMock"`.
+2. Se crean variables `ref()` con la misma forma que tenía el mock.
+3. Al montar el componente (`onMounted`) se cargan los datos:
+   - **Primero** `opciones-filtros`, para conocer el rango de fechas.
+   - **Después**, en paralelo con `Promise.all`, los otros 5 endpoints.
+4. Cada respuesta se transforma ("mapea") al formato que esperan los componentes.
 
 ```vue
 <script setup>
@@ -498,10 +688,11 @@ import PriorityCollections from "@/components/dashboard/PriorityCollections.vue"
 import RecentOperations from "@/components/dashboard/RecentOperations.vue";
 import NewOperationModal from "@/components/dashboard/NewOperationModal.vue";
 
-// Estado reactivo del dashboard
+// ── Estado de la pantalla ────────────────────────────────
 const loading = ref(true);
 const error = ref(null);
 
+// ── Datos (misma forma que tenía mockData) ───────────────
 const kpis = ref({
   saldoPeriodo: 0,
   ventasMes: 0,
@@ -521,51 +712,52 @@ const priorityCollections = ref([]);
 const recentOperations = ref([]);
 const topProducts = ref([]);
 
-// Carga de datos reales desde el Backend
+// ── Carga desde el backend ───────────────────────────────
 const cargarDatosDashboard = async () => {
   loading.value = true;
   error.value = null;
+
   try {
-    // 1. Obtener rango de fechas disponible
+    // 1. Rango de fechas disponible en la BD
     const opciones = await apiService.getOpcionesFiltros();
     const filtroRango = {
       fecha_inicio: opciones.rango_fechas_disponible.min_display,
       fecha_fin: opciones.rango_fechas_disponible.max_display,
     };
 
-    // 2. Ejecutar peticiones en paralelo para máximo rendimiento
+    // 2. Resto de peticiones en paralelo
     const [resumen, agrupado, cuentas, ventas, productos] = await Promise.all([
       apiService.getResumenFinanciero(filtroRango),
-      apiService.getResumenAgrupado("mensual", filtroRango),
+      apiService.getResumenAgrupado("mensual", filtroRango), // ⚠️ P01
       apiService.getCuentasPorCobrar({ vencidas: "true", page_size: 5 }),
       apiService.getUltimosMovimientos({ page_size: 5 }),
       apiService.getProductos({ page_size: 4 }),
     ]);
 
-    // 3. Mapear KPIs
+    // 3. KPIs
     kpis.value = {
       saldoPeriodo: resumen.flujo_caja_neto,
-      ventasMes: resumen.total_ingresos,
+      ventasMes: resumen.total_ingresos, // ⚠️ P06
       comprasGastos: resumen.total_costos,
       pendienteCobrar: resumen.por_estado_pago?.PENDIENTE?.ingresos || 0,
     };
 
-    // 4. Mapear Resumen de Operaciones
+    // 4. Resumen de operaciones
     operationsSummary.value = {
       totalVentas: resumen.total_transacciones,
-      totalGastos: 0,
-      unidadesVendidas: resumen.total_transacciones,
+      totalGastos: 0, // ⚠️ P05
+      unidadesVendidas: resumen.total_transacciones, // ⚠️ P04
       cuentasPendientes: cuentas.resumen?.total_cuentas || 0,
     };
 
-    // 5. Mapear Flujo de Caja para el Gráfico
+    // 5. Gráfico de flujo de caja (últimos 8 periodos)
     weeklyFlow.value = (agrupado.periodos || []).slice(-8).map((p) => ({
       semana: p.periodo,
       ventas: p.ingresos,
       gastos: p.costos,
     }));
 
-    // 6. Mapear Cobros Prioritarios
+    // 6. Cobros prioritarios
     priorityCollections.value = (cuentas.results || []).map((c) => ({
       id: c.id,
       cliente: c.cliente_nombre || `Cliente #${c.cliente}`,
@@ -576,7 +768,7 @@ const cargarDatosDashboard = async () => {
       estado: c.vencida ? "VENCIDA" : "PENDIENTE",
     }));
 
-    // 7. Mapear Movimientos Recientes
+    // 7. Movimientos recientes ⚠️ P02
     recentOperations.value = (ventas.results || []).map((v) => ({
       id: v.id,
       tipo: "VENTA",
@@ -590,7 +782,7 @@ const cargarDatosDashboard = async () => {
       monto: parseFloat(v.total_venta),
     }));
 
-    // 8. Mapear Productos
+    // 8. Productos ⚠️ P03
     topProducts.value = (productos.results || []).map((p) => ({
       id: p.no_parte,
       nombre: p.producto,
@@ -605,30 +797,141 @@ const cargarDatosDashboard = async () => {
   }
 };
 
-onMounted(() => {
-  cargarDatosDashboard();
-});
+onMounted(cargarDatosDashboard);
 </script>
 ```
 
+### 4.5 🟩 Paso 4 — Ajustar el `<template>` de `DashboardView.vue`
+
+Como `mockData` ya no existe, hay que reemplazar cada referencia en el template:
+
+| Buscar en el template          | Reemplazar por        |
+| :----------------------------- | :-------------------- |
+| `mockData.kpis`                | `kpis`                |
+| `mockData.operationsSummary`   | `operationsSummary`   |
+| `mockData.weeklyFlow`          | `weeklyFlow`          |
+| `mockData.priorityCollections` | `priorityCollections` |
+| `mockData.recentOperations`    | `recentOperations`    |
+| `mockData.topProducts`         | `topProducts`         |
+
+> En el template **no** se escribe `.value`: Vue desenvuelve los `ref` automáticamente.
+
+Además, conviene mostrar los estados de carga y error para que la pantalla no aparezca en cero mientras llegan los datos:
+
+```vue
+<template>
+  <div v-if="loading" class="dashboard-estado">Cargando datos…</div>
+
+  <div v-else-if="error" class="dashboard-estado dashboard-error">
+    {{ error }}
+    <button @click="cargarDatosDashboard">Reintentar</button>
+  </div>
+
+  <div v-else>
+    <!-- contenido actual del dashboard, con las referencias ya reemplazadas -->
+  </div>
+</template>
+```
+
+### ✅ Checklist del equipo de Frontend
+
+- [ ] Proxy agregado en `vite.config.js` (4.2).
+- [ ] Archivo `src/services/api.js` creado (4.3).
+- [ ] `DashboardView.vue` ya no importa `dashboardMock` (4.4).
+- [ ] Todas las referencias `mockData.*` del template reemplazadas (4.5).
+- [ ] Estados de carga y error visibles en pantalla (4.5).
+- [ ] Componentes hijos **sin cambios**.
+- [ ] Ver en DevTools → Network que las llamadas a `/api/...` responden 200.
+
 ---
 
-### 6. Paso 5: Cómo Probar la Conexión de Ambos Equipos en Local
+## Parte 5 — Punto de acoplamiento
 
-1. **Terminal 1 (Backend Django):**
+Esta tabla es **el contrato entre ambos equipos** 🟨. Cada fila dice qué campo del JSON lee el frontend y qué prop alimenta.
 
-   ```powershell
-   venv\Scripts\python.exe manage.py runserver
-   # Escuchando en http://127.0.0.1:8000
-   ```
+- Si el **backend** renombra o elimina uno de estos campos, el dashboard se rompe.
+- Si el **frontend** necesita un campo nuevo, debe pedirlo al backend y agregarlo aquí.
 
-2. **Terminal 2 (Frontend Vue 3):**
+| Componente (prop)                        | Campo que lee el frontend                                                                  | Endpoint                           | Estado                 |
+| :--------------------------------------- | :----------------------------------------------------------------------------------------- | :--------------------------------- | :--------------------- |
+| StatCard · `saldoPeriodo`                | `flujo_caja_neto`                                                                          | `resumen-mensual`                  | ✅ Documentado         |
+| StatCard · `ventasMes`                   | `total_ingresos`                                                                           | `resumen-mensual`                  | ✅ ⚠️ P06              |
+| StatCard · `comprasGastos`               | `total_costos`                                                                             | `resumen-mensual`                  | ✅ Documentado         |
+| StatCard · `pendienteCobrar`             | `por_estado_pago.PENDIENTE.ingresos`                                                       | `resumen-mensual`                  | ✅ Documentado         |
+| OperationsSummary · `totalVentas`        | `total_transacciones`                                                                      | `resumen-mensual`                  | ✅ Documentado         |
+| OperationsSummary · `totalGastos`        | — (fijo en 0)                                                                              | —                                  | ⚠️ P05                 |
+| OperationsSummary · `unidadesVendidas`   | `total_transacciones`                                                                      | `resumen-mensual`                  | ⚠️ P04                 |
+| OperationsSummary · `cuentasPendientes`  | `resumen.total_cuentas`                                                                    | `cuentas-por-cobrar`               | ✅ Documentado         |
+| CashChart · `semana`, `ventas`, `gastos` | `periodos[].periodo`, `.ingresos`, `.costos`                                               | `resumen-agrupado`                 | ✅ ⚠️ P01              |
+| PriorityCollections                      | `id`, `cliente`, `cliente_nombre`, `factura`, `monto`, `fecha_vencimiento`, `vencida`      | `cuentas-por-cobrar?vencidas=true` | ✅ Documentado         |
+| RecentOperations                         | `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                           | ❓ Sin confirmar · P02 |
+| TopProducts                              | `no_parte`, `producto`, `total_vendido`, `precio_venta`                                    | `productos`                        | ❓ Sin confirmar · P03 |
 
-   ```powershell
-   cd scratch_ux\ux\prototype\cajaclara-ui
-   npm install
-   npm run dev
-   # Abriendo en http://localhost:5173
-   ```
+---
 
-3. **Resultado:** Al abrir `http://localhost:5173`, el dashboard de Vue mostrará los datos reales cargados desde la base de datos de Django en tiempo real, sin depender de archivos mock estáticos.
+## Parte 6 — Prueba de integración en local
+
+Se necesitan **dos terminales abiertas al mismo tiempo**.
+
+**Terminal 1 — Backend (Django):**
+
+```powershell
+# Desde la carpeta raíz del backend
+venv\Scripts\python.exe manage.py runserver
+# Debe quedar escuchando en http://127.0.0.1:8000
+```
+
+Prueba rápida: abrir `http://127.0.0.1:8000/api/finanzas/opciones-filtros/` en el navegador. Si se ve el JSON, el backend está bien.
+
+**Terminal 2 — Frontend (Vue 3):**
+
+```powershell
+cd ux\prototype\cajaclara-ui   # ⚠️ P08: verificar la ruta real en tu equipo
+npm install
+npm run dev
+# Abre en http://localhost:5173
+```
+
+**Resultado esperado:** al abrir `http://localhost:5173`, el dashboard muestra datos reales de la base de datos, sin depender de `dashboardMock.js`.
+
+### Si algo falla
+
+| Síntoma                                      | Causa probable                                   | Qué revisar                                |
+| :------------------------------------------- | :----------------------------------------------- | :----------------------------------------- |
+| Mensaje "No se pudieron conectar los datos…" | Django no está corriendo o el proxy no se aplicó | Terminal 1 activa; reiniciar `npm run dev` |
+| Error 404 en `/api/...`                      | Ruta mal escrita o URL no registrada en Django   | `urls.py` del backend y `API_BASE`         |
+| Error 500                                    | Excepción en el backend                          | Consola de la Terminal 1                   |
+| Tarjetas en `NaN` o vacías                   | El campo no existe en el JSON (nombre distinto)  | Parte 5 + DevTools → Network → Response    |
+| Carga muy lenta                              | Consultas pesadas sobre ~100k registros          | Índices en la BD y consultas del backend   |
+
+---
+
+## Anexo — Pendientes y correcciones a futuro
+
+Problemas detectados al revisar este documento. No bloquean la primera integración, pero conviene resolverlos.
+
+**Prioridad:** 🔴 Alta (puede romper o mostrar datos incorrectos) · 🟠 Media (dato engañoso) · 🟢 Baja (documentación o detalle)
+
+| ID  | Prioridad | Problema                                                                                                                                                                                                                                        | Dónde                           | Responsable | Propuesta                                                                                                              |
+| :-- | :-------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------ | :---------- | :--------------------------------------------------------------------------------------------------------------------- |
+| P01 |    🟠     | La versión anterior de la tabla de mapeo pedía `agrupacion=semanal`, pero el endpoint solo acepta `diaria`, `mensual`, `trimestral` y `anual`. El código usa `mensual`, mientras que el componente y su prop se llaman `weeklyFlow` / `semana`. | `resumen-agrupado`, `CashChart` | 🟨 Ambos    | Decidir: (a) el backend agrega `semanal`, o (b) el frontend renombra `weeklyFlow` → `cashFlow` y `semana` → `periodo`. |
+
+| P02 | 🔴 | El endpoint `/ventas/` no tiene respuesta de ejemplo documentada. El frontend usa `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago` y `total_venta` sin confirmar que existan. | `VentaSerializer`, `RecentOperations` | 🟦 Backend | Revisar el serializer, agregar los campos que falten y documentar un JSON de ejemplo en la Parte 3. |
+
+| P03 | 🔴 | El endpoint `/productos/` no tiene respuesta de ejemplo. El frontend usa `no_parte`, `producto`, `total_vendido` y `precio_venta`. `total_vendido` probablemente requiere una agregación (`Sum`) que podría no existir. Además, "TopProducts" implica productos más vendidos, pero no se pide ningún orden. | `ProductoSerializer`, `TopProducts` | 🟦 Backend | Agregar `total_vendido` con `annotate`, permitir `?ordering=-total_vendido` y documentar la respuesta. |
+
+| P04 | 🔴 | `unidadesVendidas` se llena con `total_transacciones`. Una transacción no equivale a una unidad, así que el dato mostrado es incorrecto. | `DashboardView.vue` (paso 4 del script) | 🟨 Ambos | El backend agrega `total_unidades` en `resumen-mensual`; el frontend lo usa. |
+
+| P05 | 🟠 | `totalGastos` está fijo en `0`. | `DashboardView.vue` (paso 4 del script) | 🟩 Frontend | Usar `resumen.total_costos` o `gastos.resumen.monto_total_gastos`, según lo que defina el equipo. |
+
+| P06 | 🟠 | El endpoint se llama `resumen-mensual`, pero acepta cualquier rango. El dashboard lo llama con todo el histórico (2010–2022), así que el KPI `ventasMes` muestra 12 años de ventas, no un mes. | Nombre del endpoint, KPI `ventasMes` | 🟨 Ambos | Renombrar a `resumen-financiero` (manteniendo el alias antiguo por un tiempo) y que el dashboard pida el último mes disponible, o cambiar la etiqueta del KPI. |
+
+| P07 | 🟠 | `CORS_ALLOW_ALL_ORIGINS = True` permite que cualquier sitio consuma la API. | `settings.py` | 🟦 Backend | En producción, usar `CORS_ALLOWED_ORIGINS` con la lista de dominios permitidos, controlado por variable de entorno. |
+
+| P08 | 🟢 | La guía de prueba usaba la ruta `scratch_ux\ux\prototype\cajaclara-ui`, mientras que el resto del documento usa `ux/prototype/cajaclara-ui`. | Parte 6 | Documentación | Confirmar la ruta real en el repositorio y unificarla. |
+
+| P09 | 🟢 | El ejemplo original de `cuentas-por-cobrar` omitía `next` y `previous`. Se agregaron en esta versión asumiendo la paginación estándar. | Parte 3, endpoint 9 | 🟦 Backend | Verificar con una llamada real que la respuesta incluya ambas claves. |
+
+| P10 | 🟢 | `vencimientoTexto` muestra la fecha en formato ISO (`Vence 2010-02-19`), distinto del formato chileno usado en el resto de la app. | `DashboardView.vue` (paso 6 del script) | 🟩 Frontend | Formatear con `toLocaleDateString("es-CL")`. |
+
+| P11 | 🟢 | El proxy de Vite solo existe en desarrollo. No hay definido cómo encuentra el frontend al backend en producción. | `vite.config.js`, `api.js` | 🟨 Ambos | Usar una variable `VITE_API_URL` en `API_BASE`, o servir ambos detrás del mismo dominio. |
