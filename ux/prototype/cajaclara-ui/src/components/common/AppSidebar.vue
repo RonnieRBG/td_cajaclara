@@ -148,11 +148,11 @@ const navigateTo = (path) => {
       <div class="sidebar-footer">
         <div class="business-card">
           <div class="business-avatar" aria-hidden="true">
-            AE
+            MC
           </div>
           <div class="business-details">
-            <span class="business-name">Almacén La Esquina</span>
-            <span class="business-role">Administrador</span>
+            <span class="business-name">Max Ceballos</span>
+            <span class="business-role">Almacén La Esquina · Propietario</span>
           </div>
         </div>
         <div class="sidebar-help">

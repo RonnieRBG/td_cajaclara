@@ -2,7 +2,7 @@
 
 export const businessInfo = {
   name: 'Almacén La Esquina',
-  owner: 'Jorge Tamayo',
+  owner: 'Max Ceballos',
   type: 'Abarrotes y Almacén de Barrio',
   rut: '76.432.198-K',
   address: 'Av. Providencia 1240, Santiago',
@@ -207,7 +207,7 @@ export const mockData = {
   business: {
     name: businessInfo.name,
     owner: businessInfo.owner,
-    initials: 'JT',
+    initials: 'MC',
     period: currentPeriod.label
   },
   kpis: {

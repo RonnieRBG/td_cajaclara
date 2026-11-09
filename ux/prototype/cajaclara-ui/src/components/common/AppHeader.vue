@@ -85,7 +85,7 @@ const props = defineProps({
   },
   userName: {
     type: String,
-    default: 'Jorge Tamayo'
+    default: 'Max Ceballos'
   },
   ownerName: {
     type: String,
@@ -93,15 +93,15 @@ const props = defineProps({
   },
   ownerInitials: {
     type: String,
-    default: 'JT'
+    default: 'MC'
   }
 })
 
 defineEmits(['toggle-sidebar'])
 
 const activePeriod = computed(() => props.period || props.periodLabel || 'Octubre de 2026')
-const activeUser = computed(() => props.ownerName || props.userName || 'Jorge Tamayo')
-const activeInitials = computed(() => props.ownerInitials || 'JT')
+const activeUser = computed(() => props.ownerName || props.userName || 'Max Ceballos')
+const activeInitials = computed(() => props.ownerInitials || 'MC')
 </script>
 
 <style scoped>

@@ -7,10 +7,9 @@
 
     <div class="quick-actions-bar__grid">
       <!-- 1. Registrar Venta -->
-      <button 
-        type="button" 
-        class="quick-action-btn quick-action-btn--primary" 
-        @click="$emit('open-modal', 'venta')"
+      <router-link
+        to="/operaciones?nueva=venta"
+        class="quick-action-btn quick-action-btn--primary"
         title="Registrar una nueva venta por unidad"
       >
         <span class="quick-action-btn__icon" aria-hidden="true">
@@ -23,34 +22,33 @@
           <strong class="quick-action-btn__label">Registrar venta</strong>
           <span class="quick-action-btn__sub">Entrada de dinero</span>
         </div>
-      </button>
+      </router-link>
 
-      <!-- 2. Registrar Compra -->
-      <button 
-        type="button" 
-        class="quick-action-btn quick-action-btn--secondary" 
-        @click="$emit('open-modal', 'compra')"
-        title="Registrar compra de productos al por mayor"
+      <!-- 2. Venta al fiado -->
+      <router-link
+        to="/operaciones?nueva=venta-pendiente"
+        class="quick-action-btn quick-action-btn--secondary"
+        title="Registrar venta al fiado (pendiente de pago)"
       >
         <span class="quick-action-btn__icon" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <path d="M16 10a4 4 0 0 1-8 0" />
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="11" x2="19" y2="17" />
+            <line x1="16" y1="14" x2="22" y2="14" />
           </svg>
         </span>
         <div class="quick-action-btn__content">
-          <strong class="quick-action-btn__label">Registrar compra</strong>
-          <span class="quick-action-btn__sub">Cajas / Fardos</span>
+          <strong class="quick-action-btn__label">Venta al fiado</strong>
+          <span class="quick-action-btn__sub">Pendiente de pago</span>
         </div>
-      </button>
+      </router-link>
 
-      <!-- 3. Registrar Otro Gasto -->
-      <button 
-        type="button" 
-        class="quick-action-btn quick-action-btn--secondary" 
-        @click="$emit('open-modal', 'gasto')"
-        title="Registrar otro gasto operativo como fletes o servicios"
+      <!-- 3. Registrar Compra / Gasto -->
+      <router-link
+        to="/operaciones?nueva=gasto"
+        class="quick-action-btn quick-action-btn--secondary"
+        title="Registrar compra de productos o gasto operativo"
       >
         <span class="quick-action-btn__icon" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -59,14 +57,14 @@
           </svg>
         </span>
         <div class="quick-action-btn__content">
-          <strong class="quick-action-btn__label">Registrar otro gasto</strong>
-          <span class="quick-action-btn__sub">Flete, servicios, etc.</span>
+          <strong class="quick-action-btn__label">Registrar gasto</strong>
+          <span class="quick-action-btn__sub">Compra o gasto operativo</span>
         </div>
-      </button>
+      </router-link>
 
       <!-- 4. Revisar Cobros -->
-      <router-link 
-        to="/cobros" 
+      <router-link
+        to="/cobros"
         class="quick-action-btn quick-action-btn--secondary"
         title="Ir a gestionar cobros pendientes a clientes"
       >
@@ -88,7 +86,6 @@
 </template>
 
 <script setup>
-defineEmits(['open-modal'])
 </script>
 
 <style scoped>

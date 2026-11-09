@@ -61,7 +61,8 @@ const props = defineProps({
   trend: { type: String, default: '' },
   trendLabel: { type: String, default: '' },
   badge: { type: String, default: '' },
-  tooltip: { type: String, default: '' }
+  tooltip: { type: String, default: '' },
+  formatAsCurrency: { type: Boolean, default: true }
 })
 
 const resolvedLabel = computed(() => props.label || props.title || 'Métrica')
@@ -87,7 +88,9 @@ const computedEmphasis = computed(() => {
   return props.isEmphasis || resolvedType.value === 'balance'
 })
 
-const formattedValue = computed(() => formatCLP(resolvedValue.value))
+const formattedValue = computed(() => props.formatAsCurrency
+  ? formatCLP(resolvedValue.value)
+  : new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(resolvedValue.value))
 </script>
 
 <style scoped>

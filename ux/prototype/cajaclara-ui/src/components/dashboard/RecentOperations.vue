@@ -40,7 +40,7 @@ const getOperationIcon = (tipo) => {
       </div>
 
       <button type="button" class="btn btn-secondary btn-sm" @click="goToOperations">
-        <span>Ver todos (167)</span>
+        <span>Ver todas las operaciones</span>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6" />
         </svg>

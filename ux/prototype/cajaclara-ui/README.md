@@ -46,7 +46,7 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 
 ## Estado actual
 
-> El proyecto se encuentra en desarrollo. El Dashboard de alta fidelidad está implementado. Las demás vistas están en construcción o representadas mediante componentes placeholder.
+> El proyecto se encuentra en desarrollo. El Dashboard y la vista de Compras y ventas están implementados. Los módulos restantes continúan en construcción o se representan mediante componentes placeholder.
 
 ### Implementado
 
@@ -63,8 +63,10 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 - Operaciones recientes con detalle, tipo y badge de estado.
 - Productos más vendidos con unidades y monto.
 - Modal de nueva operación (venta pagada, venta al fiado, compra/gasto).
+- Vista de Compras y ventas en `/operaciones`, con filtros, búsqueda, indicadores y detalle de operaciones.
+- Formularios simulados para ventas de varios productos, compras y otros gastos.
 - Notificaciones toast con feedback visual.
-- Datos simulados desacoplados en un único archivo de mock.
+- Datos simulados desacoplados por vista y escenario.
 - Utilidades de formato de moneda (CLP) y fechas.
 - Rutas preparadas para módulos futuros.
 - Sistema visual compartido con design tokens en CSS custom properties.
@@ -73,7 +75,6 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 
 ### En desarrollo
 
-- Compras y ventas (vista de movimientos).
 - Cuentas por cobrar (gestión detallada).
 - Resumen mensual.
 - Login y autenticación.
@@ -112,6 +113,8 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 - **Productos más vendidos** con unidades y total de ventas.
 - **Acciones rápidas** para registrar ventas, compras y cobros.
 - **Modal de nueva operación** con formulario interactivo y tipos configurables.
+- **Compras y ventas** con filtro por periodo/tipo/estado, búsqueda, ordenamiento, detalle y registro local de pagos.
+- **Registro simulado** de ventas de varios productos, compras de insumos y otros gastos.
 - **Navegación responsive** con sidebar en escritorio, drawer en tablet y barra inferior en móvil.
 - **Rutas preparadas** para los módulos de operaciones, cobros y resumen mensual.
 
@@ -206,21 +209,26 @@ ux/prototype/cajaclara-ui/
     │   │   ├── BadgeStatus.vue         # Badges semánticos accesibles (Pagada, Pendiente, Vencida)
     │   │   ├── QuickActions.vue        # 4 botones de acción rápida de caja
     │   │   └── StatCard.vue            # Tarjeta de indicador financiero (KPI)
-    │   └── dashboard/
+    │   ├── dashboard/
     │       ├── CashChart.vue           # Gráfico de barras semanal (ventas vs compras/gastos)
     │       ├── NewOperationModal.vue   # Modal para registrar nuevos movimientos
     │       ├── OperationsSummary.vue   # Métricas operativas de volumen
     │       ├── PriorityCollections.vue # Cobros que requieren atención
     │       ├── RecentOperations.vue    # Últimos movimientos de caja
     │       └── TopProducts.vue         # Productos de mayor rotación
+    │   └── operations/
+    │       ├── OperationDetailModal.vue # Detalle accesible de una operación
+    │       └── OperationFormModal.vue   # Formularios de venta, compra y gasto
     ├── data/
-    │   └── dashboardMock.js            # Datos simulados del escenario Almacén La Esquina
+    │   ├── dashboardMock.js             # Datos simulados del Dashboard
+    │   └── operationsMock.js            # Operaciones, clientes, productos y categorías simulados
     ├── router/
     │   └── index.js                    # Configuración de Vue Router (rutas y redirects)
     ├── utils/
     │   └── formatters.js              # Formateadores de moneda CLP y fechas
     └── views/
         ├── DashboardView.vue           # Vista principal del Dashboard (implementada)
+        ├── OperationsView.vue          # Vista de Compras y ventas (implementada)
         └── PlaceholderView.vue         # Vista temporal para módulos en desarrollo
 ```
 
@@ -243,7 +251,11 @@ App.vue (Layout)
 │   │   ├── OperationsSummary
 │   │   ├── TopProducts
 │   │   └── NewOperationModal
-│   └── PlaceholderView → Operaciones, Cobros y Resumen (en desarrollo)
+│   ├── OperationsView  → Compras y ventas implementada
+│   │   ├── StatCard × 4
+│   │   ├── NewOperationModal → OperationFormModal compartido
+│   │   └── OperationDetailModal
+│   └── PlaceholderView → Cobros y Resumen (en desarrollo)
 └── AppBottomNav        → Barra inferior para móvil
 ```
 
@@ -255,8 +267,8 @@ App.vue (Layout)
 | `AppSidebar`        | Menú de navegación lateral con enlaces a Dashboard, Operaciones, Cobros y Resumen. Permanente en escritorio ≥ 1024 px, drawer con overlay en tablet/móvil. |
 | `AppBottomNav`      | Barra inferior fija con acceso directo a las cuatro secciones principales. Visible solo bajo 1024 px. |
 | `BadgeStatus`       | Badge visual con color semántico según estado: `PAGADA`, `PENDIENTE` o `VENCIDA`. |
-| `QuickActions`      | Cuatro botones de acción rápida: registrar venta, venta al fiado, compra/gasto y registrar cobro. Emite evento `open-modal`. |
-| `StatCard`          | Tarjeta KPI con monto, subtítulo, tendencia, tooltip informativo y variantes de color (`balance`, `income`, `expense`, `pending`). |
+| `QuickActions`      | Accesos rápidos a nueva venta, venta pendiente, compra/gasto y cobros. Las operaciones navegan a sus formularios mediante `/operaciones?nueva=...`. |
+| `StatCard`          | Tarjeta KPI con monto, subtítulo, tendencia, tooltip informativo y variantes de color (`balance`, `income`, `expense`, `pending`); también permite mostrar conteos sin formato monetario. |
 
 ### Componentes del Dashboard (`components/dashboard/`)
 
@@ -269,6 +281,13 @@ App.vue (Layout)
 | `RecentOperations`      | Tabla de los últimos movimientos de caja con tipo, concepto, cliente/proveedor, monto y estado. |
 | `TopProducts`           | Ranking de productos con más unidades vendidas y su monto total de ventas. |
 
+### Componentes de operaciones (`components/operations/`)
+
+| Componente | Función |
+| --- | --- |
+| `OperationFormModal` | Formulario accesible para venta con múltiples productos, compra de insumos u otro gasto. |
+| `OperationDetailModal` | Modal de solo lectura con datos, productos, monto, estado y vencimiento de la operación. |
+
 ---
 
 ## Rutas
@@ -279,18 +298,18 @@ Las rutas están definidas en `src/router/index.js` usando Vue Router 4 con `cre
 | ---------------- | ------------- | ------------------ | -------------- |
 | `/`              | Dashboard     | `DashboardView`    | ✅ Implementada |
 | `/dashboard`     | —             | Redirect → `/`     | ✅ Redirect     |
-| `/operaciones`   | Operaciones   | `PlaceholderView`  | 🚧 Placeholder  |
+| `/operaciones`   | Operaciones   | `OperationsView`   | ✅ Implementada |
 | `/cobros`        | Cobros        | `PlaceholderView`  | 🚧 Placeholder  |
 | `/resumen`       | Resumen       | `PlaceholderView`  | 🚧 Placeholder  |
 | `/:pathMatch(.*)*` | —           | Redirect → `/`     | ✅ Catch-all    |
 
-El componente `PlaceholderView` muestra un mensaje contextual según la ruta y un botón para volver al Dashboard.
+El componente `PlaceholderView` se conserva para Cobros y Resumen, módulos aún no implementados.
 
 ---
 
 ## Datos simulados
 
-Todos los datos del prototipo provienen del archivo `src/data/dashboardMock.js`. Este archivo exporta estructuras independientes que alimentan cada componente:
+Los datos simulados están separados por vista. `src/data/dashboardMock.js` alimenta el Dashboard y `src/data/operationsMock.js` contiene las operaciones, clientes, productos y categorías disponibles para Compras y ventas.
 
 | Exportación             | Descripción                                                   |
 | ----------------------- | ------------------------------------------------------------- |
@@ -303,6 +322,8 @@ Todos los datos del prototipo provienen del archivo `src/data/dashboardMock.js`.
 | `recentOperations`      | Últimos movimientos registrados con tipo, fecha y estado.      |
 | `topDemandProducts`     | Productos más vendidos con unidades, ingresos y participación. |
 | `mockData`              | Objeto consolidado que transforma las exportaciones anteriores al formato esperado por los componentes. |
+
+`operationsMock.js` exporta `operations`, `clients`, `productCatalog`, `expenseCategories` y `suppliers`. Las altas y los pagos que se realizan desde `/operaciones` se conservan únicamente en el estado local de la vista durante la sesión; no modifican el mock ni se envían al Backend.
 
 El escenario simulado representa el **Almacén La Esquina**, un almacén de barrio en Santiago, con datos del periodo Octubre de 2026.
 
@@ -433,7 +454,9 @@ No existen pruebas automatizadas, configuración de linting ni formateo en esta 
 - Todos los datos son simulados. No hay persistencia ni comunicación con backend.
 - El gráfico de barras está construido con CSS puro; no tiene tooltips interactivos ni animaciones avanzadas.
 - El modal de nueva operación no persiste datos; simula el registro y muestra un toast.
-- Las vistas de Operaciones, Cobros y Resumen son placeholders sin funcionalidad.
+- La vista de Operaciones usa estado local temporal; al recargar, las altas y pagos vuelven a los datos mock iniciales.
+- Las vistas de Cobros y Resumen siguen siendo placeholders.
+- La edición de operaciones es únicamente una simulación.
 - No existe gestión de estado global (Pinia). Los datos fluyen vía props desde el mock.
 - No hay manejo de errores HTTP, estados de carga ni estados vacíos.
 - La tipografía depende de Google Fonts (conexión externa requerida).
@@ -444,10 +467,10 @@ No existen pruebas automatizadas, configuración de linting ni formateo en esta 
 
 ## Roadmap técnico
 
-1. **Fase actual** — Dashboard de alta fidelidad con datos simulados.
-2. **Siguiente fase** — Implementar vistas de Operaciones, Cobros y Resumen mensual.
+1. **Fase actual** — Dashboard y Compras y ventas de alta fidelidad con datos simulados.
+2. **Siguiente fase** — Implementar Cuentas por cobrar y Resumen mensual.
 3. **Integración** — Conectar con la API del backend, introducir Pinia y manejo de estados.
-4. **Formularios** — Registro completo de ventas, gastos y cobros con validación.
+4. **Formularios** — Persistencia y validaciones completas para ventas, gastos y cobros.
 5. **Calidad** — Incorporar ESLint, Prettier, Vitest y pruebas E2E.
 6. **Accesibilidad** — Auditoría completa, gestión de foco y pruebas con lectores de pantalla.
 7. **Producción** — Login, protección de rutas, variables de entorno y despliegue.
