@@ -51,7 +51,7 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 ### Implementado
 
 - Configuración base con Vue 3 y Vite.
-- Dashboard de alta fidelidad con layout de dos columnas.
+- Dashboard de alta fidelidad con filas independientes: flujo y cobros prioritarios, movimientos a ancho completo e información operativa.
 - Layout principal con sidebar, header y barra inferior.
 - Navegación lateral permanente en escritorio y drawer en tablet/móvil.
 - Barra de navegación inferior para móvil.
@@ -69,7 +69,7 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 - Notificaciones toast con feedback visual.
 - Datos simulados desacoplados por vista y escenario.
 - Utilidades de formato de moneda (CLP) y fechas.
-- Rutas preparadas para módulos futuros.
+- Ruta `/resumen` conservada como placeholder; `/operaciones` y `/cobros` implementadas.
 - Sistema visual compartido con design tokens en CSS custom properties.
 - Adaptación responsive de escritorio a móvil.
 - Skip link de accesibilidad para navegación por teclado.
@@ -79,14 +79,11 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 - Resumen mensual.
 - Login y autenticación.
 - Configuración del negocio.
-- Registro completo de ventas.
-- Registro de gastos.
-- Registro de pago parcial o total.
-- Estados vacíos.
+- Persistencia e integración de ventas y gastos.
+- Integración del registro de pago completo con Backend.
 - Estados de error.
 - Estados de carga.
 - Confirmaciones de acciones destructivas.
-- Integración con Backend.
 - Pruebas automatizadas.
 - Auditoría de accesibilidad.
 
@@ -117,7 +114,7 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 - **Cuentas por cobrar** con estados pendiente, vencida y pagada; indicadores, filtros, búsqueda, orden por vencimiento, detalle y pago completo simulado.
 - **Registro simulado** de ventas de varios productos, compras de insumos y otros gastos.
 - **Navegación responsive** con sidebar en escritorio, drawer en tablet y barra inferior en móvil.
-- **Rutas preparadas** para los módulos de operaciones, cobros y resumen mensual.
+- **Rutas activas** para Inicio, Compras y ventas y Cuentas por cobrar; Resumen mensual continúa como placeholder.
 
 > Todas las cifras visibles en el prototipo son simuladas y no representan datos reales ni respuestas actuales de la API.
 
@@ -211,18 +208,22 @@ ux/prototype/cajaclara-ui/
     │   │   ├── QuickActions.vue        # 4 botones de acción rápida de caja
     │   │   └── StatCard.vue            # Tarjeta de indicador financiero (KPI)
     │   ├── dashboard/
-    │       ├── CashChart.vue           # Gráfico de barras semanal (ventas vs compras/gastos)
-    │       ├── NewOperationModal.vue   # Modal para registrar nuevos movimientos
-    │       ├── OperationsSummary.vue   # Métricas operativas de volumen
-    │       ├── PriorityCollections.vue # Cobros que requieren atención
-    │       ├── RecentOperations.vue    # Últimos movimientos de caja
-    │       └── TopProducts.vue         # Productos de mayor rotación
-    │   └── operations/
-    │       ├── OperationDetailModal.vue # Detalle accesible de una operación
-    │       └── OperationFormModal.vue   # Formularios de venta, compra y gasto
+    │   │   ├── CashChart.vue             # Gráfico de barras semanal
+    │   │   ├── NewOperationModal.vue     # Modal para registrar nuevos movimientos
+    │   │   ├── OperationsSummary.vue     # Métricas operativas de volumen
+    │   │   ├── PriorityCollections.vue   # Cobros que requieren atención
+    │   │   ├── RecentOperations.vue      # Últimos movimientos de caja
+    │   │   └── TopProducts.vue           # Productos de mayor rotación
+    │   ├── operations/
+    │   │   ├── OperationDetailModal.vue  # Detalle accesible de una operación
+    │   │   └── OperationFormModal.vue    # Formularios de venta, compra y gasto
+    │   └── receivables/
+    │       ├── PaymentModal.vue          # Registro simulado de pago completo
+    │       └── ReceivableDetailModal.vue # Detalle de cuenta por cobrar
     ├── data/
     │   ├── dashboardMock.js             # Datos simulados del Dashboard
-    │   └── operationsMock.js            # Operaciones, clientes, productos y categorías simulados
+    │   ├── operationsMock.js             # Operaciones, clientes, productos y categorías
+    │   └── receivablesMock.js            # Cuentas por cobrar simuladas relacionadas con operaciones
     ├── router/
     │   └── index.js                    # Configuración de Vue Router (rutas y redirects)
     ├── utils/
@@ -230,6 +231,7 @@ ux/prototype/cajaclara-ui/
     └── views/
         ├── DashboardView.vue           # Vista principal del Dashboard (implementada)
         ├── OperationsView.vue          # Vista de Compras y ventas (implementada)
+        ├── ReceivablesView.vue         # Vista de Cuentas por cobrar (implementada)
         └── PlaceholderView.vue         # Vista temporal para módulos en desarrollo
 ```
 
@@ -246,11 +248,11 @@ App.vue (Layout)
 │   │   ├── QuickActions
 │   │   ├── StatCard × 4             (KPIs financieros)
 │   │   ├── CashChart                (Gráfico semanal)
-│   │   ├── RecentOperations
 │   │   ├── PriorityCollections
 │   │   │   └── BadgeStatus
 │   │   ├── OperationsSummary
 │   │   ├── TopProducts
+│   │   ├── RecentOperations (ancho completo)
 │   │   └── NewOperationModal
 │   ├── OperationsView  → Compras y ventas implementada
 │   │   ├── StatCard × 4
@@ -385,13 +387,15 @@ El prototipo sigue una estrategia **desktop-first** con adaptación progresiva a
 
 | Breakpoint        | Comportamiento                                                   |
 | ----------------- | ---------------------------------------------------------------- |
-| ≥ 1024 px         | Sidebar permanente, KPIs en 4 columnas, analytics en 2 columnas. |
-| 640–1023 px       | Sidebar como drawer, KPIs en 2 columnas, analytics en 1 columna. Bottom nav visible. |
-| < 640 px          | KPIs en 1 columna, padding reducido, toast de ancho completo. Bottom nav visible. |
+| ≥ 1280 px         | Sidebar permanente, KPIs en 4 columnas y distribución Dashboard 2:1 / 1:2. |
+| 1024–1279 px      | Sidebar permanente; Dashboard apilado y listado de Operaciones en tarjetas. |
+| 640–1023 px       | Sidebar como drawer, KPIs en 2 columnas, contenidos apilados y bottom nav visible. |
+| < 640 px          | KPIs en 1 columna, padding compacto, tarjetas y toast de ancho disponible. |
 
 Breakpoints principales del CSS:
 
 - `1200px` — Ajuste de padding del contenido principal.
+- `1280px` — Dashboard muestra sus distribuciones analíticas de dos columnas.
 - `1023px` — Oculta sidebar permanente, muestra bottom nav, elimina margen izquierdo.
 - `640px` — Layout de columna única, padding compacto.
 
@@ -408,20 +412,20 @@ Medidas implementadas en esta etapa:
 - **`aria-hidden="true"`** en iconos decorativos.
 - **Focus visible** con outline de 2 px y offset, aplicado globalmente a enlaces, botones e inputs.
 - **Badges semánticos** con colores diferenciados para estados (pagada, pendiente, vencida).
+- **Diálogos** de operación y cobro con cierre por Escape, foco inicial, retorno del foco y navegación por teclado.
 
 ### Pendiente
 
 - Auditoría completa con herramientas (axe, Lighthouse).
 - Pruebas con lectores de pantalla.
 - Revisión de contraste en todas las variantes de color.
-- Gestión de foco dentro del modal.
 - Navegación completa por teclado en todos los componentes.
 
 ---
 
 ## Integración con Backend
 
-El prototipo actualmente no se conecta a ningún servicio externo. Toda la información es estática y proviene de `dashboardMock.js`.
+El prototipo actualmente no se conecta a ningún servicio externo. La información es simulada y proviene de mocks separados por módulo (`dashboardMock.js`, `operationsMock.js` y `receivablesMock.js`).
 
 ### Preparación para la integración
 
@@ -465,7 +469,7 @@ No existen pruebas automatizadas, configuración de linting ni formateo en esta 
 
 ## Limitaciones conocidas
 
-- Todos los datos son simulados. No hay persistencia ni comunicación con backend.
+- Todos los datos son simulados. Operaciones y pagos se actualizan solo en el estado local de cada vista, no persisten ni se sincronizan entre módulos, y no hay comunicación con Backend.
 - El gráfico de barras está construido con CSS puro; no tiene tooltips interactivos ni animaciones avanzadas.
 - El modal de nueva operación no persiste datos; simula el registro y muestra un toast.
 - La vista de Operaciones usa estado local temporal; al recargar, las altas y pagos vuelven a los datos mock iniciales.
@@ -473,7 +477,7 @@ No existen pruebas automatizadas, configuración de linting ni formateo en esta 
 - Resumen mensual continúa siendo placeholder.
 - La edición de operaciones es únicamente una simulación.
 - No existe gestión de estado global (Pinia). Los datos fluyen vía props desde el mock.
-- No hay manejo de errores HTTP, estados de carga ni estados vacíos.
+- No hay manejo de errores HTTP ni estados de carga; algunas vistas sí incluyen estados vacíos y de búsqueda sin resultados.
 - La tipografía depende de Google Fonts (conexión externa requerida).
 - No se ha realizado auditoría formal de accesibilidad ni pruebas con lectores de pantalla.
 - No hay mecanismo de autenticación ni protección de rutas.
@@ -482,8 +486,8 @@ No existen pruebas automatizadas, configuración de linting ni formateo en esta 
 
 ## Roadmap técnico
 
-1. **Fase actual** — Dashboard y Compras y ventas de alta fidelidad con datos simulados.
-2. **Siguiente fase** — Implementar Cuentas por cobrar y Resumen mensual.
+1. **Fase actual** — Dashboard, Compras y ventas y Cuentas por cobrar de alta fidelidad con datos simulados.
+2. **Siguiente fase** — Implementar Resumen mensual e integrar los módulos con Backend.
 3. **Integración** — Conectar con la API del backend, introducir Pinia y manejo de estados.
 4. **Formularios** — Persistencia y validaciones completas para ventas, gastos y cobros.
 5. **Calidad** — Incorporar ESLint, Prettier, Vitest y pruebas E2E.

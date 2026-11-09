@@ -75,15 +75,16 @@ El objetivo UX es que una persona pueda responder rápidamente:
 - Revisión del modelo relacional y de las seis tablas de Análisis de Datos.
 - Definición inicial del sistema visual.
 - **Dashboard de alta fidelidad desarrollado con Vue 3 y Vite.**
-- Diseño del Dashboard priorizado para escritorio y preparado para ser responsive.
+- **Compras y ventas** implementada en `/operaciones`, con operaciones simuladas y formularios locales.
+- **Cuentas por cobrar** implementada en `/cobros`, con búsqueda, filtros, orden por vencimiento, detalle y registro de pago completo simulado.
+- Dashboard y módulos operativos adaptados a escritorio, tablet y móvil.
 
 ### En desarrollo durante la Semana 3
 
 - Ajustes de interfaz y consistencia visual.
-- Extensión del sistema visual a las siguientes pantallas.
-- Prototipos de Compras y ventas y Cuentas por cobrar.
-- Estados vacíos, errores, confirmaciones y carga.
-- Revisión responsive en escritorio, tablet y móvil.
+- Resumen mensual, que continúa como placeholder.
+- Estados de error y carga para una futura integración con Backend.
+- Pruebas de usabilidad y refinamiento a partir de sus resultados.
 - Preparación del prototipo navegable para las pruebas de usabilidad.
 
 ---
@@ -272,9 +273,9 @@ Aunque los PNG muestran la versión móvil, el proyecto completo está planteado
 
 ### Dashboard completado
 
-El primer módulo de alta fidelidad corresponde al **Dashboard**, desarrollado con **Vue 3**, **Vite** y componentes reutilizables.
+El prototipo de alta fidelidad se desarrolla con **Vue 3**, **Vite** y componentes reutilizables. Incluye Dashboard, Compras y ventas y Cuentas por cobrar; el resumen mensual permanece como placeholder.
 
-La prioridad visual es la versión de escritorio, con adaptación responsive para tablet y móvil.
+El Dashboard prioriza escritorio y organiza el contenido en filas independientes: flujo de caja junto a cobros prioritarios, movimientos recientes a ancho completo y resumen de actividad junto a productos más vendidos. En tablet y móvil las secciones se reorganizan en una columna.
 
 El Dashboard incluye:
 
@@ -290,12 +291,20 @@ El Dashboard incluye:
 - Operaciones recientes.
 - Cobros prioritarios.
 
+### Compras y ventas y Cuentas por cobrar
+
+- **Compras y ventas (`/operaciones`):** búsqueda, filtros, indicadores, detalle y registro local de ventas, compras y gastos.
+- **Cuentas por cobrar (`/cobros`):** estados pendiente, vencida y pagada; indicadores, filtros, búsqueda, orden por vencimiento, detalle y pago completo.
+- Los mocks son exclusivos del prototipo. Las altas y pagos se mantienen en el estado local de cada vista, no se persisten ni se sincronizan entre módulos, y no llaman al Backend.
+
+Para detalles técnicos, estructura de componentes y rutas consulta el [README del prototipo Vue](./prototype/cajaclara-ui/README.md).
+
 ### Sistema visual inicial
 
 - Paleta principal verde, asociada a orden, control y confianza.
 - Escala de colores neutros.
 - Colores semánticos para estados de éxito, advertencia, error e información.
-- Tipografía basada en `Inter` y fuentes del sistema.
+- Tipografía Plus Jakarta Sans y fuentes del sistema.
 - Escala de espaciado basada en múltiplos de cuatro.
 - Botones, tarjetas KPI, badges, navegación y controles reutilizables.
 
@@ -399,12 +408,11 @@ La ubicación concreta del proyecto Vue debe conservar la estructura existente e
 - Extensión del sistema visual.
 - Compras y ventas en alta fidelidad.
 - Cuentas por cobrar en alta fidelidad.
-- Estados vacíos.
+- Estados vacíos y confirmaciones principales.
 - Estados de error.
-- Confirmaciones y feedback.
 - Revisión responsive.
 
-**Estado:** en progreso. El Dashboard de alta fidelidad ya está disponible.
+**Estado:** en progreso. Dashboard, Compras y ventas y Cuentas por cobrar ya están implementados en el prototipo; errores y carga siguen pendientes.
 
 ### Semana 4 - Test de usabilidad
 
