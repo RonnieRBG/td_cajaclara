@@ -433,13 +433,13 @@ Medidas implementadas en esta etapa:
 
 ## Integración con Backend
 
-El prototipo actualmente no se conecta a ningún servicio externo. La información es simulada y proviene de mocks separados por módulo (`dashboardMock.js`, `operationsMock.js` y `receivablesMock.js`).
+El prototipo actualmente no se conecta a ningún servicio externo. La información es simulada y proviene de mocks separados por módulo (`dashboardMock.js`, `operationsMock.js`, `receivablesMock.js` y `monthlySummaryMock.js`).
 
 ### Preparación para la integración
 
 Cuando el backend esté disponible:
 
-1. Reemplazar los imports de `dashboardMock.js` en `DashboardView.vue` y `App.vue` por llamadas a la API.
+1. Reemplazar los imports de `dashboardMock.js`, `monthlySummaryMock.js` y los demás mocks en sus vistas por llamadas a la API.
 2. Introducir un cliente HTTP (por ejemplo, `fetch` nativo o Axios).
 3. Considerar un store centralizado (por ejemplo, Pinia) para gestionar el estado compartido.
 4. Implementar estados de carga, error y vacío en cada componente.
