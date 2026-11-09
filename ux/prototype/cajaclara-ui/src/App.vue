@@ -40,7 +40,7 @@ const closeSidebar = () => {
       />
 
       <!-- Main Page Content -->
-      <main id="main-content" class="app-main">
+      <main id="main-content" class="app-main" tabindex="-1">
         <router-view />
       </main>
     </div>

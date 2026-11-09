@@ -46,7 +46,7 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 
 ## Estado actual
 
-> El proyecto se encuentra en desarrollo. El Dashboard, Compras y ventas y Cuentas por cobrar están implementados. Los módulos restantes continúan en construcción o se representan mediante componentes placeholder.
+> El proyecto se encuentra en desarrollo. El Dashboard, Compras y ventas, Cuentas por cobrar y Resumen mensual están implementados con datos simulados. Otros módulos continúan en construcción.
 
 ### Implementado
 
@@ -65,18 +65,18 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 - Modal de nueva operación (venta pagada, venta al fiado, compra/gasto).
 - Vista de Compras y ventas en `/operaciones`, con filtros, búsqueda, indicadores y detalle de operaciones.
 - Vista de Cuentas por cobrar en `/cobros`, con filtros, búsqueda, orden por vencimiento, detalle y registro simulado de pago completo.
+- Vista de Resumen mensual en `/resumen`, con selector de periodo, indicadores, gráfico semanal, desgloses y operaciones principales.
 - Formularios simulados para ventas de varios productos, compras y otros gastos.
 - Notificaciones toast con feedback visual.
 - Datos simulados desacoplados por vista y escenario.
 - Utilidades de formato de moneda (CLP) y fechas.
-- Ruta `/resumen` conservada como placeholder; `/operaciones` y `/cobros` implementadas.
+- `/resumen`, `/operaciones` y `/cobros` implementadas.
 - Sistema visual compartido con design tokens en CSS custom properties.
 - Adaptación responsive de escritorio a móvil.
 - Skip link de accesibilidad para navegación por teclado.
 
 ### En desarrollo
 
-- Resumen mensual.
 - Login y autenticación.
 - Configuración del negocio.
 - Persistencia e integración de ventas y gastos.
@@ -112,9 +112,10 @@ CajaClara UI es el prototipo Frontend de alta fidelidad de CajaClara, una aplica
 - **Modal de nueva operación** con formulario interactivo y tipos configurables.
 - **Compras y ventas** con filtro por periodo/tipo/estado, búsqueda, ordenamiento, detalle y registro local de pagos.
 - **Cuentas por cobrar** con estados pendiente, vencida y pagada; indicadores, filtros, búsqueda, orden por vencimiento, detalle y pago completo simulado.
+- **Resumen mensual** con indicadores financieros, comparativa semanal de ventas y gastos, desglose de gastos, resumen de ventas, actividad destacada y hasta cinco operaciones principales.
 - **Registro simulado** de ventas de varios productos, compras de insumos y otros gastos.
 - **Navegación responsive** con sidebar en escritorio, drawer en tablet y barra inferior en móvil.
-- **Rutas activas** para Inicio, Compras y ventas y Cuentas por cobrar; Resumen mensual continúa como placeholder.
+- **Rutas activas** para Inicio, Compras y ventas, Cuentas por cobrar y Resumen mensual.
 
 > Todas las cifras visibles en el prototipo son simuladas y no representan datos reales ni respuestas actuales de la API.
 
@@ -223,7 +224,8 @@ ux/prototype/cajaclara-ui/
     ├── data/
     │   ├── dashboardMock.js             # Datos simulados del Dashboard
     │   ├── operationsMock.js             # Operaciones, clientes, productos y categorías
-    │   └── receivablesMock.js            # Cuentas por cobrar simuladas relacionadas con operaciones
+    │   ├── receivablesMock.js            # Cuentas por cobrar simuladas relacionadas con operaciones
+    │   └── monthlySummaryMock.js         # Datos simulados del Resumen mensual
     ├── router/
     │   └── index.js                    # Configuración de Vue Router (rutas y redirects)
     ├── utils/
@@ -232,6 +234,7 @@ ux/prototype/cajaclara-ui/
         ├── DashboardView.vue           # Vista principal del Dashboard (implementada)
         ├── OperationsView.vue          # Vista de Compras y ventas (implementada)
         ├── ReceivablesView.vue         # Vista de Cuentas por cobrar (implementada)
+        ├── MonthlySummaryView.vue      # Resumen mensual con datos simulados
         └── PlaceholderView.vue         # Vista temporal para módulos en desarrollo
 ```
 
@@ -262,7 +265,11 @@ App.vue (Layout)
 │   │   ├── StatCard × 4
 │   │   ├── ReceivableDetailModal
 │   │   └── PaymentModal
-│   └── PlaceholderView → Resumen (en desarrollo)
+│   ├── MonthlySummaryView → Resumen mensual
+│   │   ├── StatCard × 4
+│   │   ├── CashChart
+│   │   └── BadgeStatus
+│   └── PlaceholderView → módulos aún en desarrollo
 └── AppBottomNav        → Barra inferior para móvil
 ```
 
@@ -314,16 +321,16 @@ Las rutas están definidas en `src/router/index.js` usando Vue Router 4 con `cre
 | `/dashboard`     | —             | Redirect → `/`     | ✅ Redirect     |
 | `/operaciones`   | Operaciones   | `OperationsView`   | ✅ Implementada |
 | `/cobros`        | Cobros        | `ReceivablesView`  | ✅ Implementada |
-| `/resumen`       | Resumen       | `PlaceholderView`  | 🚧 Placeholder  |
+| `/resumen`       | Resumen       | `MonthlySummaryView` | ✅ Implementada |
 | `/:pathMatch(.*)*` | —           | Redirect → `/`     | ✅ Catch-all    |
 
-El componente `PlaceholderView` se conserva para Resumen y los módulos que aún no están implementados.
+`PlaceholderView` se mantiene disponible para módulos que aún no están implementados; `/resumen` renderiza `MonthlySummaryView`.
 
 ---
 
 ## Datos simulados
 
-Los datos simulados están separados por vista. `src/data/dashboardMock.js` alimenta el Dashboard, `src/data/operationsMock.js` contiene operaciones, clientes, productos y categorías para Compras y ventas, y `src/data/receivablesMock.js` contiene las cuentas por cobrar vinculadas a operaciones existentes cuando es posible.
+Los datos simulados están separados por vista. `src/data/dashboardMock.js` alimenta el Dashboard, `src/data/operationsMock.js` contiene operaciones, clientes, productos y categorías para Compras y ventas, `src/data/receivablesMock.js` contiene las cuentas por cobrar y `src/data/monthlySummaryMock.js` contiene los periodos del Resumen mensual.
 
 | Exportación             | Descripción                                                   |
 | ----------------------- | ------------------------------------------------------------- |
@@ -336,6 +343,7 @@ Los datos simulados están separados por vista. `src/data/dashboardMock.js` alim
 | `recentOperations`      | Últimos movimientos registrados con tipo, fecha y estado.      |
 | `topDemandProducts`     | Productos más vendidos con unidades, ingresos y participación. |
 | `mockData`              | Objeto consolidado que transforma las exportaciones anteriores al formato esperado por los componentes. |
+| `monthlySummaryData`    | Datos simulados de `/resumen`, incluidos Octubre de 2026 y un periodo sin movimientos. |
 
 `operationsMock.js` exporta `operations`, `clients`, `productCatalog`, `expenseCategories` y `suppliers`. Las altas y los pagos que se realizan desde `/operaciones` se conservan únicamente en el estado local de la vista durante la sesión; no modifican el mock ni se envían al Backend.
 
@@ -343,7 +351,7 @@ Los pagos realizados desde `/cobros` cancelan la cuenta completa y actualizan su
 
 El escenario simulado representa el **Almacén La Esquina**, un almacén de barrio en Santiago, con datos del periodo Octubre de 2026.
 
-> Los datos no provienen de una API ni de un backend. Cuando se implemente la integración, los imports de `dashboardMock.js` deben reemplazarse por llamadas al servicio real.
+> Los datos no provienen de una API ni de un backend. El Resumen mensual usa mocks y estado local; no representa resultados reales ni respuestas del Backend.
 
 ---
 
@@ -474,7 +482,7 @@ No existen pruebas automatizadas, configuración de linting ni formateo en esta 
 - El modal de nueva operación no persiste datos; simula el registro y muestra un toast.
 - La vista de Operaciones usa estado local temporal; al recargar, las altas y pagos vuelven a los datos mock iniciales.
 - La vista de Cuentas por cobrar utiliza un mock propio; sus cambios se pierden al recargar y no se sincronizan con Compras y ventas ni con el Backend.
-- Resumen mensual continúa siendo placeholder.
+- El Resumen mensual muestra los datos disponibles en su mock; otros periodos muestran el estado sin información.
 - La edición de operaciones es únicamente una simulación.
 - No existe gestión de estado global (Pinia). Los datos fluyen vía props desde el mock.
 - No hay manejo de errores HTTP ni estados de carga; algunas vistas sí incluyen estados vacíos y de búsqueda sin resultados.
@@ -486,8 +494,8 @@ No existen pruebas automatizadas, configuración de linting ni formateo en esta 
 
 ## Roadmap técnico
 
-1. **Fase actual** — Dashboard, Compras y ventas y Cuentas por cobrar de alta fidelidad con datos simulados.
-2. **Siguiente fase** — Implementar Resumen mensual e integrar los módulos con Backend.
+1. **Fase actual** — Dashboard, Compras y ventas, Cuentas por cobrar y Resumen mensual de alta fidelidad con datos simulados.
+2. **Siguiente fase** — Integrar los módulos implementados con Backend.
 3. **Integración** — Conectar con la API del backend, introducir Pinia y manejo de estados.
 4. **Formularios** — Persistencia y validaciones completas para ventas, gastos y cobros.
 5. **Calidad** — Incorporar ESLint, Prettier, Vitest y pruebas E2E.

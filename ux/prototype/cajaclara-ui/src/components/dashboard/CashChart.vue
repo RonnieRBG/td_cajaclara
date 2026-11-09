@@ -6,6 +6,10 @@ const props = defineProps({
   weeklyData: {
     type: Array,
     required: true
+  },
+  subtitle: {
+    type: String,
+    default: 'Comparativa semanal del mes en curso'
   }
 })
 
@@ -39,7 +43,7 @@ const totalGastos = computed(() => {
     <div class="chart-header">
       <div>
         <h3 class="chart-title">Entradas y salidas de dinero</h3>
-        <p class="chart-subtitle">Comparativa semanal del mes en curso</p>
+        <p class="chart-subtitle">{{ subtitle }}</p>
       </div>
 
       <div class="chart-legend" aria-hidden="true">
