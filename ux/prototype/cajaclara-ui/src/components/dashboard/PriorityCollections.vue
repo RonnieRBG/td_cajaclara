@@ -97,6 +97,7 @@ const handlePay = (item) => {
   flex-direction: column;
   gap: var(--space-4);
   border-left: 4px solid var(--color-amber-500);
+  container-type: inline-size;
 }
 
 .card-header {
@@ -159,10 +160,9 @@ const handlePay = (item) => {
 }
 
 .collection-item {
-  display: flex;
+  display: grid;
   min-width: var(--content-min-width);
-  flex-wrap: wrap;
-  flex-direction: column;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   padding: var(--space-4);
   background-color: var(--color-surface-subtle);
@@ -171,11 +171,10 @@ const handlePay = (item) => {
   transition: all var(--transition-fast);
 }
 
-@media (min-width: 640px) {
+@container (min-width: 42rem) {
   .collection-item {
-    flex-direction: row;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.8fr);
     align-items: center;
-    justify-content: space-between;
   }
 }
 
@@ -191,12 +190,9 @@ const handlePay = (item) => {
 
 .client-column {
   display: flex;
-  min-width: var(--content-min-width);
-  flex: 1 1 13rem;
+  min-width: 0;
   align-items: center;
   gap: var(--space-3);
-  flex: 1;
-  min-width: 0;
 }
 
 .client-avatar {
@@ -242,8 +238,7 @@ const handlePay = (item) => {
 
 .due-column {
   display: flex;
-  min-width: var(--content-min-width);
-  flex: 1 1 11rem;
+  min-width: 0;
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
@@ -269,18 +264,10 @@ const handlePay = (item) => {
 
 .amount-column {
   display: flex;
-  min-width: var(--content-min-width);
-  flex: 1 1 10rem;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  flex-shrink: 0;
-}
-
-@media (min-width: 640px) {
-  .amount-column {
-    justify-content: flex-end;
-  }
 }
 
 .collection-amount {

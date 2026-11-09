@@ -112,24 +112,23 @@ const handleModalSuccess = (data) => {
       </div>
     </section>
 
-    <!-- Main Analytics & Operational Section (2 Columns Desktop) -->
-    <div class="analytics-row">
-      <!-- Left Column: Flow Chart & Recent Operations -->
-      <div class="analytics-col-main">
-        <CashChart :weeklyData="mockData.weeklyFlow" />
-        <RecentOperations :operations="mockData.recentOperations" />
-      </div>
+    <!-- Main analytics: cash flow and priority collections -->
+    <section class="analytics-row" aria-label="Análisis principal de caja">
+      <CashChart :weeklyData="mockData.weeklyFlow" />
+      <PriorityCollections
+        :collections="mockData.priorityCollections"
+        @pay-collection="handlePayCollection"
+      />
+    </section>
 
-      <!-- Right Column: Priority Collections, Activity Summary & Top Products -->
-      <div class="analytics-col-side">
-        <PriorityCollections
-          :collections="mockData.priorityCollections"
-          @pay-collection="handlePayCollection"
-        />
-        <OperationsSummary :summary="mockData.operationsSummary" />
-        <TopProducts :products="mockData.topProducts" />
-      </div>
-    </div>
+    <!-- Recent cash movements use the full available width -->
+    <RecentOperations :operations="mockData.recentOperations" />
+
+    <!-- Operational information -->
+    <section class="operations-row" aria-label="Información operativa">
+      <OperationsSummary :summary="mockData.operationsSummary" />
+      <TopProducts :products="mockData.topProducts" />
+    </section>
 
     <!-- Modal for New Operation / Collection -->
     <NewOperationModal
@@ -204,8 +203,16 @@ const handleModalSuccess = (data) => {
   }
 }
 
-/* 2-Column Analytics Layout */
+/* Independent rows prevent unrelated cards from sharing column heights. */
 .analytics-row {
+  display: grid;
+  min-width: var(--content-min-width);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--layout-card-gap);
+  align-items: start;
+}
+
+.operations-row {
   display: grid;
   min-width: var(--content-min-width);
   grid-template-columns: minmax(0, 1fr);
@@ -215,22 +222,12 @@ const handleModalSuccess = (data) => {
 
 @media (min-width: 1280px) {
   .analytics-row {
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   }
-}
 
-.analytics-col-main {
-  display: flex;
-  min-width: var(--content-min-width);
-  flex-direction: column;
-  gap: var(--layout-card-gap);
-}
-
-.analytics-col-side {
-  display: flex;
-  min-width: var(--content-min-width);
-  flex-direction: column;
-  gap: var(--layout-card-gap);
+  .operations-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
 }
 
 @keyframes slideUp {
