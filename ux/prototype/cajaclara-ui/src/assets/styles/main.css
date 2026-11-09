@@ -53,12 +53,6 @@
   --radius-xl: 20px;
   --radius-pill: 9999px;
 
-  /* Medidas y Layout */
-  --sidebar-width: 250px;
-  --header-height: 64px;
-  --bottom-nav-height: 64px;
-  --max-content-width: 1360px;
-
   /* Sistema de Espaciado Oficial */
   --space-1: 0.25rem;  /* 4px */
   --space-2: 0.5rem;   /* 8px */
@@ -69,6 +63,26 @@
   --space-8: 2rem;     /* 32px */
   --space-10: 2.5rem;  /* 40px */
   --space-12: 3rem;    /* 48px */
+
+  /* Layout responsive */
+  --layout-sidebar-width: 15.625rem;
+  --layout-header-height: 4rem;
+  --layout-bottom-nav-height: 4rem;
+  --layout-content-max: 85rem;
+  --layout-gutter-desktop: var(--space-8);
+  --layout-gutter-tablet: var(--space-6);
+  --layout-gutter-mobile: var(--space-4);
+  --layout-section-gap: var(--space-10);
+  --layout-card-gap: var(--space-6);
+  --layout-control-gap: var(--space-3);
+  --control-min-height: 2.75rem;
+  --content-min-width: 0;
+
+  /* Alias para los componentes que ya usan los nombres anteriores */
+  --sidebar-width: var(--layout-sidebar-width);
+  --header-height: var(--layout-header-height);
+  --bottom-nav-height: var(--layout-bottom-nav-height);
+  --max-content-width: var(--layout-content-max);
 
   /* Alias semánticos y tokens compartidos */
   --color-background: var(--color-bg-app);
@@ -160,6 +174,7 @@ select:focus-visible,
 /* Utilidades Comunes de Cards */
 .card,
 .ui-card {
+  min-width: var(--content-min-width);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -180,6 +195,7 @@ select:focus-visible,
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: var(--control-min-height);
   gap: var(--space-2);
   padding: 8px 14px;
   border-radius: var(--radius-md);

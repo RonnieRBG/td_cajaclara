@@ -67,12 +67,15 @@ const getBarWidth = (units) => {
 <style scoped>
 .top-products-card {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
   gap: var(--space-4);
 }
 
 .card-header {
   display: flex;
+  min-width: var(--content-min-width);
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   padding-bottom: var(--space-4);
@@ -111,6 +114,7 @@ const getBarWidth = (units) => {
 
 .product-item {
   display: flex;
+  min-width: var(--content-min-width);
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-1) 0;
@@ -135,6 +139,7 @@ const getBarWidth = (units) => {
 
 .product-main-row {
   display: flex;
+  min-width: var(--content-min-width);
   justify-content: space-between;
   align-items: baseline;
   gap: var(--space-2);
@@ -147,6 +152,8 @@ const getBarWidth = (units) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .product-total {
@@ -174,7 +181,10 @@ const getBarWidth = (units) => {
 
 .product-meta {
   display: flex;
+  min-width: var(--content-min-width);
+  flex-wrap: wrap;
   justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
   font-size: 0.75rem;
   color: var(--color-text-muted);
 }
@@ -186,5 +196,6 @@ const getBarWidth = (units) => {
 .product-stock {
   color: var(--color-primary-700);
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 </style>

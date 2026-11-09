@@ -95,6 +95,7 @@ const formattedValue = computed(() => props.formatAsCurrency
 
 <style scoped>
 .stat-card {
+  min-width: var(--content-min-width);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -116,6 +117,7 @@ const formattedValue = computed(() => props.formatAsCurrency
 
 .stat-card__header {
   display: flex;
+  min-width: var(--content-min-width);
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
@@ -154,6 +156,8 @@ const formattedValue = computed(() => props.formatAsCurrency
 
 .stat-card__tags {
   display: flex;
+  min-width: var(--content-min-width);
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }
@@ -206,6 +210,7 @@ const formattedValue = computed(() => props.formatAsCurrency
 
 .stat-card__body {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
   gap: 3px;
 }
@@ -215,16 +220,18 @@ const formattedValue = computed(() => props.formatAsCurrency
   font-weight: 600;
   color: var(--color-text-secondary);
   letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
 }
 
 .stat-card__value {
-  font-size: 1.625rem;
+  font-size: clamp(1.25rem, 3vw, 1.625rem);
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--color-text);
   line-height: 1.2;
   font-family: var(--font-display);
   margin-top: 2px;
+  overflow-wrap: anywhere;
 }
 
 .stat-card__subtext {
@@ -232,6 +239,7 @@ const formattedValue = computed(() => props.formatAsCurrency
   color: var(--color-text-muted);
   line-height: 1.35;
   margin-top: 2px;
+  overflow-wrap: anywhere;
 }
 
 /* Variante de Énfasis (Saldo del periodo) */

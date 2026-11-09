@@ -135,12 +135,14 @@ const totalGastos = computed(() => {
 <style scoped>
 .cash-chart-card {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
   gap: var(--space-5);
 }
 
 .chart-header {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
   gap: var(--space-3);
   padding-bottom: var(--space-4);
@@ -171,6 +173,7 @@ const totalGastos = computed(() => {
 
 .chart-legend {
   display: flex;
+  min-width: var(--content-min-width);
   flex-wrap: wrap;
   gap: var(--space-5);
   font-size: 0.825rem;
@@ -178,6 +181,7 @@ const totalGastos = computed(() => {
 
 .legend-item {
   display: flex;
+  min-width: var(--content-min-width);
   align-items: center;
   gap: var(--space-2);
 }
@@ -198,6 +202,7 @@ const totalGastos = computed(() => {
 
 .legend-label {
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .legend-label strong {
@@ -207,6 +212,8 @@ const totalGastos = computed(() => {
 /* Chart Canvas */
 .chart-container {
   position: relative;
+  width: 100%;
+  min-width: var(--content-min-width);
   height: 220px;
   margin-top: var(--space-2);
   display: flex;
@@ -246,6 +253,7 @@ const totalGastos = computed(() => {
   position: relative;
   height: 100%;
   display: flex;
+  min-width: var(--content-min-width);
   justify-content: space-around;
   align-items: flex-end;
   padding: 0 var(--space-4) 28px var(--space-4);
@@ -257,6 +265,7 @@ const totalGastos = computed(() => {
   flex-direction: column;
   align-items: center;
   width: 20%;
+  min-width: 0;
   height: 100%;
   justify-content: flex-end;
   position: relative;

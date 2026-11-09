@@ -145,16 +145,17 @@ const handleModalSuccess = (data) => {
 <style scoped>
 .dashboard-view {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--layout-section-gap);
   position: relative;
 }
 
 /* Toast */
 .toast-notification {
   position: fixed;
-  bottom: 80px;
-  right: var(--space-6);
+  bottom: calc(var(--layout-bottom-nav-height) + var(--space-4));
+  right: var(--layout-gutter-tablet);
   background-color: var(--color-slate-900);
   color: white;
   padding: var(--space-3) var(--space-5);
@@ -186,49 +187,50 @@ const handleModalSuccess = (data) => {
 
 .kpis-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-5);
+  min-width: var(--content-min-width);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--layout-card-gap);
 }
 
 @media (min-width: 640px) {
   .kpis-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-5);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .kpis-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-5);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 /* 2-Column Analytics Layout */
 .analytics-row {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-8);
+  min-width: var(--content-min-width);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--layout-card-gap);
   align-items: start;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .analytics-row {
-    grid-template-columns: 1.4fr 1fr;
-    gap: var(--space-8);
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   }
 }
 
 .analytics-col-main {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--layout-card-gap);
 }
 
 .analytics-col-side {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--layout-card-gap);
 }
 
 @keyframes slideUp {
@@ -244,9 +246,9 @@ const handleModalSuccess = (data) => {
 
 @media (max-width: 767px) {
   .toast-notification {
-    bottom: 75px;
-    left: var(--space-4);
-    right: var(--space-4);
+    bottom: calc(var(--layout-bottom-nav-height) + var(--layout-control-gap));
+    left: var(--layout-gutter-mobile);
+    right: var(--layout-gutter-mobile);
   }
 }
 </style>

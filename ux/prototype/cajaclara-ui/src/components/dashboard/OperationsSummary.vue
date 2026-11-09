@@ -81,12 +81,15 @@ const props = defineProps({
 <style scoped>
 .summary-card {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
   gap: var(--space-4);
 }
 
 .summary-header {
   display: flex;
+  min-width: var(--content-min-width);
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   padding-bottom: var(--space-4);
@@ -112,12 +115,14 @@ const props = defineProps({
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  min-width: var(--content-min-width);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
 .metric-item {
   display: flex;
+  min-width: var(--content-min-width);
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-4);
@@ -175,6 +180,7 @@ const props = defineProps({
   color: var(--color-text-secondary);
   font-weight: 500;
   margin-top: 2px;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 480px) {

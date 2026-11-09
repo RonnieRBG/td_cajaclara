@@ -93,6 +93,7 @@ const handlePay = (item) => {
 <style scoped>
 .priority-card {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
   gap: var(--space-4);
   border-left: 4px solid var(--color-amber-500);
@@ -100,6 +101,8 @@ const handlePay = (item) => {
 
 .card-header {
   display: flex;
+  min-width: var(--content-min-width);
+  flex-wrap: wrap;
   flex-direction: column;
   gap: var(--space-3);
   padding-bottom: var(--space-4);
@@ -116,6 +119,8 @@ const handlePay = (item) => {
 
 .header-left {
   display: flex;
+  min-width: var(--content-min-width);
+  flex: 1 1 14rem;
   align-items: center;
   gap: var(--space-3);
 }
@@ -137,6 +142,7 @@ const handlePay = (item) => {
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .card-subtitle {
@@ -154,6 +160,8 @@ const handlePay = (item) => {
 
 .collection-item {
   display: flex;
+  min-width: var(--content-min-width);
+  flex-wrap: wrap;
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
@@ -183,6 +191,8 @@ const handlePay = (item) => {
 
 .client-column {
   display: flex;
+  min-width: var(--content-min-width);
+  flex: 1 1 13rem;
   align-items: center;
   gap: var(--space-3);
   flex: 1;
@@ -227,13 +237,13 @@ const handlePay = (item) => {
 .client-detail {
   font-size: 0.78rem;
   color: var(--color-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .due-column {
   display: flex;
+  min-width: var(--content-min-width);
+  flex: 1 1 11rem;
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
@@ -259,6 +269,8 @@ const handlePay = (item) => {
 
 .amount-column {
   display: flex;
+  min-width: var(--content-min-width);
+  flex: 1 1 10rem;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
@@ -284,6 +296,6 @@ const handlePay = (item) => {
 }
 
 .pay-btn {
-  white-space: nowrap;
+  white-space: normal;
 }
 </style>

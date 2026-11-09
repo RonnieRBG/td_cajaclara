@@ -130,12 +130,15 @@ const getOperationIcon = (tipo) => {
 <style scoped>
 .recent-operations-card {
   display: flex;
+  min-width: var(--content-min-width);
   flex-direction: column;
   gap: var(--space-5);
 }
 
 .card-header {
   display: flex;
+  min-width: var(--content-min-width);
+  flex-wrap: wrap;
   flex-direction: column;
   gap: var(--space-3);
   padding-bottom: var(--space-4);
@@ -152,6 +155,8 @@ const getOperationIcon = (tipo) => {
 
 .header-left {
   display: flex;
+  min-width: var(--content-min-width);
+  flex: 1 1 14rem;
   align-items: center;
   gap: var(--space-3);
 }
@@ -183,9 +188,10 @@ const getOperationIcon = (tipo) => {
 }
 
 .operations-table-wrap {
+  min-width: var(--content-min-width);
   overflow-x: auto;
-  margin: 0 calc(var(--space-6) * -1);
-  padding: 0 var(--space-6);
+  margin: 0 calc(var(--layout-card-gap) * -1);
+  padding: 0 var(--layout-card-gap);
 }
 
 .operations-table {

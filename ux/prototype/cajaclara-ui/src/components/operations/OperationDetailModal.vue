@@ -95,25 +95,27 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 </template>
 
 <style scoped>
-.detail-backdrop { position: fixed; inset: 0; z-index: 1110; display: grid; place-items: center; padding: 20px; background: rgba(15, 23, 42, .54); }
-.detail-dialog { width: min(560px, 100%); max-height: 90vh; overflow-y: auto; padding: 24px; border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); box-shadow: var(--shadow-modal); }
-.detail-header { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--color-border); }
+.detail-backdrop { position: fixed; inset: 0; z-index: 1110; display: grid; place-items: center; padding: var(--layout-control-gap); background: rgba(15, 23, 42, .54); }
+.detail-dialog { width: min(35rem, 100%); min-width: var(--content-min-width); max-height: 90vh; overflow-y: auto; padding: var(--layout-card-gap); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-surface); box-shadow: var(--shadow-modal); }
+.detail-header { display: flex; min-width: var(--content-min-width); justify-content: space-between; gap: var(--layout-control-gap); padding-bottom: var(--layout-control-gap); border-bottom: 1px solid var(--color-border); }
+.detail-header > div { min-width: var(--content-min-width); overflow-wrap: anywhere; }
 .detail-kicker { color: var(--color-brand-primary); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .detail-header h2 { margin-top: 4px; font-size: 1.15rem; }
-.detail-close { width: 44px; height: 44px; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: 1.6rem; line-height: 1; }
-.detail-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 20px 0; }
+.detail-close { width: var(--control-min-height); height: var(--control-min-height); flex: 0 0 var(--control-min-height); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: 1.6rem; line-height: 1; }
+.detail-facts { display: grid; min-width: var(--content-min-width); grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--layout-control-gap); padding: var(--layout-card-gap) 0; }
 .detail-facts div { min-width: 0; }
 .detail-facts dt { margin-bottom: 3px; color: var(--color-text-secondary); font-size: .75rem; }
 .detail-facts dd { color: var(--color-text); font-size: .88rem; font-weight: 700; overflow-wrap: anywhere; }
 .detail-products h3 { margin-bottom: 10px; font-size: .95rem; }
 .detail-products ul { list-style: none; border-top: 1px solid var(--color-border); }
-.detail-products li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--color-border-subtle); }
-.detail-products li div { display: flex; flex-direction: column; gap: 3px; }
+.detail-products li { display: flex; min-width: var(--content-min-width); justify-content: space-between; gap: var(--layout-control-gap); padding: var(--layout-control-gap) 0; border-bottom: 1px solid var(--color-border-subtle); }
+.detail-products li div { display: flex; min-width: var(--content-min-width); flex-direction: column; gap: var(--space-1); overflow-wrap: anywhere; }
+.detail-products li > strong { flex: 0 0 auto; }
 .detail-products li strong { font-size: .84rem; }
 .detail-products li span { color: var(--color-text-secondary); font-size: .77rem; }
-.detail-description { padding: 16px 0; color: var(--color-text-secondary); font-size: .88rem; }
-.detail-total { display: flex; justify-content: space-between; margin-top: 16px; padding: 16px; border-radius: var(--radius-md); background: var(--color-bg-subtle); }
+.detail-description { padding: var(--layout-control-gap) 0; color: var(--color-text-secondary); font-size: .88rem; overflow-wrap: anywhere; }
+.detail-total { display: flex; min-width: var(--content-min-width); justify-content: space-between; gap: var(--layout-control-gap); margin-top: var(--layout-control-gap); padding: var(--layout-control-gap); border-radius: var(--radius-md); background: var(--color-bg-subtle); }
 .detail-total span { color: var(--color-text-secondary); }
 .detail-total strong { color: var(--color-text); font-size: 1.1rem; }
-@media (max-width: 540px) { .detail-dialog { padding: 18px; } .detail-facts { grid-template-columns: 1fr; gap: 12px; } }
+@media (max-width: 540px) { .detail-dialog { padding: var(--layout-control-gap); } .detail-facts { grid-template-columns: 1fr; gap: var(--layout-control-gap); } }
 </style>

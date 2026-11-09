@@ -101,6 +101,7 @@ const navigateTo = (path) => {
   bottom: 0;
   left: 0;
   right: 0;
+  min-width: 0;
   background-color: var(--color-surface);
   border-top: 1px solid var(--color-border);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
@@ -110,7 +111,9 @@ const navigateTo = (path) => {
 
 .bottom-nav-container {
   display: flex;
-  height: 60px;
+  width: 100%;
+  min-width: 0;
+  height: var(--layout-bottom-nav-height);
   justify-content: space-around;
   align-items: center;
   max-width: 600px;
@@ -119,6 +122,7 @@ const navigateTo = (path) => {
 
 .bottom-nav-item {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -133,7 +137,7 @@ const navigateTo = (path) => {
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
-  padding: 4px 0;
+  padding: var(--space-1) 0;
   position: relative;
 }
 

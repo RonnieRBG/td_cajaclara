@@ -106,10 +106,12 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
 
 <style scoped>
 .app-header {
-  height: var(--header-height);
+  width: 100%;
+  min-width: 0;
+  height: var(--layout-header-height);
   background-color: var(--color-bg-surface);
   border-bottom: 1px solid var(--color-border);
-  padding: 0 24px;
+  padding: 0 var(--layout-gutter-desktop);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -121,12 +123,14 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
 
 .app-header__left {
   display: flex;
+  min-width: 0;
   align-items: center;
-  gap: 14px;
+  gap: var(--layout-control-gap);
 }
 
 .app-header__mobile-toggle {
   display: none;
+  flex: 0 0 auto;
   padding: 8px;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
@@ -139,8 +143,10 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
 
 .app-header__brand {
   display: flex;
+  min-width: 0;
   align-items: center;
-  gap: 10px;
+  flex: 0 1 auto;
+  gap: var(--space-2);
 }
 
 .app-header__logo-mark {
@@ -157,6 +163,7 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
 
 .app-header__brand-info {
   display: flex;
+  min-width: 0;
   flex-direction: column;
 }
 
@@ -185,6 +192,7 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
 
 .app-header__business {
   display: flex;
+  min-width: 0;
   flex-direction: column;
 }
 
@@ -200,16 +208,21 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text-main);
+  overflow-wrap: anywhere;
 }
 
 .app-header__right {
   display: flex;
+  min-width: 0;
   align-items: center;
-  gap: 14px;
+  flex: 0 1 auto;
+  gap: var(--layout-control-gap);
 }
 
 .app-header__period {
   display: flex;
+  min-width: 0;
+  flex: 0 1 auto;
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
@@ -232,6 +245,13 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
   color: var(--color-brand-primary);
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
+}
+
+.app-header__period-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-header__chevron {
@@ -241,6 +261,7 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
 
 .app-header__user {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 10px;
 }
@@ -258,6 +279,7 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
   justify-content: center;
   border: 2px solid #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex: 0 0 auto;
 }
 
 .app-header__user-meta {
@@ -287,7 +309,7 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
 
 @media (max-width: 768px) {
   .app-header {
-    padding: 0 16px;
+    padding: 0 var(--layout-gutter-mobile);
   }
   .app-header__divider,
   .app-header__business,

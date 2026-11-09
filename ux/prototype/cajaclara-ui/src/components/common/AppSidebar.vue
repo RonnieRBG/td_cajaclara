@@ -179,7 +179,8 @@ const navigateTo = (path) => {
   top: 0;
   bottom: 0;
   left: 0;
-  width: var(--sidebar-width);
+  width: var(--layout-sidebar-width);
+  box-sizing: border-box;
   background-color: var(--color-surface);
   border-right: 1px solid var(--color-border);
   display: flex;
@@ -189,7 +190,8 @@ const navigateTo = (path) => {
 }
 
 .sidebar-brand {
-  height: var(--header-height);
+  min-height: var(--layout-header-height);
+  height: var(--layout-header-height);
   padding: 0 var(--space-5);
   display: flex;
   align-items: center;

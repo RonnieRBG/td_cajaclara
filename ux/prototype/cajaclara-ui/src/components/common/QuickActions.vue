@@ -90,7 +90,8 @@
 
 <style scoped>
 .quick-actions-bar {
-  padding: var(--space-5) var(--space-6);
+  min-width: var(--content-min-width);
+  padding: var(--space-5) var(--layout-card-gap);
 }
 
 .quick-actions-bar__header {
@@ -106,12 +107,14 @@
 
 .quick-actions-bar__grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4);
+  min-width: var(--content-min-width);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--layout-control-gap);
 }
 
 .quick-action-btn {
   display: flex;
+  min-width: var(--content-min-width);
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
@@ -192,13 +195,13 @@
 /* Responsive */
 @media (max-width: 1024px) {
   .quick-actions-bar__grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
   .quick-actions-bar__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
