@@ -127,9 +127,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-cl'
 
-TIME_ZONE = 'UTC'
+# Hora de Chile: así los cortes de día, semana y mes calzan con la hora local del negocio.
+TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 

@@ -5,7 +5,7 @@ Orden: TipoCompra → Cliente → Producto → Factura → DetalleVenta → Cuen
 """
 
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -45,6 +45,14 @@ class Command(BaseCommand):
             action="store_true",
             help="Borra todos los datos antes de importar (fresh import).",
         )
+        parser.add_argument(
+            "--fechas-originales",
+            action="store_true",
+            help=(
+                "Importa las fechas tal como vienen en los CSV (2010-2022). Por defecto se "
+                "desplazan para que la última venta quede en la semana actual."
+            ),
+        )
 
     def handle(self, *args, **options):
         if not DATA_DIR.exists():
@@ -76,10 +84,13 @@ class Command(BaseCommand):
         self.stdout.write("IMPORTACIÓN DE DATOS DEL SUPERMERCADO")
         self.stdout.write("=" * 60)
 
+        self.desfase = self._calcular_desfase(archivos, options["fechas_originales"])
+        precios = self._precios_por_producto(archivos["venta"], archivos["detalle_venta"])
+
         with transaction.atomic():
             self._importar_tipos_compra()
             self._importar_clientes(archivos["cliente"])
-            self._importar_productos(archivos["producto"])
+            self._importar_productos(archivos["producto"], precios)
             self._importar_ventas(archivos["venta"])
             self._importar_detalles(archivos["detalle_venta"])
             self._importar_cuentas(archivos["cuenta_por_cobrar"])
@@ -92,6 +103,70 @@ class Command(BaseCommand):
     def _leer_csv(self, ruta):
         with open(ruta, "r", encoding="utf-8-sig") as f:
             return list(csv.DictReader(f))
+
+    # ------------------------------------------------------------------
+    # Fechas
+    # ------------------------------------------------------------------
+    def _calcular_desfase(self, archivos, fechas_originales):
+        """Los CSV terminan en noviembre de 2022. Para que el dashboard y las
+        cuentas por cobrar tengan sentido "hoy", se suma a todas las fechas un
+        mismo desfase: la última venta queda en los últimos 7 días.
+        El desfase es un múltiplo de 7 días, así cada venta conserva su día de la semana
+        y las distancias entre fechas (plazos de cobro, etc.) no cambian."""
+        if fechas_originales:
+            self.stdout.write("\nFechas: se mantienen las originales de los CSV.")
+            return timedelta(0)
+
+        fechas = [
+            fila["fecha"] for fila in self._leer_csv(archivos["venta"]) if fila.get("fecha", "").strip()
+        ]
+        fechas += [
+            fila["Fecha"] for fila in self._leer_csv(archivos["gastos_insumo"]) if fila.get("Fecha", "").strip()
+        ]
+        if not fechas:
+            return timedelta(0)
+
+        ultima = datetime.strptime(max(fechas).strip(), "%Y-%m-%d").date()
+        ayer = timezone.localdate() - timedelta(days=1)
+        semanas = (ayer - ultima).days // 7
+        if semanas <= 0:
+            return timedelta(0)
+
+        desfase = timedelta(weeks=semanas)
+        self.stdout.write(
+            f"\nFechas: se desplazan {desfase.days:,} días "
+            f"(última venta {ultima:%d/%m/%Y} → {ultima + desfase:%d/%m/%Y}). "
+            "Usa --fechas-originales para no desplazarlas."
+        )
+        return desfase
+
+    def _fecha(self, texto):
+        """Convierte 'AAAA-MM-DD' a date aplicando el desfase. Vacío → None."""
+        texto = (texto or "").strip()
+        if not texto:
+            return None
+        return datetime.strptime(texto, "%Y-%m-%d").date() + self.desfase
+
+    # ------------------------------------------------------------------
+    # Precios de catálogo
+    # ------------------------------------------------------------------
+    def _precios_por_producto(self, ruta_ventas, ruta_detalles):
+        """producto.csv no trae precio. Se toma el precio y el costo de la venta
+        más reciente de cada producto, para que el catálogo no quede en $0."""
+        fecha_factura = {
+            fila["id_factura"]: fila.get("fecha", "") for fila in self._leer_csv(ruta_ventas)
+        }
+        precios = {}
+        for fila in self._leer_csv(ruta_detalles):
+            producto = fila["id_producto"]
+            fecha = fecha_factura.get(fila["id_factura"], "")
+            if producto not in precios or fecha >= precios[producto][0]:
+                precios[producto] = (
+                    fecha,
+                    Decimal(fila.get("precio_venta") or "0"),
+                    Decimal(fila.get("costo_venta") or "0"),
+                )
+        return {producto: (precio, costo) for producto, (_, precio, costo) in precios.items()}
 
     def _importar_tipos_compra(self):
         self.stdout.write("\n[1/7] Tipos de compra...")
@@ -125,21 +200,26 @@ class Command(BaseCommand):
             Cliente.objects.bulk_create(nuevos, batch_size=BATCH_SIZE)
         self.stdout.write(self.style.SUCCESS(f"  → {len(nuevos)} clientes creados ({len(filas)} en CSV)."))
 
-    def _importar_productos(self, ruta):
+    def _importar_productos(self, ruta, precios):
         self.stdout.write("\n[3/7] Productos...")
         filas = self._leer_csv(ruta)
 
         existentes = set(Producto.objects.values_list("no_parte", flat=True))
         nuevos = []
+        sin_precio = 0
         for fila in filas:
             pid = fila["id_producto"]
             if pid not in existentes:
+                precio, costo = precios.get(pid, (Decimal("0"), Decimal("0")))
+                sin_precio += pid not in precios
                 nuevos.append(
                     Producto(
                         no_parte=pid,
                         producto=fila.get("producto", ""),
                         categoria=fila.get("categoria", "Otros / sin clasificar"),
                         unidad_negocio=fila.get("unidad_negocio", "Supermercado"),
+                        precio_venta=precio,
+                        costo_venta=costo,
                     )
                 )
                 existentes.add(pid)
@@ -147,6 +227,8 @@ class Command(BaseCommand):
         if nuevos:
             Producto.objects.bulk_create(nuevos, batch_size=BATCH_SIZE)
         self.stdout.write(self.style.SUCCESS(f"  → {len(nuevos)} productos creados ({len(filas)} en CSV)."))
+        if sin_precio:
+            self.stdout.write(self.style.WARNING(f"  → {sin_precio} productos sin ventas: quedan con precio 0."))
 
     def _importar_ventas(self, ruta):
         self.stdout.write("\n[4/7] Facturas (ventas)...")
@@ -162,15 +244,14 @@ class Command(BaseCommand):
             tipo_texto = fila.get("tipo_compra", "")
             tipo_key = TIPO_COMPRA_MAP.get(tipo_texto)
 
-            fecha_str = fila.get("fecha", "")
-            fecha = datetime.strptime(fecha_str, "%Y-%m-%d") if fecha_str else None
+            dia = self._fecha(fila.get("fecha"))
+            fecha = datetime.combine(dia, datetime.min.time()) if dia else None
             if fecha and settings.USE_TZ:
                 fecha = timezone.make_aware(fecha)
 
             por_cobrar = fila.get("por_cobrar", "False").strip().lower() == "true"
 
-            fecha_cobro_str = fila.get("fecha_cobro", "").strip()
-            fecha_cobro = datetime.strptime(fecha_cobro_str, "%Y-%m-%d").date() if fecha_cobro_str else None
+            fecha_cobro = self._fecha(fila.get("fecha_cobro"))
 
             nuevas.append(
                 Factura(
@@ -243,8 +324,7 @@ class Command(BaseCommand):
 
         nuevas = []
         for fila in filas:
-            fecha_str = fila.get("fecha_vencimiento", "").strip()
-            fecha_venc = datetime.strptime(fecha_str, "%Y-%m-%d").date() if fecha_str else None
+            fecha_venc = self._fecha(fila.get("fecha_vencimiento"))
             cid = int(fila["id_cuenta"]) if fila.get("id_cuenta") else None
 
             nuevas.append(
@@ -267,8 +347,7 @@ class Command(BaseCommand):
 
         nuevos = []
         for fila in filas:
-            fecha_str = fila.get("Fecha", "").strip()
-            fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date() if fecha_str else None
+            fecha = self._fecha(fila.get("Fecha"))
             gid = int(fila["id_gasto"]) if fila.get("id_gasto") else None
 
             nuevos.append(

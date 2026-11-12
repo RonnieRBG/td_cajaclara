@@ -4,8 +4,18 @@ from decimal import Decimal
 
 import pandas as pd
 from django.conf import settings
-from django.db.models import Count, F, Q, Sum
-from django.db.models.functions import TruncDay, TruncMonth, TruncQuarter, TruncYear
+from django.db.models import (
+    Count,
+    DecimalField,
+    F,
+    IntegerField,
+    OuterRef,
+    Q,
+    Subquery,
+    Sum,
+    Value,
+)
+from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncQuarter, TruncYear
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import generics
@@ -424,9 +434,30 @@ class ClienteListView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
+        # Cada total se calcula en su propia subconsulta. Si se hacen dos JOIN
+        # (facturas y cuentas) en la misma consulta, las filas se multiplican y
+        # la deuda sale inflada (deuda real × número de facturas del cliente).
+        facturas_del_cliente = (
+            Factura.objects.filter(cliente=OuterRef("pk"))
+            .order_by()
+            .values("cliente")
+            .annotate(total=Count("pk"))
+            .values("total")
+        )
+        deuda_del_cliente = (
+            CuentaPorCobrar.objects.filter(cliente=OuterRef("pk"))
+            .order_by()
+            .values("cliente")
+            .annotate(total=Sum("monto"))
+            .values("total")
+        )
         qs = Cliente.objects.annotate(
-            total_facturas=Count("facturas", distinct=True),
-            total_deuda=Sum("cuentas_por_cobrar__monto"),
+            total_facturas=Coalesce(Subquery(facturas_del_cliente, output_field=IntegerField()), 0),
+            total_deuda=Coalesce(
+                Subquery(deuda_del_cliente, output_field=DecimalField(max_digits=14, decimal_places=2)),
+                Value(Decimal("0")),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
         ).order_by("nombre")
 
         search = self.request.query_params.get("search")

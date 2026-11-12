@@ -70,6 +70,8 @@ python manage.py importar_csv       # 5. Cargar los datos de ejemplo
 Luego enciende el servidor con `python manage.py runserver` y abre **http://127.0.0.1:8000/api/** en el navegador. Verás el catálogo de consultas disponibles.
 
 > La carga de datos puede tardar un par de minutos, porque son más de 240 mil registros.
+>
+> Los CSV terminan en noviembre de 2022. Al importarlos, las fechas se desplazan para que la última venta quede en la semana actual y el dashboard muestre datos "de hoy". Para conservar las fechas originales usa `python manage.py importar_csv --fechas-originales`.
 
 ---
 
@@ -96,6 +98,7 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 - [ ] **Cargar los datos** en esa base con el comando de importación y **revisar que los totales coincidan** con los del notebook de la Etapa 3 (`data/Etapa_3_Elaboración_de_Tablas.ipynb`).
 - [ ] **Definir respaldos**: cada cuánto se respalda la base y quién lo hace.
 - [ ] **Validar la calidad de los datos**: productos sin categoría (aparecen como _"Otros / sin clasificar"_), clientes sin contacto y fechas fuera de rango.
+- [ ] **Revisar la caída de ventas en 2021-2022**: de ~16 mil ventas en 2019 se pasa a 241 en 2022 (en noviembre de 2022 hay una sola), mientras los gastos se mantienen en ~1.500 al año. Por eso el mes actual del dashboard muestra muy pocas ventas y los gastos superan a las ventas.
 
 ### 🎨 Equipo de Frontend / UX
 
@@ -110,8 +113,8 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 
 - [ ] **Login y usuarios**: hoy cualquiera puede consultar la información. Se debe agregar inicio de sesión (por ejemplo, con tokens o JWT).
 - [ ] **Seguridad antes de publicar**: mover la clave secreta a un archivo `.env` (y agregar ese archivo al `.gitignore`), desactivar el modo de depuración y limitar quién puede conectarse (hosts y CORS).
-- [ ] **Hora de Chile**: el sistema usa hoy la hora UTC. Hay que cambiarla a `America/Santiago` para que los cortes de día y de mes calcen.
-- [ ] **Completar dependencias**: la exportación a Excel usa `pandas` y `openpyxl`, que no están en `requirements.txt`. Sin ellas, la instalación desde cero falla.
+- [x] **Hora de Chile**: el sistema ahora usa `America/Santiago`, así los cortes de día y de mes calzan.
+- [x] **Completar dependencias**: `pandas` y `openpyxl` ya están en `requirements.txt`.
 - [ ] **Escribir pruebas automáticas** para los cálculos clave (ingresos, costos, margen y deudas vencidas).
 - [ ] **Permitir registrar datos nuevos**: hoy la API solo permite _leer_. Falta poder crear ventas, gastos y marcar deudas como pagadas.
 

@@ -101,6 +101,14 @@ Para vaciar las tablas y volver a importar desde cero:
 python manage.py importar_csv --limpiar
 ```
 
+Por defecto las fechas se desplazan un número exacto de semanas para que la última venta quede en la semana actual (cada venta conserva su día de la semana y los plazos de cobro no cambian). Para importar las fechas originales de los CSV (2010-2022):
+
+```bash
+python manage.py importar_csv --limpiar --fechas-originales
+```
+
+> Si ya tenías la base cargada antes del cambio a la hora de Chile, vuelve a importar con `--limpiar`.
+
 ### ✅ Checklist del equipo de Base de Datos
 
 - [ ] Servidor de BD creado y accesible desde la máquina donde corre Django.
