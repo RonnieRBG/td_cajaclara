@@ -430,7 +430,7 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 | Parámetro                                  | Obligatorio | Valores                                                         |
 | :----------------------------------------- | :---------: | :-------------------------------------------------------------- |
-| `agrupacion`                               |     No      | `diaria`, `mensual` (por defecto), `trimestral`, `anual` ⚠️ P01 |
+| `agrupacion`                               |     No      | `diaria`, `semanal` (lunes a domingo), `semanas_mes` (1-7, 8-14, 15-21, 22-fin de mes, como el gráfico del diseño), `mensual` (por defecto), `trimestral`, `anual` |
 | `fecha_inicio`, `fecha_fin`, `tipo_compra` |     No      | Igual que el endpoint 2                                         |
 
 ```json
@@ -489,7 +489,9 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 }
 ```
 
-> Cada período trae su propio `flujo_caja` (entradas, salidas y saldo), listo para el gráfico de ventas vs. gastos.
+> Cada período trae su propio `flujo_caja` (entradas, salidas y saldo), listo para el gráfico de ventas vs. gastos, y un `rango` corto para la etiqueta (ej. `"01 - 07 Oct"`).
+>
+> **Gráfico semanal del dashboard:** `?agrupacion=semanas_mes&fecha_inicio=01/10/2026&fecha_fin=31/10/2026` devuelve 4 períodos: `Sem 1 Oct 2026` (`01 - 07 Oct`), `Sem 2`, `Sem 3` y `Sem 4` (`22 - 31 Oct`).
 
 
 ---
@@ -536,16 +538,55 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 ### 6. Productos
 
-`GET /api/finanzas/productos/` ⚠️ P03
+`GET /api/finanzas/productos/`
 
-| Parámetro           | Valores                              |
-| :------------------ | :----------------------------------- |
-| `search`            | Busca por nombre o código `no_parte` |
-| `categoria`         | Por ejemplo, `Abarrotes`, `Lácteos`  |
-| `unidad_negocio`    | Por ejemplo, `Supermercado`          |
-| `page`, `page_size` | Paginación                           |
+| Parámetro                   | Valores                                                                                     |
+| :-------------------------- | :------------------------------------------------------------------------------------------ |
+| `search`                    | Busca por nombre o código `no_parte`                                                        |
+| `categoria`                 | Por ejemplo, `Abarrotes`, `Lácteos`                                                         |
+| `unidad_negocio`            | Por ejemplo, `Supermercado`                                                                 |
+| `fecha_inicio`, `fecha_fin` | Período para calcular `total_vendido` y `total_ingresos` (sin fechas = todo el historial)  |
+| `tipo_compra`               | `FISICA` u `ONLINE` (para los mismos totales)                                               |
+| `ordering`                  | `producto` (por defecto), `total_vendido`, `total_ingresos`, `precio_venta`, `no_parte`. Con `-` adelante, de mayor a menor. |
+| `page`, `page_size`         | Paginación                                                                                  |
 
-> 🟦 **Falta documentar la respuesta de ejemplo.** El frontend espera al menos `no_parte`, `producto`, `total_vendido` y `precio_venta`.
+**Productos más vendidos del mes:** `?ordering=-total_vendido&fecha_inicio=01/10/2026&fecha_fin=31/10/2026&page_size=4`
+
+```json
+{
+  "count": 7488,
+  "next": "http://localhost:8000/api/finanzas/productos/?fecha_fin=31%2F10%2F2026&fecha_inicio=01%2F01%2F2026&ordering=-total_vendido&page=2&page_size=2",
+  "previous": null,
+  "results": [
+    {
+      "no_parte": "P860421",
+      "producto": "Sopa Ajinomen instantánea fideos pollo verd.",
+      "categoria": "Abarrotes",
+      "unidad_negocio": "Supermercado",
+      "precio_venta": "274.00",
+      "costo_venta": "137.00",
+      "total_vendido": 199,
+      "total_ingresos": "54526.00"
+    },
+    {
+      "no_parte": "P745145",
+      "producto": "Mezcla te Suntea polvo durazno",
+      "categoria": "Bebidas sin alcohol",
+      "unidad_negocio": "Supermercado",
+      "precio_venta": "262.00",
+      "costo_venta": "131.00",
+      "total_vendido": 50,
+      "total_ingresos": "13100.00"
+    }
+  ]
+}
+```
+
+| Campo            | Significado                                                       |
+| :--------------- | :---------------------------------------------------------------- |
+| `total_vendido`  | Unidades vendidas en el período (sin ventas anuladas).           |
+| `total_ingresos` | Monto vendido en el período (cantidad × precio de cada venta).   |
+| `precio_venta`   | Precio de catálogo actual (el que se propone al vender).         |
 
 ---
 
@@ -1125,9 +1166,9 @@ export const apiService = {
     return request(`${API_BASE}/ventas/`, { page_size: 10, ...filtros });
   },
 
-  // Endpoint 6 — Productos
+  // Endpoint 6 — Productos más vendidos (filtros: fecha_inicio, fecha_fin, tipo_compra)
   getProductos(filtros = {}) {
-    return request(`${API_BASE}/productos/`, { page_size: 4, ...filtros });
+    return request(`${API_BASE}/productos/`, { page_size: 4, ordering: "-total_vendido", ...filtros });
   },
 
   // Endpoint 11 — Registrar datos
@@ -1372,10 +1413,10 @@ Esta tabla es **el contrato entre ambos equipos** 🟨. Cada fila dice qué camp
 | OperationsSummary · `totalGastos`        | `resumen.total_registros_gasto`                                                            | `gastos`                           | ✅ Documentado         |
 | OperationsSummary · `unidadesVendidas`   | `total_unidades`                                                                           | `resumen-mensual`                  | ✅ Documentado         |
 | OperationsSummary · `cuentasPendientes`  | `resumen.total_cuentas`                                                                    | `cuentas-por-cobrar`               | ✅ Documentado         |
-| CashChart · `semana`, `ventas`, `gastos` | `periodos[].periodo`, `.flujo_caja.entradas.total`, `.flujo_caja.salidas.total`            | `resumen-agrupado`                 | ✅ ⚠️ P01              |
+| CashChart · `semana`, `ventas`, `gastos` | `periodos[].rango`, `.flujo_caja.entradas.total`, `.flujo_caja.salidas.total` | `resumen-agrupado?agrupacion=semanas_mes` | ✅ Documentado |
 | PriorityCollections                      | `id`, `cliente`, `cliente_nombre`, `factura`, `monto`, `fecha_vencimiento`, `vencida`      | `cuentas-por-cobrar?vencidas=true` | ✅ Documentado         |
 | RecentOperations                         | `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                           | ✅ Documentado         |
-| TopProducts                              | `no_parte`, `producto`, `total_vendido`, `precio_venta`                                    | `productos`                        | ❓ Sin confirmar · P03 |
+| TopProducts · `nombre`, `unidadesVendidas`, `totalVentas` | `producto`, `total_vendido`, `total_ingresos` | `productos?ordering=-total_vendido&page_size=4` + fechas del mes | ✅ Documentado |
 
 ---
 
@@ -1432,11 +1473,11 @@ Problemas detectados al revisar este documento. No bloquean la primera integraci
 
 | ID  | Prioridad | Problema                                                                                                                                                                                                                                        | Dónde                           | Responsable | Propuesta                                                                                                              |
 | :-- | :-------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------ | :---------- | :--------------------------------------------------------------------------------------------------------------------- |
-| P01 |    🟠     | La versión anterior de la tabla de mapeo pedía `agrupacion=semanal`, pero el endpoint solo acepta `diaria`, `mensual`, `trimestral` y `anual`. El código usa `mensual`, mientras que el componente y su prop se llaman `weeklyFlow` / `semana`. | `resumen-agrupado`, `CashChart` | 🟨 Ambos    | Decidir: (a) el backend agrega `semanal`, o (b) el frontend renombra `weeklyFlow` → `cashFlow` y `semana` → `periodo`. |
+| P01 | ✅ | Resuelto: `resumen-agrupado` acepta `agrupacion=semanal` (lunes a domingo) y `semanas_mes` (las 4 semanas del mes que usa el gráfico del diseño), con un `rango` corto para la etiqueta. | `resumen-agrupado`, `CashChart` | 🟦 Backend | — |
 
 | P02 | ✅ | Resuelto: `/ventas/` ya tiene respuesta de ejemplo documentada (Parte 3, endpoint 8) e incluye `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago` y `total_venta`. | `DetalleVentaSerializer`, `RecentOperations` | 🟦 Backend | — |
 
-| P03 | 🔴 | El endpoint `/productos/` no tiene respuesta de ejemplo. El frontend usa `no_parte`, `producto`, `total_vendido` y `precio_venta`. `total_vendido` probablemente requiere una agregación (`Sum`) que podría no existir. Además, "TopProducts" implica productos más vendidos, pero no se pide ningún orden. | `ProductoSerializer`, `TopProducts` | 🟦 Backend | Agregar `total_vendido` con `annotate`, permitir `?ordering=-total_vendido` y documentar la respuesta. |
+| P03 | ✅ | Resuelto: `/productos/` calcula `total_vendido` y `total_ingresos` (por período y canal) y permite `?ordering=-total_vendido`. Respuesta documentada en el endpoint 6. | `ProductoSerializer`, `TopProducts` | 🟦 Backend | — |
 
 | P04 | ✅ | Resuelto: `resumen-mensual` entrega `total_unidades` (suma de cantidades vendidas). El frontend debe usarlo en `unidadesVendidas`. | `resumen-mensual`, `gastos` | 🟨 Ambos | — |
 

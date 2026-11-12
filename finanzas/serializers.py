@@ -38,7 +38,9 @@ class ClienteSerializer(serializers.ModelSerializer):
 
 
 class ProductoSerializer(serializers.ModelSerializer):
+    # Unidades vendidas y monto vendido (en el período pedido, sin ventas anuladas)
     total_vendido = serializers.IntegerField(read_only=True, default=0)
+    total_ingresos = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True, default=0)
 
     class Meta:
         model = Producto
@@ -50,6 +52,7 @@ class ProductoSerializer(serializers.ModelSerializer):
             "precio_venta",
             "costo_venta",
             "total_vendido",
+            "total_ingresos",
         ]
 
 

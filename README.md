@@ -47,7 +47,8 @@ Piensa en Caja Clara como una cadena de tres piezas:
 
 - 📊 **Resumen financiero**: ventas, costos, utilidad y margen, y el **flujo de caja** (dinero que entró por ventas al contado y cobros, menos compras y gastos), filtrando por fechas y por canal (físico u online).
 - ✍️ **Registrar datos**: ventas al contado o a crédito, pagos de deudas (y deshacerlos), anulación de ventas, compras, otros gastos y clientes.
-- 📈 **Evolución en el tiempo**: los mismos números agrupados por día, mes, trimestre o año, ideal para gráficos.
+- 📈 **Evolución en el tiempo**: los mismos números agrupados por día, semana, mes, trimestre o año, ideal para gráficos.
+- 🏆 **Productos más vendidos**: unidades e ingresos por producto en cualquier período.
 - 🧾 **Listados con búsqueda**: clientes, productos, facturas, ventas, gastos y deudas (incluye filtro de deudas vencidas).
 - 📥 **Exportar a Excel**: descarga del resumen en una planilla.
 - 🎛️ **Opciones para filtros**: categorías, canales y el rango de fechas disponible, para armar los menús de la pantalla.
@@ -94,7 +95,7 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 | Usuarios, login (JWT) y configuración segura con `.env`          | ✅ Listo                             |
 | Registrar ventas, pagos y gastos desde la API                    | ✅ Listo                             |
 | Flujo de caja (entradas, salidas y saldo)                        | ✅ Listo                             |
-| Pruebas automáticas                                              | 🟡 Login, registros y flujo de caja (25 pruebas) |
+| Pruebas automáticas                                              | 🟡 Login, registros, flujo de caja, semanas y productos (33 pruebas) |
 
 ---
 
@@ -112,7 +113,7 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 
 - [ ] **Reemplazar los datos de prueba** (`dashboardMock.js`) por consultas reales al backend. La Parte 3 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md) trae el paso a paso, y la Parte 5 indica qué campo usar en cada tarjeta (ej.: el saldo es `flujo_caja.saldo`).
 - [ ] **Conectar los formularios** de nueva venta, gasto y pago con `apiService.registrarVenta()`, `registrarGasto()` y `registrarPago()` (Parte 4.3).
-- [ ] **Ajustar el gráfico semanal**: el backend agrupa por día, mes, trimestre o año, **no por semana**. Hay que decidir si el gráfico pasa a mensual o si se pide la agrupación semanal al backend.
+- [ ] **Gráfico semanal**: el backend ya entrega las 4 semanas del mes como en el diseño (`resumen-agrupado?agrupacion=semanas_mes`) con entradas, salidas y una etiqueta corta (`"01 - 07 Oct"`). Falta conectarlo.
 - [ ] **Mostrar los montos en pesos chilenos** sin decimales (ej.: `$1.250.000`). Algunos montos llegan como texto y hay que convertirlos a número.
 - [ ] **Diseñar los estados de carga y error**: qué ve el usuario mientras cargan los datos o si el servidor no responde.
 - [ ] **Pantalla de login**: la API ya exige iniciar sesión (JWT). La guía trae un `api.js` listo que guarda el token, lo renueva solo y avisa cuando la sesión expira (Parte 4.3 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md)). No hace falta pantalla de registro: los usuarios los crea un administrador.
@@ -125,8 +126,9 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 - [ ] **Al publicar**: definir `DJANGO_DEBUG=False` y una `DJANGO_SECRET_KEY` propia, servir con HTTPS (y activar `SECURE_SSL_REDIRECT` y HSTS según el servidor) y configurar un servicio de correo real si se llega a enviar email.
 - [x] **Hora de Chile**: el sistema ahora usa `America/Santiago`, así los cortes de día y de mes calzan.
 - [x] **Completar dependencias**: `pandas` y `openpyxl` ya están en `requirements.txt`.
-- [ ] **Completar las pruebas automáticas**: ya hay 25 (login, registro de ventas, pagos, gastos y flujo de caja). Faltan las de los listados, filtros y la exportación a Excel. Se ejecutan con `python manage.py test`.
+- [ ] **Completar las pruebas automáticas**: ya hay 33 (login, registro de ventas, pagos, gastos, flujo de caja, agrupación semanal y productos más vendidos). Faltan las de los listados, filtros y la exportación a Excel. Se ejecutan con `python manage.py test`.
 - [x] **Registrar datos nuevos**: ventas (contado y crédito), pagos, anulaciones, gastos y clientes con `POST` (ver el endpoint 11 en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md)).
+- [x] **Lo que pide el dashboard**: agrupación semanal (`semanal` y `semanas_mes`) y productos más vendidos (`/productos/?ordering=-total_vendido`, con unidades e ingresos por período).
 - [x] **Flujo de caja como en el diseño**: `flujo_caja` en los resúmenes = ventas al contado + cobros − compras − otros gastos. El antiguo `flujo_caja_neto` se mantiene, pero es la utilidad bruta.
 
 ### 🤝 Decisiones que tomamos entre todos

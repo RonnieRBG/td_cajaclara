@@ -244,3 +244,90 @@ class FlujoDeCajaTests(BaseAPITest):
         self.assertEqual([d["entradas"]["total"] for d in dias], [2450.0, 0.0, 0.0, 1000.0])
         self.assertEqual([d["salidas"]["total"] for d in dias], [700.0, 0.0, 0.0, 300.0])
         self.assertEqual(r["totales"]["flujo_caja"]["saldo"], 2450.0)
+
+
+class AgrupacionSemanalTests(BaseAPITest):
+    """Ventas en días conocidos de octubre de 2026 (jueves 1 = primer día del mes)."""
+
+    def setUp(self):
+        super().setUp()
+        from datetime import date
+        self.dias = [date(2026, 10, d) for d in (1, 7, 8, 22, 31)]
+        for dia in self.dias:
+            self.vender(fecha=self.momento(dia), items=[{"producto": "P1", "cantidad": 1}])  # 1.000 c/u
+        GastoInsumo.objects.create(tipo="OTRO", categoria="ARRIENDO", fecha=date(2026, 10, 5), monto=300)
+
+    def agrupado(self, agrupacion):
+        r = self.client.get(
+            f"/api/finanzas/resumen-agrupado/?fecha_inicio=2026-10-01&fecha_fin=2026-10-31&agrupacion={agrupacion}"
+        )
+        self.assertEqual(r.status_code, 200, r.content)
+        return r.json()
+
+    def test_semanas_del_mes_como_el_diseno(self):
+        r = self.agrupado("semanas_mes")
+        self.assertEqual([p["rango"] for p in r["periodos"]], ["01 - 07 Oct", "08 - 14 Oct", "15 - 21 Oct", "22 - 31 Oct"])
+        self.assertEqual([p["periodo"] for p in r["periodos"]][0], "Sem 1 Oct 2026")
+        self.assertEqual([p["total_transacciones"] for p in r["periodos"]], [2, 1, 0, 2])
+        self.assertEqual([p["flujo_caja"]["entradas"]["total"] for p in r["periodos"]], [2000.0, 1000.0, 0.0, 2000.0])
+        self.assertEqual([p["flujo_caja"]["salidas"]["total"] for p in r["periodos"]], [300.0, 0.0, 0.0, 0.0])
+
+    def test_semanal_de_lunes_a_domingo(self):
+        r = self.agrupado("semanal")
+        # 1 oct 2026 es jueves: la primera semana va del 1 al 4 (domingo)
+        self.assertEqual(r["periodos"][0]["fecha_inicio"], "01/10/2026")
+        self.assertEqual(r["periodos"][0]["fecha_fin"], "04/10/2026")
+        self.assertEqual(r["periodos"][1]["fecha_inicio"], "05/10/2026")  # lunes
+        self.assertEqual(r["periodos"][0]["periodo"], "Sem 40 2026")
+        self.assertEqual(sum(p["total_transacciones"] for p in r["periodos"]), 5)
+
+    def test_las_semanas_suman_lo_mismo_que_el_mes(self):
+        mes = self.agrupado("mensual")["totales"]
+        for agrupacion in ("semanal", "semanas_mes", "diaria"):
+            with self.subTest(agrupacion):
+                r = self.agrupado(agrupacion)
+                self.assertEqual(sum(p["total_ingresos"] for p in r["periodos"]), mes["total_ingresos"])
+                self.assertEqual(sum(p["flujo_caja"]["saldo"] for p in r["periodos"]), mes["flujo_caja"]["saldo"])
+
+    def test_agrupacion_invalida(self):
+        r = self.client.get("/api/finanzas/resumen-agrupado/?fecha_inicio=2026-10-01&agrupacion=quincenal")
+        self.assertEqual(r.status_code, 400)
+
+
+class ProductosMasVendidosTests(BaseAPITest):
+    def setUp(self):
+        super().setUp()
+        self.d = self.hoy - timedelta(days=5)
+        self.vender(fecha=self.momento(self.d), items=[{"producto": "P2", "cantidad": 5}])  # 5 × 500
+        self.vender(fecha=self.momento(self.d), tipo_compra="ONLINE", items=[{"producto": "P1", "cantidad": 3}])  # 3 × 1000
+        antigua = self.vender(fecha=self.momento(self.d - timedelta(days=60)), items=[{"producto": "P1", "cantidad": 4}])
+        anulada = self.vender(fecha=self.momento(self.d), items=[{"producto": "P1", "cantidad": 100}])
+        self.client.post(f"/api/finanzas/facturas/{anulada.json()['factura']}/anular/")
+        self.antigua = antigua
+
+    def productos(self, extra=""):
+        r = self.client.get(f"/api/finanzas/productos/?{extra}")
+        self.assertEqual(r.status_code, 200, r.content)
+        return {p["no_parte"]: p for p in r.json()["results"]}, [p["no_parte"] for p in r.json()["results"]]
+
+    def test_totales_de_todo_el_historial(self):
+        datos, _ = self.productos()
+        self.assertEqual(datos["P1"]["total_vendido"], 7)  # 3 + 4; la anulada no cuenta
+        self.assertEqual(Decimal(datos["P1"]["total_ingresos"]), Decimal("7000"))
+        self.assertEqual(datos["P2"]["total_vendido"], 5)
+
+    def test_orden_por_mas_vendidos(self):
+        _, orden = self.productos("ordering=-total_vendido")
+        self.assertEqual(orden, ["P1", "P2"])
+        _, orden = self.productos("ordering=-total_vendido&fecha_inicio=" + str(self.d))
+        self.assertEqual(orden, ["P2", "P1"])  # en el período: P2 = 5, P1 = 3
+
+    def test_filtro_por_canal_y_orden_por_ingresos(self):
+        datos, orden = self.productos(f"ordering=-total_ingresos&tipo_compra=ONLINE&fecha_inicio={self.d}")
+        self.assertEqual(orden[0], "P1")
+        self.assertEqual(datos["P1"]["total_vendido"], 3)
+        self.assertEqual(datos["P2"]["total_vendido"], 0)
+
+    def test_parametros_invalidos(self):
+        self.assertEqual(self.client.get("/api/finanzas/productos/?ordering=-ventas").status_code, 400)
+        self.assertEqual(self.client.get("/api/finanzas/productos/?fecha_inicio=ayer").status_code, 400)

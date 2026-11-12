@@ -15,7 +15,7 @@ from django.db.models import (
     Sum,
     Value,
 )
-from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncQuarter, TruncYear
+from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncQuarter, TruncWeek, TruncYear
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import generics
@@ -59,8 +59,12 @@ CATEGORIAS_GASTO_VALIDAS = [codigo for codigo, _ in GastoInsumo.CATEGORIA_CHOICE
 VALORES_VERDADEROS = ("true", "1", "si", "sí")
 DOS_DECIMALES = Decimal("0.01")
 
+# Función de la base de datos con la que se agrupa cada opción. "semanas_mes" agrupa por
+# día y luego se juntan los días en las semanas del mes (1-7, 8-14, 15-21 y 22 a fin de mes).
 AGRUPACIONES = {
     "diaria": TruncDay,
+    "semanal": TruncWeek,
+    "semanas_mes": TruncDay,
     "mensual": TruncMonth,
     "trimestral": TruncQuarter,
     "anual": TruncYear,
@@ -181,6 +185,10 @@ def _sumar_meses(dia, meses):
 def _inicio_periodo(dia, agrupacion):
     if agrupacion == "diaria":
         return dia
+    if agrupacion == "semanal":  # semana de lunes a domingo
+        return dia - timedelta(days=dia.weekday())
+    if agrupacion == "semanas_mes":  # semanas del mes: días 1, 8, 15 y 22
+        return dia.replace(day=min((dia.day - 1) // 7, 3) * 7 + 1)
     if agrupacion == "mensual":
         return dia.replace(day=1)
     if agrupacion == "trimestral":
@@ -191,6 +199,11 @@ def _inicio_periodo(dia, agrupacion):
 def _siguiente_periodo(inicio, agrupacion):
     if agrupacion == "diaria":
         return inicio + timedelta(days=1)
+    if agrupacion == "semanal":
+        return inicio + timedelta(days=7)
+    if agrupacion == "semanas_mes":
+        # la 4ª semana (desde el día 22) llega hasta fin de mes
+        return _sumar_meses(inicio, 1) if inicio.day == 22 else inicio + timedelta(days=7)
     if agrupacion == "mensual":
         return _sumar_meses(inicio, 1)
     if agrupacion == "trimestral":
@@ -201,11 +214,24 @@ def _siguiente_periodo(inicio, agrupacion):
 def _etiqueta(inicio, agrupacion):
     if agrupacion == "diaria":
         return inicio.strftime(FORMATO_FECHA)
+    if agrupacion == "semanal":
+        return f"Sem {inicio.isocalendar().week} {inicio.isocalendar().year}"
+    if agrupacion == "semanas_mes":
+        return f"Sem {(inicio.day - 1) // 7 + 1} {MESES[inicio.month - 1]} {inicio.year}"
     if agrupacion == "mensual":
         return f"{MESES[inicio.month - 1]} {inicio.year}"
     if agrupacion == "trimestral":
         return f"T{(inicio.month - 1) // 3 + 1} {inicio.year}"
     return str(inicio.year)
+
+
+def _rango_corto(desde, hasta):
+    """'05 Nov', '01 - 07 Oct' o '29 Sep - 05 Oct'."""
+    if desde == hasta:
+        return f"{desde:%d} {MESES[desde.month - 1]}"
+    if (desde.year, desde.month) == (hasta.year, hasta.month):
+        return f"{desde:%d} - {hasta:%d} {MESES[hasta.month - 1]}"
+    return f"{desde:%d} {MESES[desde.month - 1]} - {hasta:%d} {MESES[hasta.month - 1]}"
 
 
 def _resumen(transacciones, ingresos, costos):
@@ -319,7 +345,14 @@ class ResumenAgrupadoView(APIView):
                 costos=Sum("total_costo"),
             )
         )
-        por_grupo = {_inicio_periodo(_a_fecha_local(f["grupo"]), agrupacion): f for f in filas}
+        # Varias filas pueden caer en el mismo período (ej.: los días de una semana del mes)
+        por_grupo = {}
+        for f in filas:
+            clave = _inicio_periodo(_a_fecha_local(f["grupo"]), agrupacion)
+            acumulado = por_grupo.setdefault(clave, {"transacciones": 0, "ingresos": Decimal("0"), "costos": Decimal("0")})
+            acumulado["transacciones"] += f["transacciones"]
+            acumulado["ingresos"] += f["ingresos"] or Decimal("0")
+            acumulado["costos"] += f["costos"] or Decimal("0")
         flujo_por_periodo = flujo_caja.calcular(
             fecha_inicio,
             fecha_fin,
@@ -345,6 +378,8 @@ class ResumenAgrupadoView(APIView):
                 "periodo": _etiqueta(inicio, agrupacion),
                 "fecha_inicio": desde.strftime(FORMATO_FECHA),
                 "fecha_fin": hasta.strftime(FORMATO_FECHA),
+                # Texto corto para el gráfico, ej.: "01 - 07 Oct"
+                "rango": _rango_corto(desde, hasta),
                 **_resumen(transacciones, ingresos, costos),
                 "flujo_caja": flujo_caja.a_json(flujo_por_periodo.get(inicio, flujo_caja.vacio()), _monto),
             })
@@ -505,6 +540,9 @@ class ClienteListView(generics.ListAPIView):
         return qs
 
 
+ORDEN_PRODUCTOS = ("producto", "total_vendido", "total_ingresos", "precio_venta", "no_parte")
+
+
 class ProductoListView(generics.ListAPIView):
     """
     GET /api/finanzas/productos/
@@ -512,14 +550,44 @@ class ProductoListView(generics.ListAPIView):
       - search: Filtra por nombre o N° de parte.
       - categoria: Filtra por categoría exacta (ej: Abarrotes, Limpieza).
       - unidad_negocio: Filtra por unidad de negocio.
+      - fecha_inicio, fecha_fin: período para calcular total_vendido y total_ingresos
+        (sin fechas = todas las ventas).
+      - tipo_compra: FISICA u ONLINE (para los mismos totales).
+      - ordering: producto (por defecto), total_vendido, total_ingresos, precio_venta o no_parte;
+        con "-" adelante es de mayor a menor. Productos más vendidos: ?ordering=-total_vendido
       - page, page_size: Paginación.
+    Las ventas anuladas no se cuentan.
     """
     serializer_class = ProductoSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        qs = Producto.objects.all().order_by("producto")
         params = self.request.query_params
+
+        # Ventas que cuentan para los totales de cada producto
+        cuenta = Q(ventas__factura__anulada=False)
+        fecha_ini, fecha_fin = params.get("fecha_inicio"), params.get("fecha_fin")
+        try:
+            if fecha_ini:
+                cuenta &= Q(ventas__factura__fecha__gte=_inicio_del_dia(_parsear_fecha(fecha_ini, "fecha_inicio")))
+            if fecha_fin:
+                dia_fin = _parsear_fecha(fecha_fin, "fecha_fin")
+                cuenta &= Q(ventas__factura__fecha__lt=_inicio_del_dia(dia_fin + timedelta(days=1)))
+            tipo_compra = _leer_tipo_compra(params)
+        except FiltroInvalido as error:
+            raise ValidationError({"error": str(error)})
+        if tipo_compra:
+            cuenta &= Q(ventas__factura__tipo_compra_id=tipo_compra)
+
+        monto = DecimalField(max_digits=14, decimal_places=2)
+        qs = Producto.objects.annotate(
+            total_vendido=Coalesce(Sum("ventas__cantidad", filter=cuenta), 0),
+            total_ingresos=Coalesce(
+                Sum(F("ventas__cantidad") * F("ventas__precio_unitario"), filter=cuenta, output_field=monto),
+                Value(Decimal("0")),
+                output_field=monto,
+            ),
+        )
 
         search = params.get("search")
         if search:
@@ -534,7 +602,12 @@ class ProductoListView(generics.ListAPIView):
         if unidad:
             qs = qs.filter(unidad_negocio__iexact=unidad.strip())
 
-        return qs
+        orden = (params.get("ordering") or "producto").strip()
+        if orden.lstrip("-") not in ORDEN_PRODUCTOS:
+            raise ValidationError(
+                {"error": f"'ordering' inválido. Usa: {', '.join(ORDEN_PRODUCTOS)} (con '-' para mayor a menor)."}
+            )
+        return qs.order_by(orden, "no_parte")
 
 
 class FacturaListView(generics.ListAPIView):
@@ -843,7 +916,7 @@ class ApiCatalogView(APIView):
         host = request.build_absolute_uri("/").rstrip("/")
         return Response({
             "nombre": "API Caja Clara - Módulo Finanzas Supermercado",
-            "version": "1.2",
+            "version": "1.3",
             "descripcion": "Endpoints REST listos para consumo del Frontend y agnósticos al motor de base de datos.",
             "autenticacion": {
                 "tipo": "JWT (Bearer)",
@@ -871,7 +944,7 @@ class ApiCatalogView(APIView):
                 "serie_temporal": {
                     "url": f"{host}/api/finanzas/resumen-agrupado/",
                     "metodo": "GET",
-                    "descripcion": "Datos agrupados para gráficos (diaria, mensual, trimestral, anual).",
+                    "descripcion": "Datos agrupados para gráficos (diaria, semanal, semanas_mes, mensual, trimestral, anual).",
                     "parametros": ["fecha_inicio", "fecha_fin", "agrupacion", "tipo_compra"],
                 },
                 "exportar_excel": {
@@ -889,8 +962,8 @@ class ApiCatalogView(APIView):
                 "productos": {
                     "url": f"{host}/api/finanzas/productos/",
                     "metodo": "GET",
-                    "descripcion": "Listado paginado de productos.",
-                    "parametros": ["search", "categoria", "unidad_negocio", "page", "page_size"],
+                    "descripcion": "Listado paginado de productos con unidades e ingresos vendidos; ?ordering=-total_vendido para los más vendidos.",
+                    "parametros": ["search", "categoria", "unidad_negocio", "fecha_inicio", "fecha_fin", "tipo_compra", "ordering", "page", "page_size"],
                 },
                 "facturas": {
                     "url": f"{host}/api/finanzas/facturas/",
