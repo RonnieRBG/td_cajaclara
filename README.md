@@ -124,6 +124,22 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 - [ ] ¿Cómo se marca una deuda como **vencida**? Hoy se calcula comparando la fecha límite con el día actual.
 - [ ] ¿El gráfico principal será semanal o mensual?
 - [ ] Licencia del proyecto.
+- [x] **Un solo negocio por ahora**: todos los usuarios ven los datos del mismo negocio. El login solo protege el acceso a la API.
+
+---
+
+## 🔮 Mejoras futuras
+
+### Varios negocios en el mismo sistema (multi-pyme)
+
+Hoy Caja Clara maneja **un solo negocio**. Si más adelante cada usuario debe ver **solo los datos de su negocio**, hay que modificar la base de datos:
+
+- [ ] **Crear la tabla `Negocio`** (nombre, RUT, dirección, etc.) y relacionar cada usuario con su negocio.
+- [ ] **Agregar el campo `negocio`** a `Cliente`, `Producto`, `Factura`, `CuentaPorCobrar` y `GastoInsumo`. `DetalleVenta` lo hereda a través de su factura.
+- [ ] **Filtrar todas las consultas** de la API por el negocio del usuario que inició sesión, para que nadie vea datos de otro negocio.
+- [ ] **Revisar los identificadores**: hoy el código de producto (ej. `P100055`) es único en todo el sistema. Con varios negocios, dos almacenes podrían usar el mismo código, así que debe ser único **por negocio**.
+- [ ] **Migrar los datos actuales** con una migración que cree un negocio "por defecto" y le asigne todo lo existente.
+- [ ] **Agregar pruebas** que verifiquen que un usuario no puede ver ni modificar datos de otro negocio.
 
 ---
 
