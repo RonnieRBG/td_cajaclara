@@ -176,3 +176,121 @@ class GastoInsumoSerializer(serializers.ModelSerializer):
             "monto",
         ]
 
+
+
+# ==============================================================================
+# DETALLE DE UNA FACTURA (respuesta al registrar o consultar una venta)
+# ==============================================================================
+
+class LineaFacturaSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source="no_parte.producto", read_only=True)
+    total_venta = serializers.DecimalField(source="total_linea_venta", max_digits=14, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = DetalleVenta
+        fields = ["id", "no_parte", "producto_nombre", "cantidad", "precio_unitario", "costo_unitario", "total_venta"]
+
+
+class FacturaDetalleSerializer(FacturaSerializer):
+    """Factura con sus productos y su cuenta por cobrar (si fue a crédito)."""
+
+    detalles = LineaFacturaSerializer(many=True, read_only=True)
+    cuenta_por_cobrar = serializers.SerializerMethodField()
+
+    class Meta(FacturaSerializer.Meta):
+        fields = FacturaSerializer.Meta.fields + ["detalles", "cuenta_por_cobrar"]
+
+    def get_cuenta_por_cobrar(self, obj):
+        cuenta = getattr(obj, "cuenta_por_cobrar", None)
+        return CuentaPorCobrarSerializer(cuenta).data if cuenta else None
+
+
+# ==============================================================================
+# ENTRADA DE DATOS (POST): validan lo que envía el frontend
+# ==============================================================================
+
+class ItemVentaEntradaSerializer(serializers.Serializer):
+    producto = serializers.PrimaryKeyRelatedField(
+        queryset=Producto.objects.all(),
+        error_messages={"does_not_exist": "No existe el producto '{pk_value}'."},
+    )
+    cantidad = serializers.IntegerField(min_value=1, max_value=100000)
+    # Si no se envía, se usa el precio del catálogo del producto.
+    precio_unitario = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=0, required=False, allow_null=True
+    )
+
+
+class VentaEntradaSerializer(serializers.Serializer):
+    """POST /api/finanzas/facturas/"""
+
+    items = ItemVentaEntradaSerializer(many=True, allow_empty=False, max_length=200)
+    tipo_compra = serializers.ChoiceField(choices=TipoCompra.TIPO_CHOICES, default="FISICA")
+    cliente = serializers.PrimaryKeyRelatedField(
+        queryset=Cliente.objects.all(),
+        required=False,
+        allow_null=True,
+        error_messages={"does_not_exist": "No existe el cliente '{pk_value}'."},
+    )
+    fecha = serializers.DateTimeField(required=False, help_text="Por defecto, ahora.")
+    por_cobrar = serializers.BooleanField(default=False, help_text="true = venta a crédito.")
+    fecha_vencimiento = serializers.DateField(required=False, allow_null=True)
+
+    def validate(self, datos):
+        if datos.get("por_cobrar"):
+            errores = {}
+            if not datos.get("cliente"):
+                errores["cliente"] = "Una venta a crédito necesita un cliente."
+            if not datos.get("fecha_vencimiento"):
+                errores["fecha_vencimiento"] = "Una venta a crédito necesita la fecha de vencimiento."
+            if errores:
+                raise serializers.ValidationError(errores)
+        elif datos.get("fecha_vencimiento"):
+            raise serializers.ValidationError(
+                {"fecha_vencimiento": "Solo las ventas a crédito (por_cobrar=true) llevan fecha de vencimiento."}
+            )
+        return datos
+
+
+class PagoEntradaSerializer(serializers.Serializer):
+    """POST /api/finanzas/cuentas-por-cobrar/{id}/pagar/"""
+
+    fecha_pago = serializers.DateField(required=False, allow_null=True, help_text="Por defecto, hoy.")
+
+
+class GastoEntradaSerializer(serializers.ModelSerializer):
+    """POST /api/finanzas/gastos/"""
+
+    producto = serializers.PrimaryKeyRelatedField(
+        queryset=Producto.objects.all(),
+        required=False,
+        allow_null=True,
+        error_messages={"does_not_exist": "No existe el producto '{pk_value}'."},
+    )
+    categoria = serializers.ChoiceField(choices=GastoInsumo.CATEGORIA_CHOICES, required=False)
+    fecha = serializers.DateField(required=False)
+    monto = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=1)
+
+    class Meta:
+        model = GastoInsumo
+        fields = ["tipo", "categoria", "producto", "proveedor", "descripcion", "fecha", "monto"]
+
+    def validate(self, datos):
+        tipo = datos.get("tipo", GastoInsumo.COMPRA)
+        if tipo == GastoInsumo.COMPRA and not datos.get("producto"):
+            raise serializers.ValidationError({"producto": "Una compra debe indicar qué producto se compró."})
+        if tipo == GastoInsumo.OTRO and datos.get("producto"):
+            raise serializers.ValidationError({"producto": "Solo las compras (tipo COMPRA) llevan producto."})
+        # Categoría por defecto según el tipo
+        datos.setdefault("categoria", "INSUMOS" if tipo == GastoInsumo.COMPRA else "OTROS")
+        if datos.get("fecha") is None:
+            from django.utils import timezone
+            datos["fecha"] = timezone.localdate()
+        return datos
+
+
+class ClienteEntradaSerializer(serializers.Serializer):
+    """POST /api/finanzas/clientes/"""
+
+    nombre = serializers.CharField(max_length=150)
+    contacto = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")

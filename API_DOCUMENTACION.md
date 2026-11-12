@@ -291,7 +291,19 @@ Authorization: Bearer <access>
 | 7   | `GET /facturas/`           | Listado de facturas (ventas)           |    Sí    |          —          |
 | 8   | `GET /ventas/`             | Líneas de venta detalladas             |    Sí    |         ✅          |
 | 9   | `GET /cuentas-por-cobrar/` | Deuda de clientes + resumen global     |    Sí    |         ✅          |
-| 10  | `GET /gastos/`             | Gastos de insumo + resumen global      |    Sí    |          —          |
+| 10  | `GET /gastos/`             | Gastos (compras y otros) + resumen     |    Sí    |          —          |
+
+**Registrar datos** (detalle en el endpoint 11):
+
+| Método y ruta                                  | Para qué sirve                                   |
+| :--------------------------------------------- | :----------------------------------------------- |
+| `POST /facturas/`                              | Registrar una venta (al contado o a crédito)     |
+| `GET /facturas/{factura}/`                     | Ver una venta con sus productos y su deuda       |
+| `POST /facturas/{factura}/anular/`             | Anular una venta                                 |
+| `POST /cuentas-por-cobrar/{id}/pagar/`         | Registrar el pago de una deuda                   |
+| `POST /cuentas-por-cobrar/{id}/revertir-pago/` | Deshacer un pago registrado por error            |
+| `POST /gastos/`                                | Registrar una compra u otro gasto                |
+| `POST /clientes/`                              | Registrar un cliente                             |
 
 ### Estructura de los listados paginados
 
@@ -351,31 +363,64 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 ```json
 {
   "rango_aplicado": {
-    "fecha_inicio": "01/01/2010",
-    "fecha_fin": "31/12/2012",
+    "fecha_inicio": "01/01/2026",
+    "fecha_fin": "30/06/2026",
     "periodo_tipo": "personalizado"
   },
   "filtro_tipo_compra": "TODOS",
-  "total_transacciones": 15870,
-  "total_ingresos": 80226136.0,
-  "total_costos": 61255452.0,
-  "flujo_caja_neto": 18970684.0,
-  "margen_porcentaje": 23.65,
+  "total_transacciones": 176,
+  "total_unidades": 654,
+  "total_ingresos": 445662.0,
+  "total_costos": 325328.0,
+  "utilidad_bruta": 120334.0,
+  "flujo_caja_neto": 120334.0,
+  "margen_porcentaje": 27.0,
   "por_estado_pago": {
     "PAGADO": {
       "nombre": "Pagado",
-      "transacciones": 13537,
-      "ingresos": 69219397.0
+      "transacciones": 149,
+      "ingresos": 373181.0
     },
     "PENDIENTE": {
       "nombre": "Pendiente",
-      "transacciones": 2333,
-      "ingresos": 11006739.0
+      "transacciones": 27,
+      "ingresos": 72481.0
     },
-    "ANULADO": { "nombre": "Anulado", "transacciones": 0, "ingresos": 0.0 }
+    "ANULADO": {
+      "nombre": "Anulado",
+      "transacciones": 0,
+      "ingresos": 0.0
+    }
+  },
+  "flujo_caja": {
+    "entradas": {
+      "ventas_contado": 373181.0,
+      "cobros": 0.0,
+      "total": 373181.0
+    },
+    "salidas": {
+      "compras": 984629.0,
+      "otros_gastos": 0.0,
+      "total": 984629.0
+    },
+    "saldo": -611448.0
   }
 }
 ```
+
+| Campo                 | Significado                                                                                                              |
+| :-------------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| `total_ingresos`      | Todo lo **vendido** en el período (al contado y a crédito), sin anuladas.                                                |
+| `total_costos`        | Costo de la mercadería vendida.                                                                                          |
+| `utilidad_bruta`      | `total_ingresos - total_costos`.                                                                                         |
+| `flujo_caja_neto`     | ⚠️ Se mantiene por compatibilidad, pero es **igual a `utilidad_bruta`**, no al dinero en caja. Usar `flujo_caja.saldo`.  |
+| `total_unidades`      | Unidades vendidas (suma de cantidades).                                                                                  |
+| `flujo_caja.entradas` | Dinero que **entró**: ventas al contado del período (`ventas_contado`) + deudas **cobradas** en el período (`cobros`).   |
+| `flujo_caja.salidas`  | Dinero que **salió**: `compras` de mercadería + `otros_gastos` (arriendo, flete, servicios…).                            |
+| `flujo_caja.saldo`    | `entradas.total - salidas.total`. Es el "Saldo del periodo" del dashboard.                                               |
+
+> Una venta a crédito suma en `total_ingresos` el día que se vende, pero entra a `flujo_caja` el día que se **paga**. El filtro `tipo_compra` afecta las entradas; los gastos no tienen canal y siempre se cuentan completos.
+
 
 ---
 
@@ -390,28 +435,62 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 ```json
 {
+  "rango_aplicado": {
+    "fecha_inicio": "01/05/2026",
+    "fecha_fin": "30/06/2026"
+  },
   "agrupacion": "mensual",
+  "filtro_tipo_compra": "TODOS",
   "totales": {
-    "transacciones": 15870,
-    "ingresos": 80226136.0,
-    "costos": 61255452.0,
-    "utilidad": 18970684.0,
-    "margen_porcentaje": 23.65
+    "total_transacciones": 50,
+    "total_ingresos": 100953.0,
+    "total_costos": 81926.0,
+    "utilidad": 19027.0,
+    "margen_porcentaje": 18.85,
+    "flujo_caja": {
+      "entradas": {
+        "ventas_contado": 79867.0,
+        "cobros": 0.0,
+        "total": 79867.0
+      },
+      "salidas": {
+        "compras": 333463.0,
+        "otros_gastos": 0.0,
+        "total": 333463.0
+      },
+      "saldo": -253596.0
+    }
   },
   "periodos": [
     {
-      "periodo": "Ene 2010",
-      "fecha_inicio": "01/01/2010",
-      "fecha_fin": "31/01/2010",
-      "transacciones": 420,
-      "ingresos": 2150400.0,
-      "costos": 1640000.0,
-      "utilidad": 510400.0,
-      "margen_porcentaje": 23.74
+      "periodo": "May 2026",
+      "fecha_inicio": "01/05/2026",
+      "fecha_fin": "31/05/2026",
+      "total_transacciones": 23,
+      "total_ingresos": 32980.0,
+      "total_costos": 22909.0,
+      "utilidad": 10071.0,
+      "margen_porcentaje": 30.54,
+      "flujo_caja": {
+        "entradas": {
+          "ventas_contado": 22596.0,
+          "cobros": 0.0,
+          "total": 22596.0
+        },
+        "salidas": {
+          "compras": 164216.0,
+          "otros_gastos": 0.0,
+          "total": 164216.0
+        },
+        "saldo": -141620.0
+      }
     }
   ]
 }
 ```
+
+> Cada período trae su propio `flujo_caja` (entradas, salidas y saldo), listo para el gráfico de ventas vs. gastos.
+
 
 ---
 
@@ -668,6 +747,164 @@ Incluye las **compras de productos** (`tipo = COMPRA`, siempre con producto) y l
 
 ---
 
+### 11. Registrar datos (POST)
+
+Todos exigen login y reciben JSON (`Content-Type: application/json`).
+
+| Respuesta | Cuándo                                                                                          |
+| :-------: | :---------------------------------------------------------------------------------------------- |
+|   `201`   | Se creó (venta, gasto o cliente). La respuesta trae el registro completo.                      |
+|   `200`   | Se aplicó la acción (anular, pagar, revertir pago).                                             |
+|   `400`   | Datos inválidos: `{"campo": ["mensaje"]}`. Regla del negocio no cumplida: `{"error": "mensaje"}`. |
+|   `404`   | No existe la factura o la cuenta indicada.                                                     |
+
+#### 11.1 Registrar una venta — `POST /api/finanzas/facturas/`
+
+| Campo                         | Obligatorio      | Valores                                                              |
+| :---------------------------- | :--------------: | :------------------------------------------------------------------- |
+| `items`                       |        Sí        | Lista de productos (mínimo 1)                                        |
+| `items[].producto`            |        Sí        | N° de parte (ej. `P100055`)                                          |
+| `items[].cantidad`            |        Sí        | Entero ≥ 1                                                           |
+| `items[].precio_unitario`     |        No        | Si no se envía, se usa el precio de catálogo                         |
+| `tipo_compra`                 |        No        | `FISICA` (por defecto) u `ONLINE`                                    |
+| `por_cobrar`                  |        No        | `true` = venta a crédito (por defecto `false`)                       |
+| `cliente`                     | Solo a crédito   | ID del cliente                                                       |
+| `fecha_vencimiento`           | Solo a crédito   | `AAAA-MM-DD`, no anterior a la venta                                 |
+| `fecha`                       |        No        | Por defecto, ahora                                                   |
+
+```json
+// Venta a crédito
+{
+  "items": [
+    { "producto": "P100055", "cantidad": 2 },
+    { "producto": "P100083", "cantidad": 1, "precio_unitario": 1500 }
+  ],
+  "tipo_compra": "FISICA",
+  "por_cobrar": true,
+  "cliente": "179",
+  "fecha_vencimiento": "2026-11-26"
+}
+
+// Respuesta 201: la factura con sus productos y la deuda creada
+{
+  "factura": "CC174E545A-20261111-F",
+  "cliente": "179",
+  "cliente_nombre": "José Vega Reyes",
+  "fecha": "2026-11-11T23:08:34-03:00",
+  "tipo_compra": "FISICA",
+  "tipo_compra_nombre": "Física",
+  "por_cobrar": true,
+  "anulada": false,
+  "estado_pago": "PENDIENTE",
+  "fecha_vencimiento": "2026-11-26",
+  "total_venta": "1788.00",
+  "items_count": 2,
+  "detalles": [
+    { "id": 103491, "no_parte": "P100055", "producto_nombre": "Pasta Capelli D´Angelo Conzazoni",
+      "cantidad": 2, "precio_unitario": "144.00", "costo_unitario": "124.00", "total_venta": "288.00" },
+    { "id": 103492, "no_parte": "P100083", "producto_nombre": "Salchicha Rica",
+      "cantidad": 1, "precio_unitario": "1500.00", "costo_unitario": "127.00", "total_venta": "1500.00" }
+  ],
+  "cuenta_por_cobrar": {
+    "id": 14930,
+    "monto": "1788.00",
+    "fecha_vencimiento": "2026-11-26",
+    "estado": "PENDIENTE",
+    "estado_actual": "PENDIENTE",
+    "fecha_pago": null,
+    "vencida": false
+  }
+}
+```
+
+- Una venta **al contado** es igual, sin `por_cobrar`, `cliente` ni `fecha_vencimiento`; su `cuenta_por_cobrar` es `null`.
+- El **costo** de cada línea se toma del catálogo del producto en ese momento.
+- El número de factura lo genera el backend (prefijo `CC`).
+- Ejemplo de error: `{"items": {"0": {"cantidad": ["Asegúrese de que este valor es mayor o igual a 1."]}}}`.
+
+#### 11.2 Ver una venta — `GET /api/finanzas/facturas/{factura}/`
+
+Devuelve lo mismo que la respuesta de 11.1. Sirve para la ventana de detalle de una operación.
+
+#### 11.3 Anular una venta — `POST /api/finanzas/facturas/{factura}/anular/`
+
+Sin cuerpo. La venta deja de sumar en los resúmenes y en el flujo de caja. Si era a crédito y **no se había pagado**, su deuda desaparece. Si **ya se pagó**, responde `400` (`"La venta ya fue pagada. Primero revierte el pago y luego anúlala."`).
+
+#### 11.4 Registrar un pago — `POST /api/finanzas/cuentas-por-cobrar/{id}/pagar/`
+
+```json
+// Cuerpo (opcional; por defecto, hoy)
+{ "fecha_pago": "2026-11-11" }
+
+// Respuesta 200
+{
+  "id": 14930,
+  "factura": "CC174E545A-20261111-F",
+  "monto": "1788.00",
+  "fecha_vencimiento": "2026-11-26",
+  "estado": "PAGADA",
+  "estado_actual": "PAGADA",
+  "fecha_pago": "2026-11-11",
+  "vencida": false
+}
+```
+
+- El pago es **completo** (no hay abonos parciales).
+- La fecha de pago no puede ser futura ni anterior a la venta.
+- Pagar dos veces responde `400`: `{"error": "La cuenta ya está pagada (el 11/11/2026)."}`.
+- Desde ese momento la venta aparece como `PAGADO` y el monto entra al `flujo_caja` en la fecha del pago.
+
+#### 11.5 Deshacer un pago — `POST /api/finanzas/cuentas-por-cobrar/{id}/revertir-pago/`
+
+Sin cuerpo. La cuenta vuelve a `PENDIENTE` y `fecha_pago` queda en `null`.
+
+#### 11.6 Registrar un gasto — `POST /api/finanzas/gastos/`
+
+| Campo         | Obligatorio      | Valores                                                                                 |
+| :------------ | :--------------: | :-------------------------------------------------------------------------------------- |
+| `tipo`        |        No        | `COMPRA` (por defecto) u `OTRO`                                                         |
+| `producto`    | Solo en `COMPRA` | N° de parte del producto comprado. En `OTRO` no se envía.                               |
+| `categoria`   |        No        | `INSUMOS`, `TRANSPORTE`, `SERVICIOS`, `ARRIENDO`, `MANTENIMIENTO`, `LIMPIEZA`, `OTROS`. Por defecto `INSUMOS` en compras y `OTROS` en otros gastos. |
+| `monto`       |        Sí        | Mayor que 0                                                                             |
+| `proveedor`   |        No        | Texto libre                                                                             |
+| `descripcion` |        No        | Texto libre                                                                             |
+| `fecha`       |        No        | Por defecto, hoy                                                                        |
+
+```json
+// Cuerpo
+{ "tipo": "OTRO", "categoria": "TRANSPORTE", "monto": 18000,
+  "proveedor": "Flete Don Mario", "descripcion": "Flete de mercadería" }
+
+// Respuesta 201
+{
+  "id": 20001,
+  "tipo": "OTRO",
+  "tipo_nombre": "Otro gasto",
+  "categoria": "TRANSPORTE",
+  "categoria_nombre": "Transporte o flete",
+  "producto": null,
+  "producto_nombre": "",
+  "categoria_producto": "",
+  "proveedor": "Flete Don Mario",
+  "descripcion": "Flete de mercadería",
+  "fecha": "2026-11-11",
+  "monto": "18000.00"
+}
+```
+
+#### 11.7 Registrar un cliente — `POST /api/finanzas/clientes/`
+
+```json
+// Cuerpo
+{ "nombre": "Kiosco Don Luis", "contacto": "+56 9 5587 2216" }
+
+// Respuesta 201 (el ID sigue la numeración de los clientes existentes)
+{ "cliente_id": "2001", "nombre": "Kiosco Don Luis", "contacto": "+56 9 5587 2216",
+  "total_facturas": 0, "total_deuda": "0.00" }
+```
+
+---
+
 ## Parte 4 — Equipo de Frontend
 
 Todos los cambios se hacen dentro de la aplicación Vue ubicada en la rama `ux`:
@@ -815,13 +1052,18 @@ function armarUrl(endpoint, params = {}) {
   return url.toString();
 }
 
-async function fetchConToken(url, reintentar = true) {
+async function fetchConToken(url, reintentar = true, opciones = {}) {
   const res = await fetch(url, {
-    headers: { Accept: "application/json", Authorization: `Bearer ${tokens.access}` },
+    ...opciones,
+    headers: {
+      Accept: "application/json",
+      ...(opciones.body ? { "Content-Type": "application/json" } : {}),
+      Authorization: `Bearer ${tokens.access}`,
+    },
   });
   // Token vencido: se renueva una vez y se repite la consulta
   if (res.status === 401 && reintentar && (await renovarToken())) {
-    return fetchConToken(url, false);
+    return fetchConToken(url, false, opciones);
   }
   if (res.status === 401) {
     tokens.borrar();
@@ -837,6 +1079,21 @@ async function request(endpoint, params = {}) {
     throw new Error(errorData.error || errorData.detail || `Error HTTP: ${res.status}`);
   }
   return res.json();
+}
+
+// POST con token. Si el backend rechaza los datos, el error trae los mensajes por campo.
+async function enviar(endpoint, cuerpo = {}) {
+  const res = await fetchConToken(armarUrl(endpoint), true, {
+    method: "POST",
+    body: JSON.stringify(cuerpo),
+  });
+  const datos = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(datos.error || datos.detail || "Revisa los datos ingresados.");
+    error.campos = datos; // ej: { items: { 0: { cantidad: ["..."] } } }
+    throw error;
+  }
+  return datos;
 }
 
 export const apiService = {
@@ -871,6 +1128,31 @@ export const apiService = {
   // Endpoint 6 — Productos
   getProductos(filtros = {}) {
     return request(`${API_BASE}/productos/`, { page_size: 4, ...filtros });
+  },
+
+  // Endpoint 11 — Registrar datos
+  registrarVenta(venta) {
+    // { items: [{ producto, cantidad, precio_unitario? }], tipo_compra, por_cobrar, cliente?, fecha_vencimiento? }
+    return enviar(`${API_BASE}/facturas/`, venta);
+  },
+  getVenta(factura) {
+    return request(`${API_BASE}/facturas/${encodeURIComponent(factura)}/`);
+  },
+  anularVenta(factura) {
+    return enviar(`${API_BASE}/facturas/${encodeURIComponent(factura)}/anular/`);
+  },
+  registrarPago(cuentaId, fechaPago) {
+    return enviar(`${API_BASE}/cuentas-por-cobrar/${cuentaId}/pagar/`, fechaPago ? { fecha_pago: fechaPago } : {});
+  },
+  revertirPago(cuentaId) {
+    return enviar(`${API_BASE}/cuentas-por-cobrar/${cuentaId}/revertir-pago/`);
+  },
+  registrarGasto(gasto) {
+    // { tipo: "COMPRA" | "OTRO", monto, producto?, categoria?, proveedor?, descripcion?, fecha? }
+    return enviar(`${API_BASE}/gastos/`, gasto);
+  },
+  registrarCliente(cliente) {
+    return enviar(`${API_BASE}/clientes/`, cliente); // { nombre, contacto? }
   },
 
   // Endpoint 4 — Descarga del Excel (con token, por eso no sirve un <a href>)
@@ -1082,15 +1364,15 @@ Esta tabla es **el contrato entre ambos equipos** 🟨. Cada fila dice qué camp
 
 | Componente (prop)                        | Campo que lee el frontend                                                                  | Endpoint                           | Estado                 |
 | :--------------------------------------- | :----------------------------------------------------------------------------------------- | :--------------------------------- | :--------------------- |
-| StatCard · `saldoPeriodo`                | `flujo_caja_neto`                                                                          | `resumen-mensual`                  | ✅ Documentado         |
-| StatCard · `ventasMes`                   | `total_ingresos`                                                                           | `resumen-mensual`                  | ✅ ⚠️ P06              |
-| StatCard · `comprasGastos`               | `total_costos`                                                                             | `resumen-mensual`                  | ✅ Documentado         |
+| StatCard · `saldoPeriodo`                | `flujo_caja.saldo` (antes `flujo_caja_neto`, que en realidad es la utilidad)               | `resumen-mensual`                  | ✅ Documentado         |
+| StatCard · `ventasMes`                   | `flujo_caja.entradas.total` ("dinero recibido por ventas")                                 | `resumen-mensual`                  | ✅ ⚠️ P06              |
+| StatCard · `comprasGastos`               | `flujo_caja.salidas.total` (compras + otros gastos)                                        | `resumen-mensual`                  | ✅ Documentado         |
 | StatCard · `pendienteCobrar`             | `por_estado_pago.PENDIENTE.ingresos`                                                       | `resumen-mensual`                  | ✅ Documentado         |
 | OperationsSummary · `totalVentas`        | `total_transacciones`                                                                      | `resumen-mensual`                  | ✅ Documentado         |
-| OperationsSummary · `totalGastos`        | — (fijo en 0)                                                                              | —                                  | ⚠️ P05                 |
-| OperationsSummary · `unidadesVendidas`   | `total_transacciones`                                                                      | `resumen-mensual`                  | ⚠️ P04                 |
+| OperationsSummary · `totalGastos`        | `resumen.total_registros_gasto`                                                            | `gastos`                           | ✅ Documentado         |
+| OperationsSummary · `unidadesVendidas`   | `total_unidades`                                                                           | `resumen-mensual`                  | ✅ Documentado         |
 | OperationsSummary · `cuentasPendientes`  | `resumen.total_cuentas`                                                                    | `cuentas-por-cobrar`               | ✅ Documentado         |
-| CashChart · `semana`, `ventas`, `gastos` | `periodos[].periodo`, `.ingresos`, `.costos`                                               | `resumen-agrupado`                 | ✅ ⚠️ P01              |
+| CashChart · `semana`, `ventas`, `gastos` | `periodos[].periodo`, `.flujo_caja.entradas.total`, `.flujo_caja.salidas.total`            | `resumen-agrupado`                 | ✅ ⚠️ P01              |
 | PriorityCollections                      | `id`, `cliente`, `cliente_nombre`, `factura`, `monto`, `fecha_vencimiento`, `vencida`      | `cuentas-por-cobrar?vencidas=true` | ✅ Documentado         |
 | RecentOperations                         | `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                           | ✅ Documentado         |
 | TopProducts                              | `no_parte`, `producto`, `total_vendido`, `precio_venta`                                    | `productos`                        | ❓ Sin confirmar · P03 |
@@ -1156,9 +1438,9 @@ Problemas detectados al revisar este documento. No bloquean la primera integraci
 
 | P03 | 🔴 | El endpoint `/productos/` no tiene respuesta de ejemplo. El frontend usa `no_parte`, `producto`, `total_vendido` y `precio_venta`. `total_vendido` probablemente requiere una agregación (`Sum`) que podría no existir. Además, "TopProducts" implica productos más vendidos, pero no se pide ningún orden. | `ProductoSerializer`, `TopProducts` | 🟦 Backend | Agregar `total_vendido` con `annotate`, permitir `?ordering=-total_vendido` y documentar la respuesta. |
 
-| P04 | 🔴 | `unidadesVendidas` se llena con `total_transacciones`. Una transacción no equivale a una unidad, así que el dato mostrado es incorrecto. | `DashboardView.vue` (paso 4 del script) | 🟨 Ambos | El backend agrega `total_unidades` en `resumen-mensual`; el frontend lo usa. |
+| P04 | ✅ | Resuelto: `resumen-mensual` entrega `total_unidades` (suma de cantidades vendidas). El frontend debe usarlo en `unidadesVendidas`. | `resumen-mensual`, `gastos` | 🟨 Ambos | — |
 
-| P05 | 🟠 | `totalGastos` está fijo en `0`. | `DashboardView.vue` (paso 4 del script) | 🟩 Frontend | Usar `resumen.total_costos` o `gastos.resumen.monto_total_gastos`, según lo que defina el equipo. |
+| P05 | ✅ | Resuelto: los gastos ahora existen en la API (`gastos` y `flujo_caja.salidas`). Usar `flujo_caja.salidas.total` para el monto y `gastos.resumen.total_registros_gasto` para la cantidad. | `resumen-mensual`, `gastos` | 🟨 Ambos | — |
 
 | P06 | 🟠 | El endpoint se llama `resumen-mensual`, pero acepta cualquier rango. El dashboard lo llama con todo el histórico (2010–2022), así que el KPI `ventasMes` muestra 12 años de ventas, no un mes. | Nombre del endpoint, KPI `ventasMes` | 🟨 Ambos | Renombrar a `resumen-financiero` (manteniendo el alias antiguo por un tiempo) y que el dashboard pida el último mes disponible, o cambiar la etiqueta del KPI. |
 

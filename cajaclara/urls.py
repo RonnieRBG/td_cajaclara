@@ -18,16 +18,22 @@ from django.contrib import admin
 from django.urls import include, path
 from finanzas.views import (
     ApiCatalogView,
-    ClienteListView,
     CuentaPorCobrarListView,
     DetalleVentaListView,
     ExportarExcelView,
-    FacturaListView,
-    GastoInsumoListView,
     OpcionesFiltrosView,
     ProductoListView,
     ResumenAgrupadoView,
     ResumenFinancieroView,
+)
+from finanzas.views_escritura import (
+    AnularFacturaView,
+    ClienteListCreateView,
+    FacturaDetalleView,
+    FacturaListCreateView,
+    GastoListCreateView,
+    PagarCuentaView,
+    RevertirPagoView,
 )
 
 urlpatterns = [
@@ -50,10 +56,15 @@ urlpatterns = [
     path('api/finanzas/exportar-excel/', ExportarExcelView.as_view(), name='exportar-excel'),
 
     # Entidades principales con paginación y búsqueda
-    path('api/finanzas/clientes/', ClienteListView.as_view(), name='cliente-list'),
+    # GET lista y POST registra (clientes, facturas y gastos)
+    path('api/finanzas/clientes/', ClienteListCreateView.as_view(), name='cliente-list'),
     path('api/finanzas/productos/', ProductoListView.as_view(), name='producto-list'),
-    path('api/finanzas/facturas/', FacturaListView.as_view(), name='factura-list'),
+    path('api/finanzas/facturas/', FacturaListCreateView.as_view(), name='factura-list'),
+    path('api/finanzas/facturas/<str:pk>/', FacturaDetalleView.as_view(), name='factura-detalle'),
+    path('api/finanzas/facturas/<str:pk>/anular/', AnularFacturaView.as_view(), name='factura-anular'),
     path('api/finanzas/ventas/', DetalleVentaListView.as_view(), name='detalleventa-list'),
     path('api/finanzas/cuentas-por-cobrar/', CuentaPorCobrarListView.as_view(), name='cuentaporcobrar-list'),
-    path('api/finanzas/gastos/', GastoInsumoListView.as_view(), name='gastoinsumo-list'),
+    path('api/finanzas/cuentas-por-cobrar/<int:pk>/pagar/', PagarCuentaView.as_view(), name='cuenta-pagar'),
+    path('api/finanzas/cuentas-por-cobrar/<int:pk>/revertir-pago/', RevertirPagoView.as_view(), name='cuenta-revertir-pago'),
+    path('api/finanzas/gastos/', GastoListCreateView.as_view(), name='gastoinsumo-list'),
 ]

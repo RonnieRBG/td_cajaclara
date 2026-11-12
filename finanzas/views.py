@@ -25,6 +25,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from . import flujo_caja
 from .models import (
     ESTADO_PAGO_CHOICES,
     Cliente,
@@ -230,9 +231,11 @@ class ResumenFinancieroView(APIView):
         ventas = DetalleVenta.objects.filter(filtros.q).con_totales().con_estado_pago().order_by()
         totales = ventas.exclude(estado_pago="ANULADO").aggregate(
             transacciones=Count("pk"),
+            unidades=Sum("cantidad"),
             ingresos=Sum("total_venta"),
             costos=Sum("total_costo"),
         )
+        flujo = flujo_caja.calcular(filtros.fecha_inicio, filtros.fecha_fin, filtros.tipo_compra)
         ingresos = totales["ingresos"] or Decimal("0")
         costos = totales["costos"] or Decimal("0")
         utilidad = ingresos - costos
@@ -256,11 +259,18 @@ class ResumenFinancieroView(APIView):
             },
             "filtro_tipo_compra": filtros.tipo_compra or "TODOS",
             "total_transacciones": totales["transacciones"],
+            "total_unidades": totales["unidades"] or 0,
+            # Ventas del período (al contado y a crédito) y su costo de mercadería
             "total_ingresos": _monto(ingresos),
             "total_costos": _monto(costos),
+            "utilidad_bruta": _monto(utilidad),
+            # Se mantiene por compatibilidad: es la utilidad bruta, NO el dinero en caja.
+            # Para el saldo de caja usar flujo_caja.saldo.
             "flujo_caja_neto": _monto(utilidad),
             "margen_porcentaje": _margen(ingresos, utilidad),
             "por_estado_pago": por_estado,
+            # Dinero que realmente entró y salió (ver finanzas/flujo_caja.py)
+            "flujo_caja": flujo_caja.a_json(flujo, _monto),
         })
 
 
@@ -310,6 +320,13 @@ class ResumenAgrupadoView(APIView):
             )
         )
         por_grupo = {_inicio_periodo(_a_fecha_local(f["grupo"]), agrupacion): f for f in filas}
+        flujo_por_periodo = flujo_caja.calcular(
+            fecha_inicio,
+            fecha_fin,
+            filtros.tipo_compra,
+            trunc=AGRUPACIONES[agrupacion],
+            a_clave=lambda dia: _inicio_periodo(dia, agrupacion),
+        )
 
         resultado = []
         total_transacciones, total_ingresos, total_costos = 0, Decimal("0"), Decimal("0")
@@ -329,6 +346,7 @@ class ResumenAgrupadoView(APIView):
                 "fecha_inicio": desde.strftime(FORMATO_FECHA),
                 "fecha_fin": hasta.strftime(FORMATO_FECHA),
                 **_resumen(transacciones, ingresos, costos),
+                "flujo_caja": flujo_caja.a_json(flujo_por_periodo.get(inicio, flujo_caja.vacio()), _monto),
             })
 
         return Response({
@@ -338,7 +356,12 @@ class ResumenAgrupadoView(APIView):
             },
             "agrupacion": agrupacion,
             "filtro_tipo_compra": filtros.tipo_compra or "TODOS",
-            "totales": _resumen(total_transacciones, total_ingresos, total_costos),
+            "totales": {
+                **_resumen(total_transacciones, total_ingresos, total_costos),
+                "flujo_caja": flujo_caja.a_json(
+                    flujo_caja.calcular(fecha_inicio, fecha_fin, filtros.tipo_compra), _monto
+                ),
+            },
             "periodos": resultado,
         })
 
@@ -820,7 +843,7 @@ class ApiCatalogView(APIView):
         host = request.build_absolute_uri("/").rstrip("/")
         return Response({
             "nombre": "API Caja Clara - Módulo Finanzas Supermercado",
-            "version": "1.1",
+            "version": "1.2",
             "descripcion": "Endpoints REST listos para consumo del Frontend y agnósticos al motor de base de datos.",
             "autenticacion": {
                 "tipo": "JWT (Bearer)",
@@ -842,7 +865,7 @@ class ApiCatalogView(APIView):
                 "kpis_resumen": {
                     "url": f"{host}/api/finanzas/resumen-mensual/",
                     "metodo": "GET",
-                    "descripcion": "Resumen financiero de KPIs (ingresos, costos, utilidad, margen %, pagos pendientes).",
+                    "descripcion": "Resumen financiero: ventas, costos, utilidad, margen %, pagos pendientes y flujo de caja (entradas, salidas, saldo).",
                     "parametros": ["fecha_inicio", "fecha_fin", "tipo_compra"],
                 },
                 "serie_temporal": {
@@ -895,6 +918,46 @@ class ApiCatalogView(APIView):
                         "tipo", "categoria", "categoria_producto", "producto", "proveedor",
                         "fecha_inicio", "fecha_fin", "page", "page_size",
                     ],
+                },
+                "registrar_venta": {
+                    "url": f"{host}/api/finanzas/facturas/",
+                    "metodo": "POST",
+                    "descripcion": "Registra una venta al contado o a crédito (crea su cuenta por cobrar).",
+                    "cuerpo": ["items[producto, cantidad, precio_unitario?]", "tipo_compra", "por_cobrar",
+                               "cliente", "fecha_vencimiento", "fecha"],
+                },
+                "detalle_venta": {
+                    "url": f"{host}/api/finanzas/facturas/<factura>/",
+                    "metodo": "GET",
+                    "descripcion": "Una venta con sus productos y su cuenta por cobrar.",
+                },
+                "anular_venta": {
+                    "url": f"{host}/api/finanzas/facturas/<factura>/anular/",
+                    "metodo": "POST",
+                    "descripcion": "Anula una venta (si estaba pagada, primero hay que revertir el pago).",
+                },
+                "pagar_cuenta": {
+                    "url": f"{host}/api/finanzas/cuentas-por-cobrar/<id>/pagar/",
+                    "metodo": "POST",
+                    "descripcion": "Registra el pago completo de una deuda.",
+                    "cuerpo": ["fecha_pago?"],
+                },
+                "revertir_pago": {
+                    "url": f"{host}/api/finanzas/cuentas-por-cobrar/<id>/revertir-pago/",
+                    "metodo": "POST",
+                    "descripcion": "Deshace un pago registrado por error.",
+                },
+                "registrar_gasto": {
+                    "url": f"{host}/api/finanzas/gastos/",
+                    "metodo": "POST",
+                    "descripcion": "Registra una compra de productos o un otro gasto (arriendo, flete, servicios…).",
+                    "cuerpo": ["tipo", "monto", "producto?", "categoria?", "proveedor?", "descripcion?", "fecha?"],
+                },
+                "registrar_cliente": {
+                    "url": f"{host}/api/finanzas/clientes/",
+                    "metodo": "POST",
+                    "descripcion": "Registra un cliente.",
+                    "cuerpo": ["nombre", "contacto?"],
                 },
             },
         })
