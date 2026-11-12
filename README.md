@@ -57,7 +57,7 @@ Piensa en Caja Clara como una cadena de tres piezas:
 
 ## 🚀 Probarlo en tu computador
 
-Necesitas **Python 3.10 o superior**. Son cinco pasos:
+Necesitas **Python 3.10 o superior**. Son seis pasos:
 
 ```bash
 python -m venv venv                 # 1. Crear un entorno aislado
@@ -65,9 +65,14 @@ venv\Scripts\activate               # 2. Activarlo (en Mac/Linux: source venv/bi
 pip install -r requirements.txt     # 3. Instalar lo necesario
 python manage.py migrate            # 4. Crear la base de datos
 python manage.py importar_csv       # 5. Cargar los datos de ejemplo
+python manage.py createsuperuser    # 6. Crear tu usuario para iniciar sesión
 ```
 
 Luego enciende el servidor con `python manage.py runserver` y abre **http://127.0.0.1:8000/api/** en el navegador. Verás el catálogo de consultas disponibles.
+
+> 🔐 **La API pide iniciar sesión.** Para ver los datos en el navegador, entra primero a **http://127.0.0.1:8000/admin/** con el usuario del paso 6. El frontend inicia sesión con `/api/auth/login/` (detalles en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md)).
+>
+> ⚙️ **Configuración opcional:** copia `.env.example` como `.env` para cambiar la base de datos, la clave secreta o los dominios permitidos. Sin `.env`, el proyecto arranca en modo desarrollo con SQLite.
 
 > La carga de datos puede tardar un par de minutos, porque son más de 240 mil registros.
 >
@@ -85,8 +90,9 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 | Exportación a Excel                                              | ✅ Listo                             |
 | Conexión con cualquier base de datos (SQLite, PostgreSQL, MySQL) | ✅ Listo                             |
 | Conexión real con el frontend                                    | 🟡 Guía escrita, falta implementarla |
-| Usuarios, login y seguridad                                      | 🔴 Pendiente                         |
-| Pruebas automáticas                                              | 🔴 Pendiente                         |
+| Usuarios, login (JWT) y configuración segura con `.env`          | ✅ Listo                             |
+| Registrar ventas, pagos y gastos desde la API                    | 🔴 Pendiente                         |
+| Pruebas automáticas                                              | 🟡 Login listo, faltan los cálculos  |
 
 ---
 
@@ -106,16 +112,17 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 - [ ] **Ajustar el gráfico semanal**: el backend agrupa por día, mes, trimestre o año, **no por semana**. Hay que decidir si el gráfico pasa a mensual o si se pide la agrupación semanal al backend.
 - [ ] **Mostrar los montos en pesos chilenos** sin decimales (ej.: `$1.250.000`). Algunos montos llegan como texto y hay que convertirlos a número.
 - [ ] **Diseñar los estados de carga y error**: qué ve el usuario mientras cargan los datos o si el servidor no responde.
-- [ ] **Diseñar las pantallas de login y registro**, que vendrán con la autenticación.
-- [ ] **Conectar el botón "Exportar a Excel"**.
+- [ ] **Pantalla de login**: la API ya exige iniciar sesión (JWT). La guía trae un `api.js` listo que guarda el token, lo renueva solo y avisa cuando la sesión expira (Parte 4.3 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md)). No hace falta pantalla de registro: los usuarios los crea un administrador.
+- [ ] **Conectar el botón "Exportar a Excel"** con `apiService.descargarExcel()` (un enlace directo ya no sirve, porque la descarga necesita el token).
 
 ### 🧠 Equipo de Backend
 
-- [ ] **Login y usuarios**: hoy cualquiera puede consultar la información. Se debe agregar inicio de sesión (por ejemplo, con tokens o JWT).
-- [ ] **Seguridad antes de publicar**: mover la clave secreta a un archivo `.env` (y agregar ese archivo al `.gitignore`), desactivar el modo de depuración y limitar quién puede conectarse (hosts y CORS).
+- [x] **Login y usuarios**: la API exige iniciar sesión con JWT (`/api/auth/login/`, `refresh/`, `logout/` y `perfil/`), con límite de intentos.
+- [x] **Seguridad**: clave secreta, modo depuración, dominios y CORS se configuran en `.env` (ver `.env.example`); `.env` está en el `.gitignore`.
+- [ ] **Al publicar**: definir `DJANGO_DEBUG=False` y una `DJANGO_SECRET_KEY` propia, servir con HTTPS (y activar `SECURE_SSL_REDIRECT` y HSTS según el servidor) y configurar un servicio de correo real si se llega a enviar email.
 - [x] **Hora de Chile**: el sistema ahora usa `America/Santiago`, así los cortes de día y de mes calzan.
 - [x] **Completar dependencias**: `pandas` y `openpyxl` ya están en `requirements.txt`.
-- [ ] **Escribir pruebas automáticas** para los cálculos clave (ingresos, costos, margen y deudas vencidas).
+- [ ] **Escribir pruebas automáticas** para los cálculos clave (ingresos, costos, margen y deudas vencidas). Las del login ya existen: `python manage.py test`.
 - [ ] **Permitir registrar datos nuevos**: hoy la API solo permite _leer_. Falta poder crear ventas, gastos y marcar deudas como pagadas.
 
 ### 🤝 Decisiones que tomamos entre todos
@@ -153,7 +160,7 @@ Hoy Caja Clara maneja **un solo negocio**. Si más adelante cada usuario debe ve
 
 ## 🛠️ Tecnologías
 
-**Python** · **Django** (estructura del backend) · **Django REST Framework** (la API) · **SQLite** en desarrollo y **PostgreSQL** en producción · **pandas** (exportación a Excel).
+**Python** · **Django** (estructura del backend) · **Django REST Framework** (la API) · **Simple JWT** (login con tokens) · **SQLite** en desarrollo y **PostgreSQL** en producción · **pandas** (exportación a Excel).
 
 ---
 

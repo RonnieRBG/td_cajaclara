@@ -2,3 +2,6 @@ venv/
 __pycache__/
 *.pyc
 db.sqlite3
+
+# Variables de entorno con claves (usar .env.example como plantilla)
+.env

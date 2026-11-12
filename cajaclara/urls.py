@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from finanzas.views import (
     ApiCatalogView,
     ClienteListView,
@@ -34,7 +34,10 @@ urlpatterns = [
     # Panel de administración
     path('admin/', admin.site.urls),
 
-    # Catálogo de documentación de la API
+    # Login, renovación de token, logout y perfil (JWT)
+    path('api/auth/', include('usuarios.urls')),
+
+    # Catálogo de documentación de la API (público, no requiere login)
     path('api/', ApiCatalogView.as_view(), name='api-catalog'),
     path('api/finanzas/', ApiCatalogView.as_view(), name='api-finanzas-catalog'),
 

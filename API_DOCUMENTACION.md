@@ -55,6 +55,8 @@ El backend es **agnóstico al motor de base de datos**. No hay que tocar código
 
 Si no se define ninguna, el backend usa SQLite (`db.sqlite3`) para desarrollo local.
 
+La forma más simple de definirlas es copiar **`.env.example`** como **`.env`** (en la carpeta de `manage.py`) y completar los valores: el backend lo lee al arrancar. El archivo `.env` está en el `.gitignore`, así que las claves nunca se suben al repositorio.
+
 | Variable      | Para qué sirve                            | Ejemplo PostgreSQL                        | Ejemplo MySQL              |
 | :------------ | :---------------------------------------- | :---------------------------------------- | :------------------------- |
 | `DB_ENGINE`   | Driver del motor                          | `django.db.backends.postgresql`           | `django.db.backends.mysql` |
@@ -154,21 +156,15 @@ DATABASES = {
 
 ### 2.2 🟦 CORS (`settings.py`)
 
-Actualmente está abierto a cualquier origen para facilitar el desarrollo:
+Solo los sitios listados en la variable `CORS_ALLOWED_ORIGINS` pueden llamar a la API desde el navegador. Por defecto se permite el servidor de Vite (`http://localhost:5173` y `http://127.0.0.1:5173`):
 
 ```python
-INSTALLED_APPS = [
-    # ...
-    "corsheaders",
-]
-
-MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # debe ir lo más arriba posible
-    # ...
-]
-
-CORS_ALLOW_ALL_ORIGINS = True  # ⚠️ P07: solo para desarrollo
+CORS_ALLOWED_ORIGINS = _lista(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+)
 ```
+
+Al publicar el frontend en otro dominio, se agrega ese dominio en el `.env` (por ejemplo `CORS_ALLOWED_ORIGINS=https://cajaclara.ejemplo.cl`).
 
 > Con el proxy de Vite (Parte 4.2), el navegador cree que le habla al mismo origen, así que en desarrollo CORS ni siquiera entra en juego. Sí importa si el frontend se despliega en otro dominio.
 
@@ -206,6 +202,14 @@ El frontend envía el formato `DD/MM/AAAA` porque usa `min_display` y `max_displ
 
 La lista exacta de campos que el frontend consume está en la [Parte 5](#parte-5--punto-de-acoplamiento). Antes de cambiar un serializer, revisar esa tabla.
 
+### 2.6 🟦 Seguridad y login (`settings.py`)
+
+- **Toda la API exige login** (`IsAuthenticated` por defecto). Solo `/api/` (el catálogo) y las rutas de `/api/auth/` son públicas.
+- **Clave secreta, modo depuración y dominios** se leen del `.env`: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG` y `DJANGO_ALLOWED_HOSTS`. Con `DJANGO_DEBUG=False` el backend no arranca si falta la clave.
+- **Duración de los tokens:** `JWT_ACCESS_MINUTOS` (30 por defecto) y `JWT_REFRESH_DIAS` (7 por defecto).
+- **Intentos de login:** máximo `LOGIN_RATE` (10 por minuto por defecto); después responde `429`.
+- **Usuarios:** como hay un solo negocio, no hay registro público. Los crea un administrador con `python manage.py createsuperuser` o desde `/admin/` → *Usuarios*.
+
 ### ✅ Checklist del equipo de Backend
 
 - [ ] `DATABASES` lee las variables `DB_*` (2.1).
@@ -215,6 +219,9 @@ La lista exacta de campos que el frontend consume está en la [Parte 5](#parte-5
 - [ ] Filtros de fecha aceptan `DD/MM/AAAA` y `AAAA-MM-DD` (2.4).
 - [ ] Todos los campos marcados como 🟦 en la [Parte 5](#parte-5--punto-de-acoplamiento) existen en las respuestas (⚠️ ver P02 y P03).
 - [ ] Servidor corriendo en `127.0.0.1:8000`.
+- [ ] Archivo `.env` creado a partir de `.env.example` (en producción: `DJANGO_DEBUG=False` y `DJANGO_SECRET_KEY` propia).
+- [ ] Al menos un usuario creado (`python manage.py createsuperuser`).
+- [ ] `python manage.py test` sin errores.
 
 ---
 
@@ -224,6 +231,52 @@ Referencia común para **ambos equipos**. Todas las rutas cuelgan de:
 
 - **URL base en desarrollo:** `http://localhost:8000`
 - **Prefijo:** `/api/finanzas/`
+
+### 🔐 Autenticación (JWT)
+
+**Todas las rutas de `/api/finanzas/` exigen iniciar sesión.** Sin token responden `401`.
+
+| Método y ruta            | Para qué sirve                                  | Cuerpo (JSON)              |
+| :----------------------- | :---------------------------------------------- | :------------------------- |
+| `POST /api/auth/login/`   | Iniciar sesión                                  | `username`, `password`     |
+| `POST /api/auth/refresh/` | Obtener un `access` nuevo cuando el actual vence | `refresh`                  |
+| `POST /api/auth/logout/`  | Cerrar sesión (invalida el `refresh`)           | `refresh`                  |
+| `GET /api/auth/perfil/`   | Datos del usuario que inició sesión             | —                          |
+
+**Login:**
+
+```json
+// POST /api/auth/login/
+{ "username": "admin", "password": "••••••••" }
+
+// Respuesta 200
+{
+  "refresh": "eyJhbGciOiJIUzI1NiIs...",
+  "access": "eyJhbGciOiJIUzI1NiIs...",
+  "usuario": {
+    "id": 1,
+    "username": "admin",
+    "nombre": "Ana Pérez",
+    "email": "admin@cajaclara.cl",
+    "es_admin": true
+  }
+}
+```
+
+**Cómo se usa el token:** en cada consulta se envía el encabezado
+
+```
+Authorization: Bearer <access>
+```
+
+**Cuánto duran:** el `access` dura **30 minutos** y el `refresh` **7 días**. Cuando una consulta responde `401`, el frontend llama a `/api/auth/refresh/` con el `refresh`; recibe un `access` **y un `refresh` nuevos** (el anterior deja de servir) y repite la consulta. Si el refresh también falla, se vuelve a la pantalla de login.
+
+| Respuesta | Cuándo                                                  |
+| :-------: | :------------------------------------------------------ |
+|   `401`   | Sin token, token vencido o inválido, o clave incorrecta (`"Usuario o contraseña incorrectos."`) |
+|   `429`   | Demasiados intentos de login seguidos (10 por minuto)   |
+
+> No hay registro público de usuarios: los crea un administrador (ver 2.6).
 
 ### Resumen de endpoints
 
@@ -368,7 +421,7 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 - **Parámetros:** los mismos del endpoint 2.
 - **Respuesta:** archivo binario `.xlsx` con encabezados formateados y celdas con formato contable.
-- **En el frontend:** no se usa `fetch`; se abre la URL directamente (por ejemplo, con `window.location.href` o un `<a href>`), y el navegador descarga el archivo.
+- **En el frontend:** como la API exige el token, **no sirve abrir la URL directamente** (un `<a href>` no envía el encabezado `Authorization`). Se descarga con `fetch` + token y se guarda el archivo desde el navegador (ver `descargarExcel()` en 4.3).
 
 ---
 
@@ -682,9 +735,10 @@ export default defineConfig({
 
 ### 4.3 🟩 Paso 2 — Servicio de API (`src/services/api.js`, archivo nuevo)
 
-**Qué hace:** centraliza todas las llamadas al backend. Si una ruta cambia, se corrige solo aquí.
+**Qué hace:** centraliza todas las llamadas al backend y el manejo del login. Si una ruta cambia, se corrige solo aquí.
 
-- `request()` arma la URL agregando solo los parámetros que tienen valor, hace el `fetch` y lanza un error legible si la respuesta no es 2xx.
+- `authService` inicia y cierra sesión y guarda los tokens en `localStorage`.
+- `request()` arma la URL agregando solo los parámetros que tienen valor, **envía el token**, lo **renueva solo** si venció y lanza un error legible si la respuesta no es 2xx.
 - `apiService` expone un método por cada endpoint que usa el dashboard.
 
 ```javascript
@@ -693,30 +747,95 @@ export default defineConfig({
  */
 
 const API_BASE = "/api/finanzas";
+const AUTH_BASE = "/api/auth";
 
-async function request(endpoint, params = {}) {
+// ---------- Tokens (se guardan en el navegador) ----------
+const tokens = {
+  get access() { return localStorage.getItem("cc_access"); },
+  get refresh() { return localStorage.getItem("cc_refresh"); },
+  guardar({ access, refresh }) {
+    if (access) localStorage.setItem("cc_access", access);
+    if (refresh) localStorage.setItem("cc_refresh", refresh);
+  },
+  borrar() {
+    localStorage.removeItem("cc_access");
+    localStorage.removeItem("cc_refresh");
+  },
+};
+
+async function postJSON(url, cuerpo) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(cuerpo),
+  });
+  const datos = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(datos.detail || datos.error || `Error HTTP: ${res.status}`);
+  return datos;
+}
+
+// Pide un access nuevo con el refresh. Devuelve false si la sesión expiró.
+async function renovarToken() {
+  if (!tokens.refresh) return false;
+  try {
+    tokens.guardar(await postJSON(`${AUTH_BASE}/refresh/`, { refresh: tokens.refresh }));
+    return true;
+  } catch {
+    tokens.borrar();
+    return false;
+  }
+}
+
+export const authService = {
+  async login(username, password) {
+    const datos = await postJSON(`${AUTH_BASE}/login/`, { username, password });
+    tokens.guardar(datos);
+    return datos.usuario; // { id, username, nombre, email, es_admin }
+  },
+  async logout() {
+    if (tokens.refresh) await postJSON(`${AUTH_BASE}/logout/`, { refresh: tokens.refresh }).catch(() => {});
+    tokens.borrar();
+  },
+  estaLogueado() {
+    return Boolean(tokens.access);
+  },
+  perfil() {
+    return request(`${AUTH_BASE}/perfil/`);
+  },
+};
+
+function armarUrl(endpoint, params = {}) {
   const url = new URL(endpoint, window.location.origin);
-
   // Solo se agregan los parámetros con valor (se ignoran undefined, null y "")
   Object.keys(params).forEach((key) => {
-    if (
-      params[key] !== undefined &&
-      params[key] !== null &&
-      params[key] !== ""
-    ) {
+    if (params[key] !== undefined && params[key] !== null && params[key] !== "") {
       url.searchParams.append(key, params[key]);
     }
   });
+  return url.toString();
+}
 
-  const res = await fetch(url.toString(), {
-    headers: { Accept: "application/json" },
+async function fetchConToken(url, reintentar = true) {
+  const res = await fetch(url, {
+    headers: { Accept: "application/json", Authorization: `Bearer ${tokens.access}` },
   });
+  // Token vencido: se renueva una vez y se repite la consulta
+  if (res.status === 401 && reintentar && (await renovarToken())) {
+    return fetchConToken(url, false);
+  }
+  if (res.status === 401) {
+    tokens.borrar();
+    window.dispatchEvent(new Event("sesion-expirada")); // la app redirige al login
+  }
+  return res;
+}
 
+async function request(endpoint, params = {}) {
+  const res = await fetchConToken(armarUrl(endpoint, params));
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || `Error HTTP: ${res.status}`);
+    throw new Error(errorData.error || errorData.detail || `Error HTTP: ${res.status}`);
   }
-
   return res.json();
 }
 
@@ -754,16 +873,22 @@ export const apiService = {
     return request(`${API_BASE}/productos/`, { page_size: 4, ...filtros });
   },
 
-  // Endpoint 4 — URL de descarga del Excel (no hace fetch, devuelve la URL)
-  getUrlExportarExcel(filtros = {}) {
-    const url = new URL(`${API_BASE}/exportar-excel/`, window.location.origin);
-    Object.keys(filtros).forEach((key) => {
-      if (filtros[key]) url.searchParams.append(key, filtros[key]);
-    });
-    return url.toString();
+  // Endpoint 4 — Descarga del Excel (con token, por eso no sirve un <a href>)
+  async descargarExcel(filtros = {}) {
+    const res = await fetchConToken(armarUrl(`${API_BASE}/exportar-excel/`, filtros));
+    if (!res.ok) throw new Error(`No se pudo descargar el Excel (HTTP ${res.status})`);
+    const nombre =
+      res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] || "reporte_ventas.xlsx";
+    const enlace = document.createElement("a");
+    enlace.href = URL.createObjectURL(await res.blob());
+    enlace.download = nombre;
+    enlace.click();
+    URL.revokeObjectURL(enlace.href);
   },
 };
 ```
+
+> **Pantalla de login (🟩 Frontend):** antes de mostrar el dashboard, si `authService.estaLogueado()` es `false`, mostrar un formulario que llame a `authService.login(usuario, clave)`. Escuchar el evento `sesion-expirada` para volver al login, y usar `authService.logout()` en el botón *Cerrar sesión*.
 
 ### 4.4 🟩 Paso 3 — Lógica del dashboard (`<script setup>` de `DashboardView.vue`)
 
@@ -938,6 +1063,8 @@ Además, conviene mostrar los estados de carga y error para que la pantalla no a
 
 - [ ] Proxy agregado en `vite.config.js` (4.2).
 - [ ] Archivo `src/services/api.js` creado (4.3).
+- [ ] Pantalla de login que usa `authService.login()` y vuelve al login con el evento `sesion-expirada` (4.3).
+- [ ] Botón "Exportar a Excel" usa `apiService.descargarExcel()` (no un `<a href>`).
 - [ ] `DashboardView.vue` ya no importa `dashboardMock` (4.4).
 - [ ] Todas las referencias `mockData.*` del template reemplazadas (4.5).
 - [ ] Estados de carga y error visibles en pantalla (4.5).
@@ -982,7 +1109,13 @@ venv\Scripts\python.exe manage.py runserver
 # Debe quedar escuchando en http://127.0.0.1:8000
 ```
 
-Prueba rápida: abrir `http://127.0.0.1:8000/api/finanzas/opciones-filtros/` en el navegador. Si se ve el JSON, el backend está bien.
+Antes de la primera prueba, crear un usuario (una sola vez):
+
+```powershell
+venv\Scripts\python.exe manage.py createsuperuser
+```
+
+Prueba rápida: abrir `http://127.0.0.1:8000/api/` en el navegador (es público). Para ver los datos en el navegador, entrar primero a `http://127.0.0.1:8000/admin/` con ese usuario y luego abrir `http://127.0.0.1:8000/api/finanzas/opciones-filtros/`. Sin iniciar sesión, la API responde `401`, y eso es lo esperado.
 
 **Terminal 2 — Frontend (Vue 3):**
 
@@ -1001,6 +1134,8 @@ npm run dev
 | :------------------------------------------- | :----------------------------------------------- | :----------------------------------------- |
 | Mensaje "No se pudieron conectar los datos…" | Django no está corriendo o el proxy no se aplicó | Terminal 1 activa; reiniciar `npm run dev` |
 | Error 404 en `/api/...`                      | Ruta mal escrita o URL no registrada en Django   | `urls.py` del backend y `API_BASE`         |
+| Error 401 en `/api/finanzas/...`             | No se inició sesión o el token venció            | Login (4.3) y encabezado `Authorization`   |
+| Error 429 en `/api/auth/login/`              | Demasiados intentos de login seguidos            | Esperar un minuto                          |
 | Error 500                                    | Excepción en el backend                          | Consola de la Terminal 1                   |
 | Tarjetas en `NaN` o vacías                   | El campo no existe en el JSON (nombre distinto)  | Parte 5 + DevTools → Network → Response    |
 | Carga muy lenta                              | Consultas pesadas sobre ~100k registros          | Índices en la BD y consultas del backend   |
@@ -1027,7 +1162,7 @@ Problemas detectados al revisar este documento. No bloquean la primera integraci
 
 | P06 | 🟠 | El endpoint se llama `resumen-mensual`, pero acepta cualquier rango. El dashboard lo llama con todo el histórico (2010–2022), así que el KPI `ventasMes` muestra 12 años de ventas, no un mes. | Nombre del endpoint, KPI `ventasMes` | 🟨 Ambos | Renombrar a `resumen-financiero` (manteniendo el alias antiguo por un tiempo) y que el dashboard pida el último mes disponible, o cambiar la etiqueta del KPI. |
 
-| P07 | 🟠 | `CORS_ALLOW_ALL_ORIGINS = True` permite que cualquier sitio consuma la API. | `settings.py` | 🟦 Backend | En producción, usar `CORS_ALLOWED_ORIGINS` con la lista de dominios permitidos, controlado por variable de entorno. |
+| P07 | ✅ | Resuelto: CORS ahora solo permite los dominios de `CORS_ALLOWED_ORIGINS` (por defecto, el servidor de Vite). Se configura en el `.env`. | `settings.py` | 🟦 Backend | — |
 
 | P08 | 🟢 | La guía de prueba usaba la ruta `scratch_ux\ux\prototype\cajaclara-ui`, mientras que el resto del documento usa `ux/prototype/cajaclara-ui`. | Parte 6 | Documentación | Confirmar la ruta real en el repositorio y unificarla. |
 
@@ -1036,3 +1171,5 @@ Problemas detectados al revisar este documento. No bloquean la primera integraci
 | P10 | 🟢 | `vencimientoTexto` muestra la fecha en formato ISO (`Vence 2010-02-19`), distinto del formato chileno usado en el resto de la app. | `DashboardView.vue` (paso 6 del script) | 🟩 Frontend | Formatear con `toLocaleDateString("es-CL")`. |
 
 | P11 | 🟢 | El proxy de Vite solo existe en desarrollo. No hay definido cómo encuentra el frontend al backend en producción. | `vite.config.js`, `api.js` | 🟨 Ambos | Usar una variable `VITE_API_URL` en `API_BASE`, o servir ambos detrás del mismo dominio. |
+
+| P12 | 🔴 | La API ahora exige login (JWT). El prototipo todavía no tiene pantalla de login ni envía el token, así que al conectarlo recibirá `401`. | Pantalla de login, `api.js` | 🟩 Frontend | Diseñar la pantalla de login y usar `authService` y `request()` de la sección 4.3. No hay registro público: los usuarios los crea un administrador. |

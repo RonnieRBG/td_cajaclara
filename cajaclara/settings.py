@@ -11,22 +11,38 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Lee el archivo .env (si existe) de la carpeta del proyecto. Las variables que ya
+# estén definidas en el sistema tienen prioridad. Ver .env.example.
+load_dotenv(BASE_DIR / ".env")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9#c_y#sxfz$o6!zt$g3hmya!nm^n=m*!v)38h=al&s3g*v^h8a'
+def _lista(nombre, por_defecto=""):
+    """Lee una variable separada por comas y la convierte en lista."""
+    return [v.strip() for v in os.environ.get(nombre, por_defecto).split(",") if v.strip()]
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+# Seguridad
+# Por defecto el proyecto arranca en modo desarrollo (DEBUG=True) para que funcione
+# sin configurar nada. En producción hay que definir DJANGO_DEBUG=False y DJANGO_SECRET_KEY.
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").strip().lower() in ("true", "1", "si", "sí")
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("Define DJANGO_SECRET_KEY en el archivo .env (obligatoria con DEBUG=False).")
+    # Clave solo para desarrollo local: firma los tokens, así que nunca se usa en producción.
+    SECRET_KEY = "django-insecure-solo-desarrollo-cambiar-en-produccion"
+
+ALLOWED_HOSTS = _lista("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
 
 # Application definition
@@ -39,8 +55,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'finanzas',
+    'usuarios',
 ]
 
 MIDDLEWARE = [
@@ -102,6 +120,29 @@ else:
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
+    # Toda la API exige iniciar sesión, salvo las vistas marcadas como públicas.
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # Permite navegar la API en el navegador tras entrar al /admin/ (solo útil en desarrollo).
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # Límite de intentos de login para frenar a quien intente adivinar contraseñas.
+    'DEFAULT_THROTTLE_RATES': {
+        'login': os.environ.get('LOGIN_RATE', '10/min'),
+    },
+}
+
+# Tokens JWT: el "access" dura poco y se renueva con el "refresh".
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.environ.get('JWT_ACCESS_MINUTOS', '30'))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.environ.get('JWT_REFRESH_DIAS', '7'))),
+    'ROTATE_REFRESH_TOKENS': True,  # cada renovación entrega un refresh nuevo...
+    'BLACKLIST_AFTER_ROTATION': True,  # ...y el anterior deja de servir
+    'UPDATE_LAST_LOGIN': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 
@@ -152,4 +193,16 @@ MAILERS = {
     },
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS: qué sitios web pueden llamar a la API desde el navegador.
+# Con el proxy de Vite no hace falta en desarrollo; importa al publicar el frontend en otro dominio.
+CORS_ALLOWED_ORIGINS = _lista(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+)
+CSRF_TRUSTED_ORIGINS = _lista("CSRF_TRUSTED_ORIGINS")
+
+# Ajustes de producción (se activan solo con DEBUG=False)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True

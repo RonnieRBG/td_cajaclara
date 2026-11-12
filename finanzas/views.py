@@ -21,6 +21,7 @@ from django.utils import timezone
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -811,13 +812,27 @@ class ApiCatalogView(APIView):
     """
     GET /api/
     Índice interactivo de la API para los equipos de Frontend y Base de Datos.
+    Es público: no requiere iniciar sesión.
     """
+    permission_classes = [AllowAny]
+
     def get(self, request):
         host = request.build_absolute_uri("/").rstrip("/")
         return Response({
             "nombre": "API Caja Clara - Módulo Finanzas Supermercado",
-            "version": "1.0",
+            "version": "1.1",
             "descripcion": "Endpoints REST listos para consumo del Frontend y agnósticos al motor de base de datos.",
+            "autenticacion": {
+                "tipo": "JWT (Bearer)",
+                "como_usar": "Inicia sesión en /api/auth/login/ y envía el token en cada consulta: "
+                "'Authorization: Bearer <access>'. Todas las rutas de /api/finanzas/ lo exigen.",
+                "endpoints": {
+                    "login": {"url": f"{host}/api/auth/login/", "metodo": "POST", "cuerpo": ["username", "password"]},
+                    "refresh": {"url": f"{host}/api/auth/refresh/", "metodo": "POST", "cuerpo": ["refresh"]},
+                    "logout": {"url": f"{host}/api/auth/logout/", "metodo": "POST", "cuerpo": ["refresh"]},
+                    "perfil": {"url": f"{host}/api/auth/perfil/", "metodo": "GET"},
+                },
+            },
             "endpoints": {
                 "opciones_filtros": {
                     "url": f"{host}/api/finanzas/opciones-filtros/",
