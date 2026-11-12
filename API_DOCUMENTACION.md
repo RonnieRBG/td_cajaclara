@@ -85,7 +85,7 @@ Con las variables ya definidas, ejecutar desde la carpeta del backend:
 python manage.py migrate
 ```
 
-Este comando crea todas las tablas, llaves foráneas e índices (por ejemplo, sobre `fecha` y `estado_pago`) a partir de los modelos de Django. **No hay que escribir SQL a mano.**
+Este comando crea todas las tablas, llaves foráneas e índices (por ejemplo, sobre la `fecha` de las facturas y el `estado` de las cuentas por cobrar) a partir de los modelos de Django. **No hay que escribir SQL a mano.**
 
 ### 1.3 Cargar los datos iniciales
 
@@ -108,6 +108,14 @@ python manage.py importar_csv --limpiar --fechas-originales
 ```
 
 > Si ya tenías la base cargada antes del cambio a la hora de Chile, vuelve a importar con `--limpiar`.
+
+El comando busca los CSV en `data/`. Si esa carpeta no existe, usa la de la Etapa 3 de la rama `datos` (`datos/Etapas_1-2-3/Etapa_3 Elaboracion de tablas/`). También se puede indicar otra:
+
+```bash
+python manage.py importar_csv --limpiar --carpeta "ruta/a/los/csv"
+```
+
+> **Después de actualizar el código, ejecuta `python manage.py migrate`.** La migración `0003_ordenar_modelo` reorganiza las tablas sin perder datos, pero se recomienda reimportar con `--limpiar` para partir de cero.
 
 ### ✅ Checklist del equipo de Base de Datos
 
@@ -423,40 +431,76 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 ```json
 {
-  "count": 100067,
-  "next": "http://localhost:8000/api/finanzas/facturas/?page=2",
+  "count": 14928,
+  "next": "http://localhost:8000/api/finanzas/facturas/?page=2&por_cobrar=true",
   "previous": null,
   "results": [
     {
-      "factura": "INV7811414-20100105-F",
-      "cliente": "179",
-      "cliente_nombre": "Carlos Morales Rojas",
-      "fecha": "2010-01-05T00:00:00Z",
+      "factura": "INV7778787-20220820-F",
+      "cliente": "1305",
+      "cliente_nombre": "Raúl Castillo Medina",
+      "fecha": "2026-08-08T00:00:00-04:00",
       "tipo_compra": "FISICA",
       "tipo_compra_nombre": "Física",
-      "por_cobrar": false,
-      "fecha_cobro": null,
-      "total_venta": "777.00",
+      "por_cobrar": true,
+      "anulada": false,
+      "estado_pago": "PAGADO",
+      "fecha_vencimiento": "2026-09-29",
+      "total_venta": "72.00",
       "items_count": 1
     }
   ]
 }
 ```
 
+| Campo               | Significado                                                                                   |
+| :------------------ | :-------------------------------------------------------------------------------------------- |
+| `por_cobrar`        | `true` = se vendió a crédito. No cambia cuando el cliente paga.                               |
+| `anulada`           | `true` = la venta se anuló y no suma en los resúmenes.                                        |
+| `estado_pago`       | `PAGADO`, `PENDIENTE` o `ANULADO`. Se calcula con la factura y su cuenta por cobrar.          |
+| `fecha_vencimiento` | Fecha límite de pago de su cuenta por cobrar (`null` si fue al contado). Antes `fecha_cobro`. |
+
 ---
 
 ### 8. Líneas de venta detalladas
 
-`GET /api/finanzas/ventas/` ⚠️ P02
+`GET /api/finanzas/ventas/`
 
-| Parámetro           | Valores                |
-| :------------------ | :--------------------- |
-| `factura`           | ID de factura          |
-| `producto`          | N° de parte            |
-| `estado_pago`       | `PAGADO` o `PENDIENTE` |
-| `page`, `page_size` | Paginación             |
+| Parámetro           | Valores                                |
+| :------------------ | :------------------------------------- |
+| `factura`           | ID de factura                          |
+| `producto`          | N° de parte                            |
+| `tipo_compra`       | `FISICA` u `ONLINE`                    |
+| `estado_pago`       | `PAGADO`, `PENDIENTE` o `ANULADO`      |
+| `page`, `page_size` | Paginación                             |
 
-> 🟦 **Falta documentar la respuesta de ejemplo.** El frontend espera al menos `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago` y `total_venta`.
+```json
+{
+  "count": 103489,
+  "next": "http://localhost:8000/api/finanzas/ventas/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 103489,
+      "factura": "INV7777090-20221118-F",
+      "no_parte": "P982901",
+      "producto_nombre": "Multiesponja Scotch brite cocina colors pague 2 lleve 3",
+      "categoria": "Aseo del hogar",
+      "tipo_compra": "FISICA",
+      "fecha": "2026-11-06T00:00:00-03:00",
+      "cantidad": 2,
+      "precio_unitario": "176.00",
+      "costo_unitario": "148.00",
+      "total_venta": "352.00",
+      "total_costo": "296.00",
+      "utilidad": "56.00",
+      "estado_pago": "PAGADO"
+    }
+  ]
+}
+```
+
+> `fecha`, `tipo_compra` y `estado_pago` se leen desde la factura (ya no se guardan repetidos en cada línea). `id` ahora es un número.
 
 ---
 
@@ -464,61 +508,110 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 `GET /api/finanzas/cuentas-por-cobrar/`
 
-| Parámetro           | Valores                                                           |
-| :------------------ | :---------------------------------------------------------------- |
-| `cliente`           | ID de cliente                                                     |
-| `vencidas`          | `true` = solo vencidas · `false` = solo vigentes · omitir = todas |
-| `page`, `page_size` | Paginación                                                        |
+| Parámetro           | Valores                                                                   |
+| :------------------ | :------------------------------------------------------------------------ |
+| `cliente`           | ID de cliente                                                             |
+| `factura`           | ID de factura                                                             |
+| `estado`            | `PENDIENTE` (aún no vence) · `VENCIDA` · `PAGADA`                          |
+| `vencidas`          | `true` = solo vencidas · `false` = todas menos las vencidas · omitir = todas |
+| `page`, `page_size` | Paginación                                                                |
 
 ```json
 {
   "count": 14928,
   "next": "http://localhost:8000/api/finanzas/cuentas-por-cobrar/?page=2",
   "previous": null,
-  "resumen": {
-    "total_cuentas": 14928,
-    "monto_total_por_cobrar": 57339252.0
-  },
   "results": [
     {
-      "id": 1,
-      "factura": "INV7811412-20100107-L",
-      "cliente": "1310",
-      "cliente_nombre": "Ana Valenzuela",
-      "cliente_contacto": "+56 9 1122 3344",
-      "monto": "3288.00",
-      "fecha_vencimiento": "2010-02-19",
-      "vencida": true
+      "id": 14928,
+      "factura": "INV7778787-20220820-F",
+      "fecha_emision": "2026-08-08T00:00:00-04:00",
+      "cliente": "1305",
+      "cliente_nombre": "Raúl Castillo Medina",
+      "cliente_contacto": "+56 9 7484 7558",
+      "monto": "72.00",
+      "fecha_vencimiento": "2026-09-29",
+      "estado": "PAGADA",
+      "estado_actual": "PAGADA",
+      "fecha_pago": "2026-11-11",
+      "vencida": false
     }
-  ]
+  ],
+  "resumen": {
+    "total_cuentas": 14928,
+    "monto_total_por_cobrar": 57339180.0,
+    "por_estado": {
+      "PENDIENTE": { "nombre": "Pendiente", "cantidad": 0, "monto": 0.0 },
+      "VENCIDA": { "nombre": "Vencida", "cantidad": 14927, "monto": 57339180.0 },
+      "PAGADA": { "nombre": "Pagada", "cantidad": 1, "monto": 72.0 }
+    }
+  }
 }
 ```
+
+| Campo                     | Significado                                                                              |
+| :------------------------ | :--------------------------------------------------------------------------------------- |
+| `estado`                  | Lo que está guardado: `PENDIENTE` o `PAGADA`.                                            |
+| `estado_actual`           | Lo que debe mostrar la pantalla: `PENDIENTE`, `VENCIDA` (pendiente con fecha ya pasada) o `PAGADA`. |
+| `fecha_pago`              | Fecha en que se pagó (`null` mientras esté pendiente).                                   |
+| `vencida`                 | Atajo: `true` si `estado_actual` es `VENCIDA`.                                           |
+| `monto_total_por_cobrar`  | Suma de pendientes + vencidas (no incluye las pagadas).                                  |
+
+> Los CSV no informan pagos, así que al importar todas las cuentas parten `PENDIENTE`.
 
 ---
 
-### 10. Gastos de insumo
+### 10. Gastos
 
 `GET /api/finanzas/gastos/`
 
-| Parámetro                   | Valores               |
-| :-------------------------- | :-------------------- |
-| `producto`                  | N° de parte           |
-| `categoria`                 | Categoría de producto |
-| `fecha_inicio`, `fecha_fin` | Rango de fechas       |
-| `page`, `page_size`         | Paginación            |
+Incluye las **compras de productos** (`tipo = COMPRA`, siempre con producto) y los **otros gastos** del negocio (`tipo = OTRO`: arriendo, flete, servicios, etc., sin producto).
+
+| Parámetro                   | Valores                                                                          |
+| :-------------------------- | :------------------------------------------------------------------------------- |
+| `tipo`                      | `COMPRA` u `OTRO`                                                                |
+| `categoria`                 | `INSUMOS`, `TRANSPORTE`, `SERVICIOS`, `ARRIENDO`, `MANTENIMIENTO`, `LIMPIEZA`, `OTROS` |
+| `categoria_producto`        | Categoría del producto comprado (ej. `Abarrotes`). Antes se llamaba `categoria`. |
+| `producto`                  | N° de parte                                                                      |
+| `proveedor`                 | Búsqueda parcial por nombre                                                      |
+| `fecha_inicio`, `fecha_fin` | Rango de fechas                                                                  |
+| `page`, `page_size`         | Paginación                                                                       |
 
 ```json
 {
-  "count": 20000,
-  "next": "...",
+  "count": 1,
+  "next": null,
   "previous": null,
+  "results": [
+    {
+      "id": 20001,
+      "tipo": "OTRO",
+      "tipo_nombre": "Otro gasto",
+      "categoria": "ARRIENDO",
+      "categoria_nombre": "Arriendo",
+      "producto": null,
+      "producto_nombre": "",
+      "categoria_producto": "",
+      "proveedor": "Inmobiliaria Sur",
+      "descripcion": "Arriendo local",
+      "fecha": "2026-11-11",
+      "monto": "350000.00"
+    }
+  ],
   "resumen": {
-    "total_registros_gasto": 20000,
-    "monto_total_gastos": 24484481.0
-  },
-  "results": [ ... ]
+    "total_registros_gasto": 1,
+    "monto_total_gastos": 350000.0,
+    "por_tipo": {
+      "COMPRA": { "nombre": "Compra", "cantidad": 0, "monto": 0.0 },
+      "OTRO": { "nombre": "Otro gasto", "cantidad": 1, "monto": 350000.0 }
+    }
+  }
 }
 ```
+
+> Los 20.000 gastos de los CSV se importan como `COMPRA` con categoría `INSUMOS`.
+
+> `GET /api/finanzas/opciones-filtros/` ahora también entrega `estados_cuenta`, `tipos_gasto` y `categorias_gasto` para llenar los selectores.
 
 ---
 
@@ -872,7 +965,7 @@ Esta tabla es **el contrato entre ambos equipos** 🟨. Cada fila dice qué camp
 | OperationsSummary · `cuentasPendientes`  | `resumen.total_cuentas`                                                                    | `cuentas-por-cobrar`               | ✅ Documentado         |
 | CashChart · `semana`, `ventas`, `gastos` | `periodos[].periodo`, `.ingresos`, `.costos`                                               | `resumen-agrupado`                 | ✅ ⚠️ P01              |
 | PriorityCollections                      | `id`, `cliente`, `cliente_nombre`, `factura`, `monto`, `fecha_vencimiento`, `vencida`      | `cuentas-por-cobrar?vencidas=true` | ✅ Documentado         |
-| RecentOperations                         | `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                           | ❓ Sin confirmar · P02 |
+| RecentOperations                         | `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                           | ✅ Documentado         |
 | TopProducts                              | `no_parte`, `producto`, `total_vendido`, `precio_venta`                                    | `productos`                        | ❓ Sin confirmar · P03 |
 
 ---
@@ -924,7 +1017,7 @@ Problemas detectados al revisar este documento. No bloquean la primera integraci
 | :-- | :-------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------ | :---------- | :--------------------------------------------------------------------------------------------------------------------- |
 | P01 |    🟠     | La versión anterior de la tabla de mapeo pedía `agrupacion=semanal`, pero el endpoint solo acepta `diaria`, `mensual`, `trimestral` y `anual`. El código usa `mensual`, mientras que el componente y su prop se llaman `weeklyFlow` / `semana`. | `resumen-agrupado`, `CashChart` | 🟨 Ambos    | Decidir: (a) el backend agrega `semanal`, o (b) el frontend renombra `weeklyFlow` → `cashFlow` y `semana` → `periodo`. |
 
-| P02 | 🔴 | El endpoint `/ventas/` no tiene respuesta de ejemplo documentada. El frontend usa `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago` y `total_venta` sin confirmar que existan. | `VentaSerializer`, `RecentOperations` | 🟦 Backend | Revisar el serializer, agregar los campos que falten y documentar un JSON de ejemplo en la Parte 3. |
+| P02 | ✅ | Resuelto: `/ventas/` ya tiene respuesta de ejemplo documentada (Parte 3, endpoint 8) e incluye `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago` y `total_venta`. | `DetalleVentaSerializer`, `RecentOperations` | 🟦 Backend | — |
 
 | P03 | 🔴 | El endpoint `/productos/` no tiene respuesta de ejemplo. El frontend usa `no_parte`, `producto`, `total_vendido` y `precio_venta`. `total_vendido` probablemente requiere una agregación (`Sum`) que podría no existir. Además, "TopProducts" implica productos más vendidos, pero no se pide ningún orden. | `ProductoSerializer`, `TopProducts` | 🟦 Backend | Agregar `total_vendido` con `annotate`, permitir `?ordering=-total_vendido` y documentar la respuesta. |
 

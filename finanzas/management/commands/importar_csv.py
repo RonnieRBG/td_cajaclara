@@ -11,7 +11,8 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.core.management.color import no_style
+from django.db import connection, transaction
 from django.utils import timezone
 
 from finanzas.models import (
@@ -24,7 +25,12 @@ from finanzas.models import (
     TipoCompra,
 )
 
-DATA_DIR = Path(settings.BASE_DIR) / "data"
+# Carpeta por defecto de los CSV. Si no existe, se usan los de la rama `datos`
+# (Etapa 3), que son los mismos archivos. También se puede indicar con --carpeta.
+CARPETAS_CANDIDATAS = [
+    Path(settings.BASE_DIR) / "data",
+    Path(settings.BASE_DIR) / "datos" / "Etapas_1-2-3" / "Etapa_3 Elaboracion de tablas",
+]
 BATCH_SIZE = 5000
 
 TIPO_COMPRA_MAP = {
@@ -41,6 +47,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            "--carpeta",
+            help="Carpeta con los 6 CSV. Por defecto data/ o, si no existe, la de la Etapa 3 en datos/.",
+        )
+        parser.add_argument(
             "--limpiar",
             action="store_true",
             help="Borra todos los datos antes de importar (fresh import).",
@@ -55,16 +65,16 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if not DATA_DIR.exists():
-            raise CommandError(f"No se encontró la carpeta '{DATA_DIR}'. Crea la carpeta y coloca los CSV ahí.")
+        carpeta = self._carpeta_datos(options.get("carpeta"))
+        self.stdout.write(f"Leyendo CSV desde: {carpeta}")
 
         archivos = {
-            "cliente": DATA_DIR / "cliente.csv",
-            "producto": DATA_DIR / "producto.csv",
-            "venta": DATA_DIR / "venta.csv",
-            "detalle_venta": DATA_DIR / "detalle_venta.csv",
-            "cuenta_por_cobrar": DATA_DIR / "cuenta_por_cobrar.csv",
-            "gastos_insumo": DATA_DIR / "gastos_insumo.csv",
+            "cliente": carpeta / "cliente.csv",
+            "producto": carpeta / "producto.csv",
+            "venta": carpeta / "venta.csv",
+            "detalle_venta": carpeta / "detalle_venta.csv",
+            "cuenta_por_cobrar": carpeta / "cuenta_por_cobrar.csv",
+            "gastos_insumo": carpeta / "gastos_insumo.csv",
         }
 
         faltantes = [nombre for nombre, ruta in archivos.items() if not ruta.exists()]
@@ -95,10 +105,33 @@ class Command(BaseCommand):
             self._importar_detalles(archivos["detalle_venta"])
             self._importar_cuentas(archivos["cuenta_por_cobrar"])
             self._importar_gastos(archivos["gastos_insumo"])
+            self._reiniciar_secuencias()
 
         self.stdout.write("=" * 60)
         self.stdout.write(self.style.SUCCESS("✅ Importación completada exitosamente."))
         self._mostrar_resumen()
+
+    def _carpeta_datos(self, carpeta):
+        if carpeta:
+            ruta = Path(carpeta)
+            if not ruta.is_dir():
+                raise CommandError(f"No se encontró la carpeta '{ruta}'.")
+            return ruta
+        for ruta in CARPETAS_CANDIDATAS:
+            if ruta.is_dir():
+                return ruta
+        raise CommandError(
+            "No se encontró la carpeta de datos. Crea 'data/' con los 6 CSV o indica otra con --carpeta."
+        )
+
+    def _reiniciar_secuencias(self):
+        """Los CSV traen sus propios IDs. En PostgreSQL hay que avanzar el contador
+        de IDs para que los registros nuevos que cree la API no choquen con ellos."""
+        sql = connection.ops.sequence_reset_sql(no_style(), [DetalleVenta, CuentaPorCobrar, GastoInsumo])
+        if sql:
+            with connection.cursor() as cursor:
+                for sentencia in sql:
+                    cursor.execute(sentencia)
 
     def _leer_csv(self, ruta):
         with open(ruta, "r", encoding="utf-8-sig") as f:
@@ -249,9 +282,9 @@ class Command(BaseCommand):
             if fecha and settings.USE_TZ:
                 fecha = timezone.make_aware(fecha)
 
+            # fecha_cobro del CSV no se guarda en la factura: es la misma
+            # fecha_vencimiento de su cuenta por cobrar.
             por_cobrar = fila.get("por_cobrar", "False").strip().lower() == "true"
-
-            fecha_cobro = self._fecha(fila.get("fecha_cobro"))
 
             nuevas.append(
                 Factura(
@@ -260,7 +293,6 @@ class Command(BaseCommand):
                     fecha=fecha,
                     tipo_compra_id=tipo_key,
                     por_cobrar=por_cobrar,
-                    fecha_cobro=fecha_cobro,
                 )
             )
             existentes.add(fid)
@@ -273,43 +305,27 @@ class Command(BaseCommand):
         self.stdout.write("\n[5/7] Detalles de venta...")
         filas = self._leer_csv(ruta)
 
-        # Precargar fechas, tipo_compra y por_cobrar de las facturas para asignar a cada detalle
-        facturas_info = dict(
-            Factura.objects.values_list("factura", "fecha")
-        )
-        facturas_tipo = dict(
-            Factura.objects.values_list("factura", "tipo_compra_id")
-        )
-        facturas_por_cobrar = dict(
-            Factura.objects.values_list("factura", "por_cobrar")
-        )
-
+        # La fecha, el tipo de compra y el estado de pago se leen desde la factura;
+        # cada línea solo guarda producto, cantidad, precio y costo.
         existentes = set(DetalleVenta.objects.values_list("id", flat=True))
         nuevos = []
         for fila in filas:
-            did = str(fila["id_detalle"])
+            did = int(fila["id_detalle"])
             if did in existentes:
                 continue
 
             factura_id = fila["id_factura"]
             precio = Decimal(fila.get("precio_venta", "0"))
             costo = Decimal(fila.get("costo_venta", "0"))
-            es_pendiente = facturas_por_cobrar.get(factura_id, False)
-
-            # Determinar tipo de compra desde la factura
-            factura_obj_tipo = facturas_tipo.get(factura_id)
 
             nuevos.append(
                 DetalleVenta(
                     id=did,
                     factura_id=factura_id,
                     no_parte_id=fila["id_producto"],
-                    tipo_compra_id=factura_obj_tipo,
                     cantidad=int(fila.get("cantidad", 1)),
                     precio_unitario=precio,
                     costo_unitario=costo,
-                    fecha=facturas_info.get(factura_id),
-                    estado_pago="PENDIENTE" if es_pendiente else "PAGADO",
                 )
             )
             existentes.add(did)
@@ -334,6 +350,8 @@ class Command(BaseCommand):
                     cliente_id=str(fila.get("id_cliente", "")),
                     monto=Decimal(fila.get("monto", "0")),
                     fecha_vencimiento=fecha_venc,
+                    # El CSV no informa pagos: todas parten pendientes.
+                    estado=CuentaPorCobrar.PENDIENTE,
                 )
             )
 
@@ -342,7 +360,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"  → {len(nuevas)} cuentas creadas ({len(filas)} en CSV)."))
 
     def _importar_gastos(self, ruta):
-        self.stdout.write("\n[7/7] Gastos de insumo...")
+        self.stdout.write("\n[7/7] Gastos (compras de insumos)...")
         filas = self._leer_csv(ruta)
 
         nuevos = []
@@ -353,6 +371,9 @@ class Command(BaseCommand):
             nuevos.append(
                 GastoInsumo(
                     id=gid,
+                    # Todos los gastos del CSV son compras de productos.
+                    tipo=GastoInsumo.COMPRA,
+                    categoria="INSUMOS",
                     producto_id=fila["id_producto"],
                     fecha=fecha,
                     monto=Decimal(fila.get("Monto", "0")),

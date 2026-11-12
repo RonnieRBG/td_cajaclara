@@ -38,10 +38,10 @@ Piensa en Caja Clara como una cadena de tres piezas:
 | :--------------------- | :---------------------------------------------------------------- |
 | **Clientes**           | Quién compra: nombre y teléfono.                                  |
 | **Productos**          | Qué se vende, su categoría, precio y costo.                       |
-| **Facturas**           | Cada compra: fecha, cliente y si fue en tienda física o en línea. |
-| **Detalle de venta**   | Qué productos iban en cada factura y en qué cantidad.             |
-| **Cuentas por cobrar** | Ventas que el cliente aún no paga, con su fecha límite.           |
-| **Gastos de insumo**   | Lo que el negocio gastó en reponer productos.                     |
+| **Facturas**           | Cada venta: fecha, cliente, si fue en tienda física o en línea, si fue a crédito y si se anuló. |
+| **Detalle de venta**   | Qué productos iban en cada factura, en qué cantidad y a qué precio. |
+| **Cuentas por cobrar** | Una por cada venta a crédito: monto, fecha límite y si ya se pagó (pendiente, vencida o pagada). |
+| **Gastos**             | Compras de productos para reponer y otros gastos (arriendo, flete, servicios…), con categoría y proveedor. |
 
 ### ¿Qué puede responder hoy?
 
@@ -121,7 +121,11 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 ### 🤝 Decisiones que tomamos entre todos
 
 - [ ] ¿Qué base de datos y qué servicio usaremos para publicar la app?
-- [ ] ¿Cómo se marca una deuda como **vencida**? Hoy se calcula comparando la fecha límite con el día actual.
+- [x] ¿Cómo se marca una deuda como **vencida**? Se **calcula**: es una cuenta pendiente cuya fecha límite ya pasó. No se guarda.
+- [ ] **Validar estos supuestos del modelo** (se aplicaron para avanzar; se pueden cambiar):
+  - Los pagos son **completos**: una cuenta pasa de pendiente a pagada de una vez (sin abonos parciales).
+  - Los gastos tienen **tipo** (compra de productos u otro gasto), **categoría** y **proveedor opcional** (texto libre, sin tabla de proveedores).
+  - Una venta se puede **anular** completa (no por producto).
 - [ ] ¿El gráfico principal será semanal o mensual?
 - [ ] Licencia del proyecto.
 - [x] **Un solo negocio por ahora**: todos los usuarios ven los datos del mismo negocio. El login solo protege el acceso a la API.
