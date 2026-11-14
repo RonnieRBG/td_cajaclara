@@ -1,0 +1,737 @@
+{
+  "margen_por_categoria_completa": [
+    {
+      "categoria": "Belleza y maquillaje",
+      "facturas": 10917,
+      "unidades": 62887,
+      "ventas": 56349106,
+      "costo": 38967989,
+      "margen": 17381117,
+      "margen_pct": 30.85
+    },
+    {
+      "categoria": "Abarrotes",
+      "facturas": 17190,
+      "unidades": 64773,
+      "ventas": 70310257,
+      "costo": 53439073,
+      "margen": 16871184,
+      "margen_pct": 24.0
+    },
+    {
+      "categoria": "Bebidas sin alcohol",
+      "facturas": 7602,
+      "unidades": 52154,
+      "ventas": 55157288,
+      "costo": 46071478,
+      "margen": 9085810,
+      "margen_pct": 16.47
+    },
+    {
+      "categoria": "Aseo del hogar",
+      "facturas": 13762,
+      "unidades": 34409,
+      "ventas": 41156069,
+      "costo": 33100478,
+      "margen": 8055591,
+      "margen_pct": 19.57
+    },
+    {
+      "categoria": "Lácteos y huevos",
+      "facturas": 11159,
+      "unidades": 31354,
+      "ventas": 30135610,
+      "costo": 22240618,
+      "margen": 7894992,
+      "margen_pct": 26.2
+    },
+    {
+      "categoria": "Snacks y confitería",
+      "facturas": 9232,
+      "unidades": 30760,
+      "ventas": 32565702,
+      "costo": 24989107,
+      "margen": 7576595,
+      "margen_pct": 23.27
+    },
+    {
+      "categoria": "Panadería y galletas",
+      "facturas": 10000,
+      "unidades": 28486,
+      "ventas": 37754902,
+      "costo": 30696496,
+      "margen": 7058406,
+      "margen_pct": 18.7
+    },
+    {
+      "categoria": "Cuidado personal",
+      "facturas": 7932,
+      "unidades": 16282,
+      "ventas": 23425461,
+      "costo": 16568027,
+      "margen": 6857434,
+      "margen_pct": 29.27
+    },
+    {
+      "categoria": "Licores y cervezas",
+      "facturas": 3469,
+      "unidades": 5071,
+      "ventas": 16710405,
+      "costo": 13655533,
+      "margen": 3054872,
+      "margen_pct": 18.28
+    },
+    {
+      "categoria": "Carnes y embutidos",
+      "facturas": 3398,
+      "unidades": 6915,
+      "ventas": 15977974,
+      "costo": 13252112,
+      "margen": 2725862,
+      "margen_pct": 17.06
+    },
+    {
+      "categoria": "Helados y postres",
+      "facturas": 3557,
+      "unidades": 11625,
+      "ventas": 13553316,
+      "costo": 10915727,
+      "margen": 2637589,
+      "margen_pct": 19.46
+    },
+    {
+      "categoria": "Otros / sin clasificar",
+      "facturas": 2683,
+      "unidades": 4980,
+      "ventas": 2288636,
+      "costo": 1828894,
+      "margen": 459742,
+      "margen_pct": 20.09
+    },
+    {
+      "categoria": "Frutas y verduras",
+      "facturas": 123,
+      "unidades": 435,
+      "ventas": 1532845,
+      "costo": 1316662,
+      "margen": 216183,
+      "margen_pct": 14.1
+    }
+  ],
+  "flujo_anual_completa": [
+    {
+      "anio": 2010,
+      "ventas_facturadas": 16398987,
+      "ingresos_contado": 14386926,
+      "ventas_fiadas": 2012061,
+      "cobros_fiado_recibidos": 1753104,
+      "ingresos_efectivamente_cobrados": 16140030,
+      "gastos_insumo": 1881363,
+      "flujo_caja_neto": 14258667
+    },
+    {
+      "anio": 2011,
+      "ventas_facturadas": 28843919,
+      "ingresos_contado": 25230984,
+      "ventas_fiadas": 3612935,
+      "cobros_fiado_recibidos": 3454038,
+      "ingresos_efectivamente_cobrados": 28685022,
+      "gastos_insumo": 2015133,
+      "flujo_caja_neto": 26669889
+    },
+    {
+      "anio": 2012,
+      "ventas_facturadas": 34983230,
+      "ingresos_contado": 29601487,
+      "ventas_fiadas": 5381743,
+      "cobros_fiado_recibidos": 5242701,
+      "ingresos_efectivamente_cobrados": 34844188,
+      "gastos_insumo": 1897785,
+      "flujo_caja_neto": 32946403
+    },
+    {
+      "anio": 2013,
+      "ventas_facturadas": 30021338,
+      "ingresos_contado": 25391956,
+      "ventas_fiadas": 4629382,
+      "cobros_fiado_recibidos": 4726357,
+      "ingresos_efectivamente_cobrados": 30118313,
+      "gastos_insumo": 1755007,
+      "flujo_caja_neto": 28363306
+    },
+    {
+      "anio": 2014,
+      "ventas_facturadas": 31399284,
+      "ingresos_contado": 27053635,
+      "ventas_fiadas": 4345649,
+      "cobros_fiado_recibidos": 4353847,
+      "ingresos_efectivamente_cobrados": 31407482,
+      "gastos_insumo": 1912149,
+      "flujo_caja_neto": 29495333
+    },
+    {
+      "anio": 2015,
+      "ventas_facturadas": 37590937,
+      "ingresos_contado": 32884955,
+      "ventas_fiadas": 4705982,
+      "cobros_fiado_recibidos": 4329650,
+      "ingresos_efectivamente_cobrados": 37214605,
+      "gastos_insumo": 1710127,
+      "flujo_caja_neto": 35504478
+    },
+    {
+      "anio": 2016,
+      "ventas_facturadas": 41162356,
+      "ingresos_contado": 35325623,
+      "ventas_fiadas": 5836733,
+      "cobros_fiado_recibidos": 5615174,
+      "ingresos_efectivamente_cobrados": 40940797,
+      "gastos_insumo": 1838139,
+      "flujo_caja_neto": 39102658
+    },
+    {
+      "anio": 2017,
+      "ventas_facturadas": 33911203,
+      "ingresos_contado": 29288262,
+      "ventas_fiadas": 4622941,
+      "cobros_fiado_recibidos": 5233661,
+      "ingresos_efectivamente_cobrados": 34521923,
+      "gastos_insumo": 1858179,
+      "flujo_caja_neto": 32663744
+    },
+    {
+      "anio": 2018,
+      "ventas_facturadas": 49800798,
+      "ingresos_contado": 42910978,
+      "ventas_fiadas": 6889820,
+      "cobros_fiado_recibidos": 6417724,
+      "ingresos_efectivamente_cobrados": 49328702,
+      "gastos_insumo": 2023752,
+      "flujo_caja_neto": 47304950
+    },
+    {
+      "anio": 2019,
+      "ventas_facturadas": 57385826,
+      "ingresos_contado": 48637537,
+      "ventas_fiadas": 8748289,
+      "cobros_fiado_recibidos": 8771148,
+      "ingresos_efectivamente_cobrados": 57408685,
+      "gastos_insumo": 1954429,
+      "flujo_caja_neto": 55454256
+    },
+    {
+      "anio": 2020,
+      "ventas_facturadas": 35419693,
+      "ingresos_contado": 29946828,
+      "ventas_fiadas": 5472865,
+      "cobros_fiado_recibidos": 5891028,
+      "ingresos_efectivamente_cobrados": 35837856,
+      "gastos_insumo": 1882376,
+      "flujo_caja_neto": 33955480
+    }
+  ],
+  "morosidad": [
+    {
+      "escenario": "Corte Final Dataset (2022-09-01)",
+      "cuentas_por_cobrar_abiertas": 8,
+      "cuentas_vencidas": 6,
+      "monto_por_cobrar": 10725,
+      "monto_vencido": 7570,
+      "morosidad_monto_pct": 70.58,
+      "morosidad_cuentas_pct": 75.0
+    },
+    {
+      "escenario": "Cierre Cobertura Completa (2020-12-31)",
+      "cuentas_por_cobrar_abiertas": 167,
+      "cuentas_vencidas": 26,
+      "monto_por_cobrar": 469968,
+      "monto_vencido": 63914,
+      "morosidad_monto_pct": 13.6,
+      "morosidad_cuentas_pct": 15.57
+    },
+    {
+      "escenario": "Histórico Pagos con Atraso (2010-2022)",
+      "cuentas_por_cobrar_abiertas": 14928,
+      "cuentas_vencidas": 3917,
+      "monto_por_cobrar": 57339252,
+      "monto_vencido": 15457664,
+      "morosidad_monto_pct": 26.96,
+      "morosidad_cuentas_pct": 26.24
+    }
+  ],
+  "cartera_abierta_2022_09": [
+    {
+      "id_cuenta": 14853,
+      "id_factura": "INV7777527-20210822-L",
+      "id_cliente": 653,
+      "cliente": "Patricia Molina Contreras",
+      "contacto": "+56 9 2208 9846",
+      "fecha_venta": "2021-08-22",
+      "fecha_vencimiento": "2021-10-07",
+      "monto": 1662,
+      "estado": "VENCIDA",
+      "dias_atraso": 329
+    },
+    {
+      "id_cuenta": 14875,
+      "id_factura": "INV7781306-20211120-F",
+      "id_cliente": 1541,
+      "cliente": "Claudia Aguilar Cortés",
+      "contacto": "+56 9 4794 3292",
+      "fecha_venta": "2021-11-20",
+      "fecha_vencimiento": "2021-12-20",
+      "monto": 97,
+      "estado": "VENCIDA",
+      "dias_atraso": 255
+    },
+    {
+      "id_cuenta": 14889,
+      "id_factura": "INV7778555-20211219-L",
+      "id_cliente": 506,
+      "cliente": "Natalia Núñez Fuentes",
+      "contacto": "+56 9 2533 8212",
+      "fecha_venta": "2021-12-19",
+      "fecha_vencimiento": "2022-01-30",
+      "monto": 757,
+      "estado": "VENCIDA",
+      "dias_atraso": 214
+    },
+    {
+      "id_cuenta": 14897,
+      "id_factura": "INV7777908-20220125-F",
+      "id_cliente": 848,
+      "cliente": "Eduardo Rojas Guzmán",
+      "contacto": "+56 9 4051 4075",
+      "fecha_venta": "2022-01-25",
+      "fecha_vencimiento": "2022-02-22",
+      "monto": 305,
+      "estado": "VENCIDA",
+      "dias_atraso": 191
+    },
+    {
+      "id_cuenta": 14906,
+      "id_factura": "INV7778082-20220213-L",
+      "id_cliente": 782,
+      "cliente": "Marcela Medina Mendoza",
+      "contacto": "+56 9 4755 6743",
+      "fecha_venta": "2022-02-13",
+      "fecha_vencimiento": "2022-04-04",
+      "monto": 1508,
+      "estado": "VENCIDA",
+      "dias_atraso": 150
+    },
+    {
+      "id_cuenta": 14915,
+      "id_factura": "INV7777869-20220618-L",
+      "id_cliente": 1471,
+      "cliente": "Isabel Navarro Paredes",
+      "contacto": "+56 9 8997 8669",
+      "fecha_venta": "2022-06-18",
+      "fecha_vencimiento": "2022-07-04",
+      "monto": 3241,
+      "estado": "VENCIDA",
+      "dias_atraso": 59
+    },
+    {
+      "id_cuenta": 14926,
+      "id_factura": "INV7779633-20220803-F",
+      "id_cliente": 572,
+      "cliente": "Andrés Cortés Aguilar",
+      "contacto": "+56 9 6509 1780",
+      "fecha_venta": "2022-08-03",
+      "fecha_vencimiento": "2022-09-06",
+      "monto": 3083,
+      "estado": "PENDIENTE",
+      "dias_atraso": 0
+    },
+    {
+      "id_cuenta": 14928,
+      "id_factura": "INV7778787-20220820-F",
+      "id_cliente": 1305,
+      "cliente": "Raúl Castillo Medina",
+      "contacto": "+56 9 7484 7558",
+      "fecha_venta": "2022-08-20",
+      "fecha_vencimiento": "2022-09-09",
+      "monto": 72,
+      "estado": "PENDIENTE",
+      "dias_atraso": 0
+    }
+  ],
+  "cartera_abierta_2020_12_resumen": {
+    "cuentas": 167,
+    "monto_total": 469968,
+    "vencidas_cuentas": 26,
+    "vencidas_monto": 63914,
+    "pendientes_cuentas": 141,
+    "pendientes_monto": 406054,
+    "promedio_dias_atraso_vencidas": 19.4
+  },
+  "cuadrantes_productos": [
+    {
+      "clasificacion_desempeno": "Estrella",
+      "productos": 3372,
+      "unidades": 330295,
+      "ventas": 389682389,
+      "margen": 88481987,
+      "pct_ventas": 98.18,
+      "pct_margen": 98.45
+    },
+    {
+      "clasificacion_desempeno": "Baja venta",
+      "productos": 3370,
+      "unidades": 13763,
+      "ventas": 4442729,
+      "margen": 753955,
+      "pct_ventas": 1.12,
+      "pct_margen": 0.84
+    },
+    {
+      "clasificacion_desempeno": "Alto volumen / Bajo margen",
+      "productos": 332,
+      "unidades": 3445,
+      "ventas": 1792324,
+      "margen": 210220,
+      "pct_ventas": 0.45,
+      "pct_margen": 0.23
+    },
+    {
+      "clasificacion_desempeno": "Nicho rentable",
+      "productos": 334,
+      "unidades": 2628,
+      "ventas": 1000129,
+      "margen": 429215,
+      "pct_ventas": 0.25,
+      "pct_margen": 0.48
+    }
+  ],
+  "top_10_estrella_sin_artefacto": [
+    {
+      "id_producto": "P474155",
+      "producto": "Mezcla te Suntea polvo durazno",
+      "categoria": "Bebidas sin alcohol",
+      "unidades_vendidas": 23108,
+      "ventas": 18441667,
+      "margen": 2089800,
+      "margen_pct": 11.33
+    },
+    {
+      "id_producto": "P956668",
+      "producto": "Té Hindu",
+      "categoria": "Bebidas sin alcohol",
+      "unidades_vendidas": 4584,
+      "ventas": 12053783,
+      "margen": 1689335,
+      "margen_pct": 14.01
+    },
+    {
+      "id_producto": "P593499",
+      "producto": "Pasta Tornillos Verduras Doria",
+      "categoria": "Abarrotes",
+      "unidades_vendidas": 1988,
+      "ventas": 8789203,
+      "margen": 3511762,
+      "margen_pct": 39.96
+    },
+    {
+      "id_producto": "P187536",
+      "producto": "Pan Baguette rustico de Ajo",
+      "categoria": "Panadería y galletas",
+      "unidades_vendidas": 1957,
+      "ventas": 7437727,
+      "margen": 1039959,
+      "margen_pct": 13.98
+    },
+    {
+      "id_producto": "P405949",
+      "producto": "Esmalte Vogue Fantastic Glaciar 10 ml",
+      "categoria": "Belleza y maquillaje",
+      "unidades_vendidas": 9055,
+      "ventas": 5561482,
+      "margen": 2780821,
+      "margen_pct": 50.0
+    },
+    {
+      "id_producto": "P378270",
+      "producto": "Tratamiento Nutribela 10 termoprotección intensa",
+      "categoria": "Cuidado personal",
+      "unidades_vendidas": 1166,
+      "ventas": 5495448,
+      "margen": 2197950,
+      "margen_pct": 40.0
+    },
+    {
+      "id_producto": "P609260",
+      "producto": "Bolsas Task plásticos apartamento 50",
+      "categoria": "Aseo del hogar",
+      "unidades_vendidas": 1022,
+      "ventas": 5014542,
+      "margen": 708154,
+      "margen_pct": 14.12
+    },
+    {
+      "id_producto": "P777383",
+      "producto": "Vinagreta thai Sakurahana",
+      "categoria": "Abarrotes",
+      "unidades_vendidas": 1003,
+      "ventas": 4862050,
+      "margen": 673009,
+      "margen_pct": 13.84
+    },
+    {
+      "id_producto": "P759015",
+      "producto": "Morcilla Zenú",
+      "categoria": "Carnes y embutidos",
+      "unidades_vendidas": 895,
+      "ventas": 4352322,
+      "margen": 615200,
+      "margen_pct": 14.13
+    },
+    {
+      "id_producto": "P899154",
+      "producto": "Esmalte Vogue fantastic pasión",
+      "categoria": "Belleza y maquillaje",
+      "unidades_vendidas": 1581,
+      "ventas": 4197837,
+      "margen": 1677665,
+      "margen_pct": 39.96
+    }
+  ],
+  "top_10_baja_venta": [
+    {
+      "id_producto": "P988667",
+      "producto": "Caladitos integrales Susanita",
+      "categoria": "Snacks y confitería",
+      "unidades_vendidas": 1,
+      "ventas": 44,
+      "margen": 7,
+      "margen_pct": 15.91
+    },
+    {
+      "id_producto": "P458544",
+      "producto": "Tostaditas integrales El country",
+      "categoria": "Otros / sin clasificar",
+      "unidades_vendidas": 1,
+      "ventas": 44,
+      "margen": 14,
+      "margen_pct": 31.82
+    },
+    {
+      "id_producto": "P100512",
+      "producto": "Maizitos",
+      "categoria": "Otros / sin clasificar",
+      "unidades_vendidas": 1,
+      "ventas": 46,
+      "margen": 5,
+      "margen_pct": 10.87
+    },
+    {
+      "id_producto": "P961818",
+      "producto": "Palomitas de maíz Planet Pop sabor queso cheddar",
+      "categoria": "Lácteos y huevos",
+      "unidades_vendidas": 1,
+      "ventas": 46,
+      "margen": 5,
+      "margen_pct": 10.87
+    },
+    {
+      "id_producto": "P432324",
+      "producto": "Arroz Roa parbolizado",
+      "categoria": "Abarrotes",
+      "unidades_vendidas": 1,
+      "ventas": 47,
+      "margen": 6,
+      "margen_pct": 12.77
+    },
+    {
+      "id_producto": "P446893",
+      "producto": "Galletas saltin noel queso holan",
+      "categoria": "Panadería y galletas",
+      "unidades_vendidas": 1,
+      "ventas": 47,
+      "margen": 6,
+      "margen_pct": 12.77
+    },
+    {
+      "id_producto": "P204734",
+      "producto": "Jabón Deseo explosión tropical antibacterial barra",
+      "categoria": "Aseo del hogar",
+      "unidades_vendidas": 1,
+      "ventas": 49,
+      "margen": 7,
+      "margen_pct": 14.29
+    },
+    {
+      "id_producto": "P622013",
+      "producto": "Café molido JBO",
+      "categoria": "Abarrotes",
+      "unidades_vendidas": 1,
+      "ventas": 50,
+      "margen": 7,
+      "margen_pct": 14.0
+    },
+    {
+      "id_producto": "P929691",
+      "producto": "Salsa Para Pastas y Pizza Mix Dp",
+      "categoria": "Abarrotes",
+      "unidades_vendidas": 1,
+      "ventas": 50,
+      "margen": 7,
+      "margen_pct": 14.0
+    },
+    {
+      "id_producto": "P260727",
+      "producto": "Galleta Club Social Queso",
+      "categoria": "Panadería y galletas",
+      "unidades_vendidas": 1,
+      "ventas": 50,
+      "margen": 13,
+      "margen_pct": 26.0
+    }
+  ],
+  "top_10_reajuste_precio": [
+    {
+      "id_producto": "P185444",
+      "producto": "Chocolate Oreo barra crujiente",
+      "categoria": "Snacks y confitería",
+      "unidades_vendidas": 22,
+      "ventas": 22447,
+      "margen": 360,
+      "margen_pct": 1.6
+    },
+    {
+      "id_producto": "P581671",
+      "producto": "Semilla de amapola",
+      "categoria": "Otros / sin clasificar",
+      "unidades_vendidas": 19,
+      "ventas": 16099,
+      "margen": 363,
+      "margen_pct": 2.25
+    },
+    {
+      "id_producto": "P672768",
+      "producto": "Pasabocas El golpe Con Todo Ranchero",
+      "categoria": "Snacks y confitería",
+      "unidades_vendidas": 11,
+      "ventas": 12474,
+      "margen": 693,
+      "margen_pct": 5.56
+    },
+    {
+      "id_producto": "P393663",
+      "producto": "Leche colanta uht entera Slim",
+      "categoria": "Lácteos y huevos",
+      "unidades_vendidas": 15,
+      "ventas": 10705,
+      "margen": 515,
+      "margen_pct": 4.81
+    },
+    {
+      "id_producto": "P474149",
+      "producto": "Sopa sabor a pollo Maruchan",
+      "categoria": "Abarrotes",
+      "unidades_vendidas": 13,
+      "ventas": 10049,
+      "margen": 677,
+      "margen_pct": 6.74
+    },
+    {
+      "id_producto": "P269879",
+      "producto": "Vino J.P. Chenet merlot",
+      "categoria": "Licores y cervezas",
+      "unidades_vendidas": 1,
+      "ventas": 8473,
+      "margen": 657,
+      "margen_pct": 7.75
+    },
+    {
+      "id_producto": "P624175",
+      "producto": "Vino Espumoso Jp Chenet Rose",
+      "categoria": "Licores y cervezas",
+      "unidades_vendidas": 1,
+      "ventas": 8465,
+      "margen": 664,
+      "margen_pct": 7.84
+    },
+    {
+      "id_producto": "P663557",
+      "producto": "Mix trocitos de fruta liofilizada",
+      "categoria": "Otros / sin clasificar",
+      "unidades_vendidas": 2,
+      "ventas": 8330,
+      "margen": 728,
+      "margen_pct": 8.74
+    },
+    {
+      "id_producto": "P453056",
+      "producto": "Spray Mexsana pies advance",
+      "categoria": "Otros / sin clasificar",
+      "unidades_vendidas": 7,
+      "ventas": 7699,
+      "margen": 768,
+      "margen_pct": 9.98
+    },
+    {
+      "id_producto": "P140367",
+      "producto": "Vino Merlot Vintage Autoritas",
+      "categoria": "Licores y cervezas",
+      "unidades_vendidas": 2,
+      "ventas": 7686,
+      "margen": 770,
+      "margen_pct": 10.02
+    }
+  ],
+  "sustentabilidad_completa_2010_2020": {
+    "ventas": 396917571,
+    "costo": 307042194,
+    "margen_bruto": 89875377,
+    "gastos_insumo": 20728439,
+    "utilidad_neta_operativa": 69146938,
+    "monto_fiado": 56258400,
+    "ratio_margen_sobre_gastos": 4.34,
+    "fiado_sobre_margen_pct": 62.6
+  },
+  "sustentabilidad_total_2010_2022": {
+    "ventas": 403521023,
+    "margen_bruto": 91360576,
+    "gastos_insumo": 24484481,
+    "utilidad_neta_operativa": 66876095,
+    "monto_fiado": 57339252
+  },
+  "top_5_clientes_historico_fiado": [
+    {
+      "id_cliente": 248,
+      "nombre": "Sergio García López",
+      "total_cuentas_fiadas": 10,
+      "monto_total_fiado": 915730,
+      "promedio_dias_atraso_historico": 0.9
+    },
+    {
+      "id_cliente": 855,
+      "nombre": "Camila Vega Núñez",
+      "total_cuentas_fiadas": 7,
+      "monto_total_fiado": 701388,
+      "promedio_dias_atraso_historico": 0.0
+    },
+    {
+      "id_cliente": 1965,
+      "nombre": "Andrés Gómez Fuentes",
+      "total_cuentas_fiadas": 9,
+      "monto_total_fiado": 586753,
+      "promedio_dias_atraso_historico": 4.0
+    },
+    {
+      "id_cliente": 935,
+      "nombre": "Claudia Fernández Fernández",
+      "total_cuentas_fiadas": 5,
+      "monto_total_fiado": 455758,
+      "promedio_dias_atraso_historico": 10.8
+    },
+    {
+      "id_cliente": 233,
+      "nombre": "Rosa Mendoza Aguilar",
+      "total_cuentas_fiadas": 9,
+      "monto_total_fiado": 392459,
+      "promedio_dias_atraso_historico": 40.3
+    }
+  ]
+}

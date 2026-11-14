@@ -1,0 +1,149 @@
+{
+  "fecha_corte_referencia": "2022-09-01",
+  "ventana_aviso_dias": 15,
+  "vistas_verificadas": {
+    "vw_margen_producto_categoria": 68014,
+    "vw_ventas_categoria_mes": 1901,
+    "vw_flujo_caja_mensual": 155,
+    "vw_cuentas_por_cobrar_cliente": 2000,
+    "vw_indicador_morosidad": 3,
+    "vw_ranking_productos": 7408,
+    "vw_sustentabilidad_negocio": 13,
+    "vw_alertas_cobro": 8
+  },
+  "reconciliacion_morosidad": {
+    "cuentas_abiertas": 8,
+    "cuentas_vencidas": 6,
+    "cuentas_por_vencer_15d": 2,
+    "monto_abierto": 10725,
+    "monto_vencido": 7570,
+    "monto_por_vencer": 3155,
+    "coincide_con_vw_indicador_morosidad": true
+  },
+  "resumen_prioridades": [
+    {
+      "prioridad_alerta": "1_CRITICA_VENCIDA",
+      "ventana_alerta": "Vencida",
+      "cuentas": 6,
+      "monto_total": 7570
+    },
+    {
+      "prioridad_alerta": "2_ALTA_PROXIMA_7D",
+      "ventana_alerta": "Vence en <= 7 días",
+      "cuentas": 1,
+      "monto_total": 3083
+    },
+    {
+      "prioridad_alerta": "3_MEDIA_PROXIMA_15D",
+      "ventana_alerta": "Vence en 8-15 días",
+      "cuentas": 1,
+      "monto_total": 72
+    }
+  ],
+  "alertas": [
+    {
+      "id_cuenta": 14853,
+      "id_factura": "INV7777527-20210822-L",
+      "id_cliente": 653,
+      "cliente_nombre": "Patricia Molina Contreras",
+      "cliente_contacto": "+56 9 2208 9846",
+      "fecha_vencimiento": "2021-10-07",
+      "estado": "VENCIDA",
+      "monto": 1662,
+      "dias_para_vencer": -329,
+      "dias_atraso": 329,
+      "prioridad_alerta": "1_CRITICA_VENCIDA"
+    },
+    {
+      "id_cuenta": 14875,
+      "id_factura": "INV7781306-20211120-F",
+      "id_cliente": 1541,
+      "cliente_nombre": "Claudia Aguilar Cortés",
+      "cliente_contacto": "+56 9 4794 3292",
+      "fecha_vencimiento": "2021-12-20",
+      "estado": "VENCIDA",
+      "monto": 97,
+      "dias_para_vencer": -255,
+      "dias_atraso": 255,
+      "prioridad_alerta": "1_CRITICA_VENCIDA"
+    },
+    {
+      "id_cuenta": 14889,
+      "id_factura": "INV7778555-20211219-L",
+      "id_cliente": 506,
+      "cliente_nombre": "Natalia Núñez Fuentes",
+      "cliente_contacto": "+56 9 2533 8212",
+      "fecha_vencimiento": "2022-01-30",
+      "estado": "VENCIDA",
+      "monto": 757,
+      "dias_para_vencer": -214,
+      "dias_atraso": 214,
+      "prioridad_alerta": "1_CRITICA_VENCIDA"
+    },
+    {
+      "id_cuenta": 14897,
+      "id_factura": "INV7777908-20220125-F",
+      "id_cliente": 848,
+      "cliente_nombre": "Eduardo Rojas Guzmán",
+      "cliente_contacto": "+56 9 4051 4075",
+      "fecha_vencimiento": "2022-02-22",
+      "estado": "VENCIDA",
+      "monto": 305,
+      "dias_para_vencer": -191,
+      "dias_atraso": 191,
+      "prioridad_alerta": "1_CRITICA_VENCIDA"
+    },
+    {
+      "id_cuenta": 14906,
+      "id_factura": "INV7778082-20220213-L",
+      "id_cliente": 782,
+      "cliente_nombre": "Marcela Medina Mendoza",
+      "cliente_contacto": "+56 9 4755 6743",
+      "fecha_vencimiento": "2022-04-04",
+      "estado": "VENCIDA",
+      "monto": 1508,
+      "dias_para_vencer": -150,
+      "dias_atraso": 150,
+      "prioridad_alerta": "1_CRITICA_VENCIDA"
+    },
+    {
+      "id_cuenta": 14915,
+      "id_factura": "INV7777869-20220618-L",
+      "id_cliente": 1471,
+      "cliente_nombre": "Isabel Navarro Paredes",
+      "cliente_contacto": "+56 9 8997 8669",
+      "fecha_vencimiento": "2022-07-04",
+      "estado": "VENCIDA",
+      "monto": 3241,
+      "dias_para_vencer": -59,
+      "dias_atraso": 59,
+      "prioridad_alerta": "1_CRITICA_VENCIDA"
+    },
+    {
+      "id_cuenta": 14926,
+      "id_factura": "INV7779633-20220803-F",
+      "id_cliente": 572,
+      "cliente_nombre": "Andrés Cortés Aguilar",
+      "cliente_contacto": "+56 9 6509 1780",
+      "fecha_vencimiento": "2022-09-06",
+      "estado": "PENDIENTE",
+      "monto": 3083,
+      "dias_para_vencer": 5,
+      "dias_atraso": 0,
+      "prioridad_alerta": "2_ALTA_PROXIMA_7D"
+    },
+    {
+      "id_cuenta": 14928,
+      "id_factura": "INV7778787-20220820-F",
+      "id_cliente": 1305,
+      "cliente_nombre": "Raúl Castillo Medina",
+      "cliente_contacto": "+56 9 7484 7558",
+      "fecha_vencimiento": "2022-09-09",
+      "estado": "PENDIENTE",
+      "monto": 72,
+      "dias_para_vencer": 8,
+      "dias_atraso": 0,
+      "prioridad_alerta": "3_MEDIA_PROXIMA_15D"
+    }
+  ]
+}

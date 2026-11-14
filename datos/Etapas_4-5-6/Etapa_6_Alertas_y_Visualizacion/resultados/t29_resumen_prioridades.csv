@@ -1,0 +1,4 @@
+﻿prioridad_alerta,ventana_alerta,cuentas,monto_total
+1_CRITICA_VENCIDA,Vencida,6,7570
+2_ALTA_PROXIMA_7D,Vence en <= 7 días,1,3083
+3_MEDIA_PROXIMA_15D,Vence en 8-15 días,1,72

@@ -1,0 +1,4 @@
+﻿escenario,cuentas_por_cobrar_abiertas,cuentas_vencidas,monto_por_cobrar,monto_vencido,morosidad_monto_pct,morosidad_cuentas_pct
+Corte Final Dataset (2022-09-01),8,6,10725,7570,70.58,75.0
+Cierre Cobertura Completa (2020-12-31),167,26,469968,63914,13.6,15.57
+Histórico Pagos con Atraso (2010-2022),14928,3917,57339252,15457664,26.96,26.24

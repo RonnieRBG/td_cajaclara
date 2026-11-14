@@ -1,0 +1,1902 @@
+﻿anio,mes,periodo,cobertura,categoria,facturas,unidades,ventas,margen
+2010,1,2010-01,completa,Belleza y maquillaje,7,19,47298,15425
+2010,1,2010-01,completa,Bebidas sin alcohol,3,14,42978,6016
+2010,1,2010-01,completa,Aseo del hogar,6,8,18083,4100
+2010,1,2010-01,completa,Snacks y confitería,5,7,9964,2136
+2010,1,2010-01,completa,Abarrotes,6,13,9727,1383
+2010,1,2010-01,completa,Panadería y galletas,6,8,7730,1184
+2010,1,2010-01,completa,Cuidado personal,4,4,6853,1269
+2010,1,2010-01,completa,Lácteos y huevos,5,9,3139,715
+2010,1,2010-01,completa,Otros / sin clasificar,4,6,2127,583
+2010,2,2010-02,completa,Abarrotes,31,133,361568,122771
+2010,2,2010-02,completa,Belleza y maquillaje,16,66,135584,20376
+2010,2,2010-02,completa,Carnes y embutidos,8,16,89350,11597
+2010,2,2010-02,completa,Aseo del hogar,18,27,61754,11747
+2010,2,2010-02,completa,Bebidas sin alcohol,4,21,53088,7428
+2010,2,2010-02,completa,Snacks y confitería,13,25,36016,12234
+2010,2,2010-02,completa,Panadería y galletas,17,27,35159,8123
+2010,2,2010-02,completa,Lácteos y huevos,12,23,26546,6163
+2010,2,2010-02,completa,Cuidado personal,9,15,24993,8092
+2010,2,2010-02,completa,Frutas y verduras,1,3,20295,2841
+2010,2,2010-02,completa,Helados y postres,4,5,20278,2817
+2010,2,2010-02,completa,Licores y cervezas,3,4,10560,4471
+2010,2,2010-02,completa,Otros / sin clasificar,4,9,3009,433
+2010,3,2010-03,completa,Abarrotes,52,129,206056,48867
+2010,3,2010-03,completa,Carnes y embutidos,13,23,116388,16694
+2010,3,2010-03,completa,Panadería y galletas,21,74,108278,15641
+2010,3,2010-03,completa,Lácteos y huevos,22,61,89851,31348
+2010,3,2010-03,completa,Licores y cervezas,16,22,85603,14985
+2010,3,2010-03,completa,Bebidas sin alcohol,16,41,80324,15734
+2010,3,2010-03,completa,Snacks y confitería,18,43,77041,10888
+2010,3,2010-03,completa,Cuidado personal,19,45,52128,14955
+2010,3,2010-03,completa,Aseo del hogar,30,66,45054,9205
+2010,3,2010-03,completa,Helados y postres,7,29,31985,4588
+2010,3,2010-03,completa,Belleza y maquillaje,17,26,30486,8020
+2010,3,2010-03,completa,Otros / sin clasificar,9,23,9666,2504
+2010,4,2010-04,completa,Abarrotes,59,252,511659,117089
+2010,4,2010-04,completa,Lácteos y huevos,41,162,243600,63673
+2010,4,2010-04,completa,Aseo del hogar,33,103,98716,15167
+2010,4,2010-04,completa,Snacks y confitería,28,95,74759,17167
+2010,4,2010-04,completa,Panadería y galletas,20,47,66662,10354
+2010,4,2010-04,completa,Carnes y embutidos,7,10,56682,7626
+2010,4,2010-04,completa,Licores y cervezas,11,20,55942,21499
+2010,4,2010-04,completa,Belleza y maquillaje,15,34,44467,14886
+2010,4,2010-04,completa,Cuidado personal,26,39,37862,8241
+2010,4,2010-04,completa,Bebidas sin alcohol,11,20,23683,6732
+2010,4,2010-04,completa,Helados y postres,8,15,23632,5746
+2010,4,2010-04,completa,Otros / sin clasificar,5,27,8121,2075
+2010,5,2010-05,completa,Abarrotes,69,286,445806,134258
+2010,5,2010-05,completa,Belleza y maquillaje,30,121,279228,78123
+2010,5,2010-05,completa,Bebidas sin alcohol,24,66,178438,33730
+2010,5,2010-05,completa,Panadería y galletas,26,72,153205,21718
+2010,5,2010-05,completa,Aseo del hogar,33,122,124776,18052
+2010,5,2010-05,completa,Snacks y confitería,35,80,116820,24394
+2010,5,2010-05,completa,Cuidado personal,15,43,107084,44205
+2010,5,2010-05,completa,Licores y cervezas,14,26,85333,21233
+2010,5,2010-05,completa,Lácteos y huevos,31,54,61474,16836
+2010,5,2010-05,completa,Carnes y embutidos,12,20,56501,13057
+2010,5,2010-05,completa,Helados y postres,8,59,55569,13717
+2010,5,2010-05,completa,Otros / sin clasificar,11,16,21037,6247
+2010,5,2010-05,completa,Frutas y verduras,1,1,77,11
+2010,6,2010-06,completa,Bebidas sin alcohol,12,48,128556,18903
+2010,6,2010-06,completa,Belleza y maquillaje,35,106,125619,19873
+2010,6,2010-06,completa,Abarrotes,43,112,115655,25422
+2010,6,2010-06,completa,Aseo del hogar,38,72,114802,17636
+2010,6,2010-06,completa,Cuidado personal,21,32,86882,23756
+2010,6,2010-06,completa,Lácteos y huevos,31,67,81061,24751
+2010,6,2010-06,completa,Panadería y galletas,25,88,80178,14353
+2010,6,2010-06,completa,Carnes y embutidos,8,16,77058,10818
+2010,6,2010-06,completa,Snacks y confitería,24,54,69552,16080
+2010,6,2010-06,completa,Helados y postres,7,9,31563,13942
+2010,6,2010-06,completa,Licores y cervezas,6,14,19055,3343
+2010,6,2010-06,completa,Otros / sin clasificar,7,11,7122,2334
+2010,7,2010-07,completa,Snacks y confitería,37,358,465285,164915
+2010,7,2010-07,completa,Lácteos y huevos,35,277,344673,58584
+2010,7,2010-07,completa,Aseo del hogar,60,171,314527,54548
+2010,7,2010-07,completa,Belleza y maquillaje,34,117,189128,62213
+2010,7,2010-07,completa,Abarrotes,53,126,145405,37079
+2010,7,2010-07,completa,Bebidas sin alcohol,19,72,138247,21178
+2010,7,2010-07,completa,Licores y cervezas,14,18,111443,23535
+2010,7,2010-07,completa,Panadería y galletas,35,84,100069,19865
+2010,7,2010-07,completa,Cuidado personal,17,38,56774,21164
+2010,7,2010-07,completa,Helados y postres,12,35,45910,6570
+2010,7,2010-07,completa,Carnes y embutidos,11,22,37954,6093
+2010,7,2010-07,completa,Otros / sin clasificar,12,18,13142,1889
+2010,8,2010-08,completa,Abarrotes,56,209,361039,72024
+2010,8,2010-08,completa,Aseo del hogar,45,128,254715,35700
+2010,8,2010-08,completa,Panadería y galletas,36,103,177883,32357
+2010,8,2010-08,completa,Snacks y confitería,26,83,122100,32436
+2010,8,2010-08,completa,Belleza y maquillaje,40,80,121038,26343
+2010,8,2010-08,completa,Lácteos y huevos,47,116,120532,32440
+2010,8,2010-08,completa,Bebidas sin alcohol,23,41,111097,21511
+2010,8,2010-08,completa,Cuidado personal,34,58,101014,33802
+2010,8,2010-08,completa,Carnes y embutidos,11,17,73984,8268
+2010,8,2010-08,completa,Licores y cervezas,10,11,49521,7946
+2010,8,2010-08,completa,Helados y postres,11,53,45062,15378
+2010,8,2010-08,completa,Otros / sin clasificar,9,12,10561,1992
+2010,8,2010-08,completa,Frutas y verduras,1,2,214,30
+2010,9,2010-09,completa,Abarrotes,95,324,491415,125573
+2010,9,2010-09,completa,Belleza y maquillaje,48,116,235600,55479
+2010,9,2010-09,completa,Aseo del hogar,60,128,189456,45430
+2010,9,2010-09,completa,Snacks y confitería,33,104,158817,47773
+2010,9,2010-09,completa,Panadería y galletas,47,119,155811,22887
+2010,9,2010-09,completa,Bebidas sin alcohol,31,70,112267,19787
+2010,9,2010-09,completa,Cuidado personal,30,65,103310,28692
+2010,9,2010-09,completa,Lácteos y huevos,49,116,98581,36529
+2010,9,2010-09,completa,Carnes y embutidos,15,22,71428,9883
+2010,9,2010-09,completa,Helados y postres,15,39,59062,9207
+2010,9,2010-09,completa,Licores y cervezas,6,12,32939,8242
+2010,9,2010-09,completa,Otros / sin clasificar,7,12,6067,825
+2010,10,2010-10,completa,Belleza y maquillaje,54,967,409842,105844
+2010,10,2010-10,completa,Abarrotes,74,269,284718,70742
+2010,10,2010-10,completa,Lácteos y huevos,41,191,242459,55988
+2010,10,2010-10,completa,Bebidas sin alcohol,27,91,201322,31395
+2010,10,2010-10,completa,Aseo del hogar,62,133,169619,27294
+2010,10,2010-10,completa,Carnes y embutidos,21,40,142431,22885
+2010,10,2010-10,completa,Snacks y confitería,46,97,136934,21982
+2010,10,2010-10,completa,Panadería y galletas,39,87,113755,17437
+2010,10,2010-10,completa,Cuidado personal,34,65,83852,21970
+2010,10,2010-10,completa,Licores y cervezas,12,18,70796,13766
+2010,10,2010-10,completa,Helados y postres,9,21,50801,7070
+2010,10,2010-10,completa,Otros / sin clasificar,11,30,9986,1545
+2010,11,2010-11,completa,Bebidas sin alcohol,24,105,288594,42184
+2010,11,2010-11,completa,Abarrotes,85,217,280382,72144
+2010,11,2010-11,completa,Belleza y maquillaje,34,85,216891,49729
+2010,11,2010-11,completa,Aseo del hogar,60,140,168060,35969
+2010,11,2010-11,completa,Snacks y confitería,29,77,147819,29844
+2010,11,2010-11,completa,Panadería y galletas,29,74,131195,20424
+2010,11,2010-11,completa,Lácteos y huevos,38,95,111158,38376
+2010,11,2010-11,completa,Carnes y embutidos,17,27,89190,11055
+2010,11,2010-11,completa,Cuidado personal,20,38,53661,17101
+2010,11,2010-11,completa,Helados y postres,8,10,51021,22397
+2010,11,2010-11,completa,Licores y cervezas,13,22,49980,7869
+2010,11,2010-11,completa,Otros / sin clasificar,19,28,21235,3193
+2010,12,2010-12,completa,Abarrotes,68,288,270533,60536
+2010,12,2010-12,completa,Aseo del hogar,55,146,231773,36897
+2010,12,2010-12,completa,Bebidas sin alcohol,27,88,208078,35786
+2010,12,2010-12,completa,Carnes y embutidos,24,43,206152,29385
+2010,12,2010-12,completa,Panadería y galletas,48,154,200939,29724
+2010,12,2010-12,completa,Lácteos y huevos,32,111,170770,35236
+2010,12,2010-12,completa,Cuidado personal,31,73,147281,34492
+2010,12,2010-12,completa,Helados y postres,18,58,120030,25467
+2010,12,2010-12,completa,Belleza y maquillaje,33,70,102906,20658
+2010,12,2010-12,completa,Snacks y confitería,36,96,87116,21869
+2010,12,2010-12,completa,Licores y cervezas,11,25,62028,14503
+2010,12,2010-12,completa,Otros / sin clasificar,15,29,12308,2854
+2010,12,2010-12,completa,Frutas y verduras,1,1,107,15
+2011,1,2011-01,completa,Abarrotes,80,608,632438,199288
+2011,1,2011-01,completa,Aseo del hogar,54,146,303453,57044
+2011,1,2011-01,completa,Belleza y maquillaje,46,156,257028,65663
+2011,1,2011-01,completa,Panadería y galletas,43,108,130936,22159
+2011,1,2011-01,completa,Lácteos y huevos,38,98,121029,38858
+2011,1,2011-01,completa,Cuidado personal,27,68,115915,37080
+2011,1,2011-01,completa,Carnes y embutidos,20,30,112387,16696
+2011,1,2011-01,completa,Bebidas sin alcohol,28,77,89344,19433
+2011,1,2011-01,completa,Snacks y confitería,23,61,63174,12839
+2011,1,2011-01,completa,Helados y postres,11,26,34108,8990
+2011,1,2011-01,completa,Licores y cervezas,10,20,25396,5040
+2011,1,2011-01,completa,Otros / sin clasificar,14,25,14473,2497
+2011,1,2011-01,completa,Frutas y verduras,1,1,6318,885
+2011,2,2011-02,completa,Abarrotes,93,265,477799,93980
+2011,2,2011-02,completa,Aseo del hogar,44,107,232415,40705
+2011,2,2011-02,completa,Bebidas sin alcohol,21,94,214390,38056
+2011,2,2011-02,completa,Panadería y galletas,31,99,205134,30705
+2011,2,2011-02,completa,Lácteos y huevos,32,138,154820,30090
+2011,2,2011-02,completa,Belleza y maquillaje,32,82,150712,31230
+2011,2,2011-02,completa,Snacks y confitería,25,66,116737,36341
+2011,2,2011-02,completa,Cuidado personal,25,53,109027,30296
+2011,2,2011-02,completa,Helados y postres,13,33,94205,21447
+2011,2,2011-02,completa,Licores y cervezas,16,37,90230,23341
+2011,2,2011-02,completa,Carnes y embutidos,18,28,86079,15799
+2011,2,2011-02,completa,Otros / sin clasificar,17,39,10705,1738
+2011,2,2011-02,completa,Frutas y verduras,2,4,400,56
+2011,3,2011-03,completa,Abarrotes,80,308,387395,64126
+2011,3,2011-03,completa,Aseo del hogar,59,131,257305,40924
+2011,3,2011-03,completa,Lácteos y huevos,57,194,237768,69823
+2011,3,2011-03,completa,Bebidas sin alcohol,31,141,216327,42506
+2011,3,2011-03,completa,Snacks y confitería,53,141,197314,41724
+2011,3,2011-03,completa,Panadería y galletas,43,86,196415,31048
+2011,3,2011-03,completa,Belleza y maquillaje,63,128,190812,52634
+2011,3,2011-03,completa,Carnes y embutidos,22,32,115222,17363
+2011,3,2011-03,completa,Helados y postres,15,44,106246,42297
+2011,3,2011-03,completa,Licores y cervezas,9,11,76138,11013
+2011,3,2011-03,completa,Cuidado personal,38,75,75083,19156
+2011,3,2011-03,completa,Otros / sin clasificar,14,29,27753,10774
+2011,4,2011-04,completa,Bebidas sin alcohol,36,1182,1305998,151671
+2011,4,2011-04,completa,Abarrotes,75,261,593680,109766
+2011,4,2011-04,completa,Snacks y confitería,37,142,357407,143588
+2011,4,2011-04,completa,Lácteos y huevos,61,246,257339,98568
+2011,4,2011-04,completa,Panadería y galletas,36,122,250425,45274
+2011,4,2011-04,completa,Belleza y maquillaje,57,139,247887,69478
+2011,4,2011-04,completa,Aseo del hogar,59,158,196926,38427
+2011,4,2011-04,completa,Cuidado personal,28,50,166057,49499
+2011,4,2011-04,completa,Licores y cervezas,19,28,91025,18849
+2011,4,2011-04,completa,Helados y postres,11,63,86261,16291
+2011,4,2011-04,completa,Carnes y embutidos,12,17,71755,9533
+2011,4,2011-04,completa,Otros / sin clasificar,15,28,22792,5322
+2011,4,2011-04,completa,Frutas y verduras,1,1,6318,885
+2011,5,2011-05,completa,Abarrotes,69,391,389531,106011
+2011,5,2011-05,completa,Bebidas sin alcohol,30,138,362404,58002
+2011,5,2011-05,completa,Belleza y maquillaje,55,174,352891,87464
+2011,5,2011-05,completa,Snacks y confitería,49,273,206150,67459
+2011,5,2011-05,completa,Aseo del hogar,58,138,186301,32192
+2011,5,2011-05,completa,Panadería y galletas,43,79,184955,26627
+2011,5,2011-05,completa,Lácteos y huevos,59,144,147125,43698
+2011,5,2011-05,completa,Cuidado personal,40,99,131487,48056
+2011,5,2011-05,completa,Helados y postres,18,38,70738,24873
+2011,5,2011-05,completa,Licores y cervezas,11,17,41373,7487
+2011,5,2011-05,completa,Otros / sin clasificar,14,30,19996,5543
+2011,5,2011-05,completa,Carnes y embutidos,6,6,18801,2570
+2011,5,2011-05,completa,Frutas y verduras,2,5,500,78
+2011,6,2011-06,completa,Abarrotes,88,335,514547,111866
+2011,6,2011-06,completa,Snacks y confitería,66,331,448632,122538
+2011,6,2011-06,completa,Belleza y maquillaje,63,160,284649,64771
+2011,6,2011-06,completa,Bebidas sin alcohol,37,133,274054,57486
+2011,6,2011-06,completa,Aseo del hogar,68,180,214016,39896
+2011,6,2011-06,completa,Panadería y galletas,47,104,181388,45466
+2011,6,2011-06,completa,Carnes y embutidos,24,42,145040,20408
+2011,6,2011-06,completa,Lácteos y huevos,42,88,114309,41153
+2011,6,2011-06,completa,Helados y postres,14,45,80895,27534
+2011,6,2011-06,completa,Cuidado personal,21,37,80258,23464
+2011,6,2011-06,completa,Licores y cervezas,14,15,38004,11917
+2011,6,2011-06,completa,Otros / sin clasificar,16,39,13945,4453
+2011,7,2011-07,completa,Aseo del hogar,59,174,489511,79087
+2011,7,2011-07,completa,Abarrotes,108,397,339446,77630
+2011,7,2011-07,completa,Panadería y galletas,52,146,271564,72697
+2011,7,2011-07,completa,Belleza y maquillaje,57,151,241956,71087
+2011,7,2011-07,completa,Bebidas sin alcohol,37,129,237844,40319
+2011,7,2011-07,completa,Lácteos y huevos,62,147,233262,62717
+2011,7,2011-07,completa,Snacks y confitería,62,156,224140,61570
+2011,7,2011-07,completa,Carnes y embutidos,23,48,162928,28625
+2011,7,2011-07,completa,Cuidado personal,43,103,138482,37200
+2011,7,2011-07,completa,Licores y cervezas,24,30,103293,19572
+2011,7,2011-07,completa,Helados y postres,15,32,51260,9601
+2011,7,2011-07,completa,Otros / sin clasificar,16,33,10134,2258
+2011,8,2011-08,completa,Abarrotes,100,300,485611,131589
+2011,8,2011-08,completa,Belleza y maquillaje,50,143,280322,81036
+2011,8,2011-08,completa,Aseo del hogar,62,162,268083,51512
+2011,8,2011-08,completa,Cuidado personal,37,72,200274,66599
+2011,8,2011-08,completa,Snacks y confitería,48,115,173785,35270
+2011,8,2011-08,completa,Bebidas sin alcohol,24,94,152271,31588
+2011,8,2011-08,completa,Panadería y galletas,56,106,139527,27158
+2011,8,2011-08,completa,Licores y cervezas,18,32,97662,27967
+2011,8,2011-08,completa,Carnes y embutidos,18,32,96662,13602
+2011,8,2011-08,completa,Lácteos y huevos,40,99,90978,24617
+2011,8,2011-08,completa,Helados y postres,16,58,81639,12218
+2011,8,2011-08,completa,Otros / sin clasificar,21,41,18684,3144
+2011,8,2011-08,completa,Frutas y verduras,1,2,200,28
+2011,9,2011-09,completa,Belleza y maquillaje,49,1388,764668,345962
+2011,9,2011-09,completa,Abarrotes,98,313,407692,77324
+2011,9,2011-09,completa,Aseo del hogar,66,230,320428,63910
+2011,9,2011-09,completa,Lácteos y huevos,53,244,241133,48254
+2011,9,2011-09,completa,Cuidado personal,56,97,185251,62247
+2011,9,2011-09,completa,Bebidas sin alcohol,28,117,181390,37496
+2011,9,2011-09,completa,Snacks y confitería,44,165,163285,42232
+2011,9,2011-09,completa,Frutas y verduras,3,23,139092,19481
+2011,9,2011-09,completa,Panadería y galletas,43,127,127661,25603
+2011,9,2011-09,completa,Helados y postres,16,43,55569,15399
+2011,9,2011-09,completa,Licores y cervezas,13,17,47560,8871
+2011,9,2011-09,completa,Carnes y embutidos,12,18,45481,6276
+2011,9,2011-09,completa,Otros / sin clasificar,20,38,26365,4365
+2011,10,2011-10,completa,Abarrotes,88,1621,1705440,674328
+2011,10,2011-10,completa,Panadería y galletas,70,207,468667,87678
+2011,10,2011-10,completa,Bebidas sin alcohol,34,113,274988,43763
+2011,10,2011-10,completa,Belleza y maquillaje,63,167,241764,53892
+2011,10,2011-10,completa,Aseo del hogar,83,190,210123,32041
+2011,10,2011-10,completa,Lácteos y huevos,67,182,176063,56191
+2011,10,2011-10,completa,Snacks y confitería,48,117,140360,33903
+2011,10,2011-10,completa,Carnes y embutidos,14,28,128479,17726
+2011,10,2011-10,completa,Cuidado personal,34,63,72055,15984
+2011,10,2011-10,completa,Licores y cervezas,12,16,47148,10326
+2011,10,2011-10,completa,Helados y postres,12,42,43482,6415
+2011,10,2011-10,completa,Otros / sin clasificar,20,37,35490,11173
+2011,10,2011-10,completa,Frutas y verduras,3,3,6518,914
+2011,11,2011-11,completa,Abarrotes,90,284,610135,93550
+2011,11,2011-11,completa,Panadería y galletas,53,150,236417,54592
+2011,11,2011-11,completa,Belleza y maquillaje,50,112,182710,43664
+2011,11,2011-11,completa,Carnes y embutidos,25,44,181247,26055
+2011,11,2011-11,completa,Snacks y confitería,44,134,143160,35072
+2011,11,2011-11,completa,Helados y postres,22,65,111359,17127
+2011,11,2011-11,completa,Aseo del hogar,52,139,108810,20258
+2011,11,2011-11,completa,Bebidas sin alcohol,41,103,107768,26714
+2011,11,2011-11,completa,Cuidado personal,22,65,105445,36567
+2011,11,2011-11,completa,Lácteos y huevos,40,90,89347,28220
+2011,11,2011-11,completa,Licores y cervezas,20,25,79095,17575
+2011,11,2011-11,completa,Otros / sin clasificar,14,19,14492,3200
+2011,11,2011-11,completa,Frutas y verduras,1,1,98,12
+2011,12,2011-12,completa,Abarrotes,100,284,354703,70659
+2011,12,2011-12,completa,Aseo del hogar,80,144,306429,52690
+2011,12,2011-12,completa,Belleza y maquillaje,50,144,240206,66890
+2011,12,2011-12,completa,Bebidas sin alcohol,30,114,182848,39488
+2011,12,2011-12,completa,Panadería y galletas,42,118,156804,33892
+2011,12,2011-12,completa,Cuidado personal,28,55,152623,49362
+2011,12,2011-12,completa,Lácteos y huevos,43,140,137010,31249
+2011,12,2011-12,completa,Snacks y confitería,50,132,130366,20928
+2011,12,2011-12,completa,Carnes y embutidos,19,27,108134,15141
+2011,12,2011-12,completa,Licores y cervezas,18,30,98937,17808
+2011,12,2011-12,completa,Helados y postres,14,31,60200,20852
+2011,12,2011-12,completa,Otros / sin clasificar,19,36,11411,2104
+2011,12,2011-12,completa,Frutas y verduras,1,2,206,34
+2012,1,2012-01,completa,Abarrotes,89,280,630553,161873
+2012,1,2012-01,completa,Lácteos y huevos,54,118,238006,101943
+2012,1,2012-01,completa,Belleza y maquillaje,56,121,234895,47217
+2012,1,2012-01,completa,Bebidas sin alcohol,30,88,222244,37787
+2012,1,2012-01,completa,Aseo del hogar,61,136,216900,66957
+2012,1,2012-01,completa,Panadería y galletas,56,141,173118,28747
+2012,1,2012-01,completa,Cuidado personal,41,69,151604,34529
+2012,1,2012-01,completa,Carnes y embutidos,22,36,137421,19950
+2012,1,2012-01,completa,Licores y cervezas,15,19,104022,22880
+2012,1,2012-01,completa,Snacks y confitería,43,69,80862,15041
+2012,1,2012-01,completa,Helados y postres,14,39,57852,12434
+2012,1,2012-01,completa,Otros / sin clasificar,16,27,13622,3183
+2012,2,2012-02,completa,Abarrotes,65,261,567010,94581
+2012,2,2012-02,completa,Bebidas sin alcohol,39,157,304757,51805
+2012,2,2012-02,completa,Lácteos y huevos,47,311,278899,48230
+2012,2,2012-02,completa,Aseo del hogar,74,210,247471,46044
+2012,2,2012-02,completa,Snacks y confitería,33,181,240192,105804
+2012,2,2012-02,completa,Belleza y maquillaje,44,118,228459,61600
+2012,2,2012-02,completa,Panadería y galletas,49,169,149102,40826
+2012,2,2012-02,completa,Cuidado personal,25,45,105781,24117
+2012,2,2012-02,completa,Helados y postres,18,39,102391,33276
+2012,2,2012-02,completa,Carnes y embutidos,16,24,87155,14494
+2012,2,2012-02,completa,Licores y cervezas,9,12,32937,7707
+2012,2,2012-02,completa,Otros / sin clasificar,10,21,8258,1825
+2012,2,2012-02,completa,Frutas y verduras,1,1,6438,901
+2012,3,2012-03,completa,Abarrotes,121,378,413345,87712
+2012,3,2012-03,completa,Lácteos y huevos,58,338,371224,155482
+2012,3,2012-03,completa,Belleza y maquillaje,51,131,290381,48339
+2012,3,2012-03,completa,Aseo del hogar,72,168,281873,45433
+2012,3,2012-03,completa,Cuidado personal,44,86,195310,55337
+2012,3,2012-03,completa,Snacks y confitería,64,148,175022,48725
+2012,3,2012-03,completa,Panadería y galletas,56,134,164013,33743
+2012,3,2012-03,completa,Bebidas sin alcohol,37,79,120673,23365
+2012,3,2012-03,completa,Carnes y embutidos,14,26,99124,21211
+2012,3,2012-03,completa,Helados y postres,16,28,45153,8285
+2012,3,2012-03,completa,Licores y cervezas,16,19,33176,7818
+2012,3,2012-03,completa,Otros / sin clasificar,20,42,16608,3997
+2012,3,2012-03,completa,Frutas y verduras,3,5,450,60
+2012,4,2012-04,completa,Abarrotes,100,1629,1724500,745761
+2012,4,2012-04,completa,Snacks y confitería,55,272,403661,101825
+2012,4,2012-04,completa,Aseo del hogar,68,203,347781,85954
+2012,4,2012-04,completa,Helados y postres,17,223,292445,60071
+2012,4,2012-04,completa,Belleza y maquillaje,64,161,281092,81197
+2012,4,2012-04,completa,Lácteos y huevos,65,182,213808,59952
+2012,4,2012-04,completa,Panadería y galletas,43,107,141464,22668
+2012,4,2012-04,completa,Bebidas sin alcohol,36,86,125571,29282
+2012,4,2012-04,completa,Licores y cervezas,18,22,83989,19376
+2012,4,2012-04,completa,Cuidado personal,29,52,70886,22660
+2012,4,2012-04,completa,Carnes y embutidos,14,19,56296,7928
+2012,4,2012-04,completa,Otros / sin clasificar,16,35,16722,3665
+2012,5,2012-05,completa,Abarrotes,117,409,782173,199862
+2012,5,2012-05,completa,Bebidas sin alcohol,38,164,315404,58027
+2012,5,2012-05,completa,Aseo del hogar,66,160,282831,52671
+2012,5,2012-05,completa,Snacks y confitería,54,160,228925,56565
+2012,5,2012-05,completa,Belleza y maquillaje,49,98,223538,44454
+2012,5,2012-05,completa,Panadería y galletas,43,89,156585,29376
+2012,5,2012-05,completa,Lácteos y huevos,58,145,138682,35615
+2012,5,2012-05,completa,Cuidado personal,31,58,119789,38878
+2012,5,2012-05,completa,Helados y postres,16,40,76086,16148
+2012,5,2012-05,completa,Licores y cervezas,17,26,63627,9879
+2012,5,2012-05,completa,Carnes y embutidos,11,13,40602,6107
+2012,5,2012-05,completa,Otros / sin clasificar,17,31,14725,3430
+2012,6,2012-06,completa,Abarrotes,97,310,547915,173933
+2012,6,2012-06,completa,Belleza y maquillaje,50,143,317611,61682
+2012,6,2012-06,completa,Bebidas sin alcohol,41,135,293892,50284
+2012,6,2012-06,completa,Lácteos y huevos,61,262,272882,64861
+2012,6,2012-06,completa,Cuidado personal,52,124,272194,94072
+2012,6,2012-06,completa,Panadería y galletas,52,163,201818,53947
+2012,6,2012-06,completa,Aseo del hogar,75,169,160609,31075
+2012,6,2012-06,completa,Snacks y confitería,42,95,146587,44435
+2012,6,2012-06,completa,Carnes y embutidos,20,29,70943,9885
+2012,6,2012-06,completa,Licores y cervezas,11,13,55224,7410
+2012,6,2012-06,completa,Helados y postres,11,15,38700,8385
+2012,6,2012-06,completa,Otros / sin clasificar,18,28,22481,6339
+2012,6,2012-06,completa,Frutas y verduras,1,3,19314,2679
+2012,7,2012-07,completa,Belleza y maquillaje,63,902,895453,389855
+2012,7,2012-07,completa,Abarrotes,110,341,683019,174035
+2012,7,2012-07,completa,Lácteos y huevos,57,352,336594,71999
+2012,7,2012-07,completa,Aseo del hogar,81,174,273438,54748
+2012,7,2012-07,completa,Bebidas sin alcohol,48,157,270064,66532
+2012,7,2012-07,completa,Cuidado personal,50,108,235121,74629
+2012,7,2012-07,completa,Snacks y confitería,54,116,162197,35471
+2012,7,2012-07,completa,Licores y cervezas,21,37,157954,27620
+2012,7,2012-07,completa,Panadería y galletas,53,143,116869,19679
+2012,7,2012-07,completa,Carnes y embutidos,24,39,113451,15782
+2012,7,2012-07,completa,Helados y postres,20,39,63034,11387
+2012,7,2012-07,completa,Otros / sin clasificar,17,33,14877,2632
+2012,8,2012-08,completa,Bebidas sin alcohol,38,1426,1611683,200997
+2012,8,2012-08,completa,Abarrotes,111,334,366635,92640
+2012,8,2012-08,completa,Panadería y galletas,60,181,346822,64293
+2012,8,2012-08,completa,Cuidado personal,53,107,325076,116217
+2012,8,2012-08,completa,Snacks y confitería,56,305,278983,110126
+2012,8,2012-08,completa,Aseo del hogar,78,153,244767,44216
+2012,8,2012-08,completa,Belleza y maquillaje,58,131,219836,62175
+2012,8,2012-08,completa,Helados y postres,24,86,174711,38626
+2012,8,2012-08,completa,Lácteos y huevos,61,135,164909,57644
+2012,8,2012-08,completa,Licores y cervezas,23,36,127063,25235
+2012,8,2012-08,completa,Carnes y embutidos,12,23,48980,8063
+2012,8,2012-08,completa,Otros / sin clasificar,22,42,19279,3042
+2012,8,2012-08,completa,Frutas y verduras,1,1,102,14
+2012,9,2012-09,completa,Helados y postres,16,818,946693,142119
+2012,9,2012-09,completa,Abarrotes,93,287,481276,130501
+2012,9,2012-09,completa,Snacks y confitería,53,193,263222,62368
+2012,9,2012-09,completa,Aseo del hogar,84,220,242468,44060
+2012,9,2012-09,completa,Panadería y galletas,54,136,234226,60705
+2012,9,2012-09,completa,Cuidado personal,50,102,210879,63677
+2012,9,2012-09,completa,Lácteos y huevos,52,147,188240,46130
+2012,9,2012-09,completa,Belleza y maquillaje,48,98,180027,47690
+2012,9,2012-09,completa,Bebidas sin alcohol,42,94,171838,29734
+2012,9,2012-09,completa,Carnes y embutidos,22,38,138469,23733
+2012,9,2012-09,completa,Licores y cervezas,14,21,56344,7935
+2012,9,2012-09,completa,Otros / sin clasificar,11,24,9425,2365
+2012,10,2012-10,completa,Bebidas sin alcohol,42,1020,1175480,146185
+2012,10,2012-10,completa,Belleza y maquillaje,55,228,484998,135007
+2012,10,2012-10,completa,Aseo del hogar,98,202,370303,70063
+2012,10,2012-10,completa,Abarrotes,92,274,368043,87549
+2012,10,2012-10,completa,Panadería y galletas,53,135,255794,58190
+2012,10,2012-10,completa,Cuidado personal,46,85,201077,63911
+2012,10,2012-10,completa,Lácteos y huevos,56,159,141862,40362
+2012,10,2012-10,completa,Snacks y confitería,45,122,102362,17397
+2012,10,2012-10,completa,Carnes y embutidos,18,32,75761,13467
+2012,10,2012-10,completa,Helados y postres,14,35,70112,15175
+2012,10,2012-10,completa,Licores y cervezas,15,24,58238,20255
+2012,10,2012-10,completa,Otros / sin clasificar,13,15,6239,1677
+2012,10,2012-10,completa,Frutas y verduras,1,2,204,28
+2012,11,2012-11,completa,Abarrotes,108,620,605574,142176
+2012,11,2012-11,completa,Snacks y confitería,60,260,472748,89747
+2012,11,2012-11,completa,Bebidas sin alcohol,46,141,292947,57460
+2012,11,2012-11,completa,Aseo del hogar,79,183,262252,40953
+2012,11,2012-11,completa,Belleza y maquillaje,64,144,253405,68553
+2012,11,2012-11,completa,Lácteos y huevos,51,188,212636,70545
+2012,11,2012-11,completa,Carnes y embutidos,17,49,179500,22720
+2012,11,2012-11,completa,Panadería y galletas,37,98,126127,24477
+2012,11,2012-11,completa,Cuidado personal,34,57,121121,44236
+2012,11,2012-11,completa,Helados y postres,19,50,109846,31244
+2012,11,2012-11,completa,Licores y cervezas,15,21,108754,23549
+2012,11,2012-11,completa,Otros / sin clasificar,14,35,21902,3417
+2012,11,2012-11,completa,Frutas y verduras,3,3,251,39
+2012,12,2012-12,completa,Abarrotes,91,385,448521,108015
+2012,12,2012-12,completa,Aseo del hogar,89,259,439853,67882
+2012,12,2012-12,completa,Belleza y maquillaje,62,205,425562,122849
+2012,12,2012-12,completa,Panadería y galletas,54,179,363303,66265
+2012,12,2012-12,completa,Cuidado personal,51,113,303440,93907
+2012,12,2012-12,completa,Lácteos y huevos,61,163,243316,63710
+2012,12,2012-12,completa,Snacks y confitería,64,159,238751,48874
+2012,12,2012-12,completa,Helados y postres,29,113,224147,64784
+2012,12,2012-12,completa,Licores y cervezas,39,57,176665,36214
+2012,12,2012-12,completa,Bebidas sin alcohol,31,86,116265,25653
+2012,12,2012-12,completa,Carnes y embutidos,18,25,68488,13699
+2012,12,2012-12,completa,Otros / sin clasificar,22,29,22830,4251
+2012,12,2012-12,completa,Frutas y verduras,2,2,12876,1802
+2013,1,2013-01,completa,Bebidas sin alcohol,42,1194,1372047,175612
+2013,1,2013-01,completa,Belleza y maquillaje,47,820,683425,319374
+2013,1,2013-01,completa,Abarrotes,64,221,277217,63745
+2013,1,2013-01,completa,Aseo del hogar,67,164,235568,43917
+2013,1,2013-01,completa,Lácteos y huevos,45,202,224419,50902
+2013,1,2013-01,completa,Panadería y galletas,38,105,171533,29043
+2013,1,2013-01,completa,Cuidado personal,32,57,151872,56343
+2013,1,2013-01,completa,Snacks y confitería,40,74,148115,23679
+2013,1,2013-01,completa,Licores y cervezas,16,20,81815,16587
+2013,1,2013-01,completa,Helados y postres,14,38,50099,11637
+2013,1,2013-01,completa,Carnes y embutidos,15,25,34983,7319
+2013,1,2013-01,completa,Otros / sin clasificar,12,19,9877,3112
+2013,2,2013-02,completa,Abarrotes,70,395,363366,102904
+2013,2,2013-02,completa,Lácteos y huevos,49,181,292731,100872
+2013,2,2013-02,completa,Belleza y maquillaje,34,165,282193,77332
+2013,2,2013-02,completa,Aseo del hogar,49,122,149866,33471
+2013,2,2013-02,completa,Snacks y confitería,34,118,125289,25861
+2013,2,2013-02,completa,Panadería y galletas,33,85,123037,19185
+2013,2,2013-02,completa,Bebidas sin alcohol,25,57,83591,18418
+2013,2,2013-02,completa,Cuidado personal,28,40,72168,14901
+2013,2,2013-02,completa,Carnes y embutidos,14,28,69508,11807
+2013,2,2013-02,completa,Licores y cervezas,9,15,69310,11449
+2013,2,2013-02,completa,Helados y postres,5,13,19145,2887
+2013,2,2013-02,completa,Otros / sin clasificar,10,20,14927,3143
+2013,2,2013-02,completa,Frutas y verduras,2,2,194,28
+2013,3,2013-03,completa,Abarrotes,97,660,403671,151481
+2013,3,2013-03,completa,Aseo del hogar,79,168,351354,72984
+2013,3,2013-03,completa,Snacks y confitería,46,243,343924,71253
+2013,3,2013-03,completa,Panadería y galletas,44,150,283753,63821
+2013,3,2013-03,completa,Belleza y maquillaje,57,138,256757,59692
+2013,3,2013-03,completa,Cuidado personal,41,79,178277,59961
+2013,3,2013-03,completa,Licores y cervezas,25,37,162617,35675
+2013,3,2013-03,completa,Lácteos y huevos,50,110,161675,38894
+2013,3,2013-03,completa,Bebidas sin alcohol,33,86,143733,30061
+2013,3,2013-03,completa,Carnes y embutidos,19,37,81607,17402
+2013,3,2013-03,completa,Helados y postres,13,22,40164,8653
+2013,3,2013-03,completa,Frutas y verduras,1,5,30460,4185
+2013,3,2013-03,completa,Otros / sin clasificar,13,24,5798,1226
+2013,4,2013-04,completa,Abarrotes,107,369,330881,60715
+2013,4,2013-04,completa,Belleza y maquillaje,62,186,322293,68625
+2013,4,2013-04,completa,Bebidas sin alcohol,32,119,259965,42519
+2013,4,2013-04,completa,Lácteos y huevos,65,233,256020,70638
+2013,4,2013-04,completa,Panadería y galletas,54,147,230610,41845
+2013,4,2013-04,completa,Carnes y embutidos,23,64,228112,40448
+2013,4,2013-04,completa,Cuidado personal,45,80,201439,47591
+2013,4,2013-04,completa,Snacks y confitería,39,103,138800,33375
+2013,4,2013-04,completa,Aseo del hogar,64,118,133595,22703
+2013,4,2013-04,completa,Licores y cervezas,16,28,96193,19219
+2013,4,2013-04,completa,Helados y postres,21,42,89672,15767
+2013,4,2013-04,completa,Frutas y verduras,1,3,17823,2058
+2013,4,2013-04,completa,Otros / sin clasificar,10,12,5603,1420
+2013,5,2013-05,completa,Abarrotes,109,481,794411,196137
+2013,5,2013-05,completa,Panadería y galletas,62,189,373119,75909
+2013,5,2013-05,completa,Bebidas sin alcohol,44,193,367460,94592
+2013,5,2013-05,completa,Belleza y maquillaje,54,204,364057,102139
+2013,5,2013-05,completa,Lácteos y huevos,67,256,280624,89668
+2013,5,2013-05,completa,Carnes y embutidos,20,59,180860,37445
+2013,5,2013-05,completa,Aseo del hogar,65,126,154953,22269
+2013,5,2013-05,completa,Snacks y confitería,50,103,141982,30111
+2013,5,2013-05,completa,Licores y cervezas,18,29,99234,13699
+2013,5,2013-05,completa,Cuidado personal,36,53,96693,26642
+2013,5,2013-05,completa,Helados y postres,17,36,47541,6892
+2013,5,2013-05,completa,Frutas y verduras,1,2,12220,1710
+2013,5,2013-05,completa,Otros / sin clasificar,11,26,11879,1924
+2013,6,2013-06,completa,Bebidas sin alcohol,43,231,486489,81731
+2013,6,2013-06,completa,Abarrotes,94,495,456632,87891
+2013,6,2013-06,completa,Belleza y maquillaje,70,877,424137,127482
+2013,6,2013-06,completa,Snacks y confitería,63,298,366041,74771
+2013,6,2013-06,completa,Lácteos y huevos,82,290,323065,74394
+2013,6,2013-06,completa,Aseo del hogar,84,194,287565,65245
+2013,6,2013-06,completa,Cuidado personal,57,124,247080,72226
+2013,6,2013-06,completa,Panadería y galletas,57,131,199321,39938
+2013,6,2013-06,completa,Licores y cervezas,22,27,133735,35469
+2013,6,2013-06,completa,Carnes y embutidos,24,56,112218,26308
+2013,6,2013-06,completa,Helados y postres,21,70,80946,13791
+2013,6,2013-06,completa,Otros / sin clasificar,19,41,18751,4981
+2013,7,2013-07,completa,Abarrotes,120,353,463548,100128
+2013,7,2013-07,completa,Lácteos y huevos,80,328,380190,86505
+2013,7,2013-07,completa,Bebidas sin alcohol,46,152,300954,64615
+2013,7,2013-07,completa,Aseo del hogar,80,200,239039,40377
+2013,7,2013-07,completa,Cuidado personal,56,148,231849,55608
+2013,7,2013-07,completa,Panadería y galletas,40,147,225271,40806
+2013,7,2013-07,completa,Snacks y confitería,53,204,225190,56508
+2013,7,2013-07,completa,Belleza y maquillaje,54,119,215103,65655
+2013,7,2013-07,completa,Carnes y embutidos,20,50,146157,23602
+2013,7,2013-07,completa,Licores y cervezas,23,28,83312,15146
+2013,7,2013-07,completa,Helados y postres,9,27,37148,5245
+2013,7,2013-07,completa,Frutas y verduras,1,4,24440,3420
+2013,7,2013-07,completa,Otros / sin clasificar,19,24,10731,2143
+2013,8,2013-08,completa,Lácteos y huevos,76,368,557790,165944
+2013,8,2013-08,completa,Abarrotes,92,364,459034,100194
+2013,8,2013-08,completa,Belleza y maquillaje,76,212,395740,120612
+2013,8,2013-08,completa,Bebidas sin alcohol,65,170,356234,58717
+2013,8,2013-08,completa,Aseo del hogar,89,230,330446,76721
+2013,8,2013-08,completa,Panadería y galletas,57,121,300424,52898
+2013,8,2013-08,completa,Licores y cervezas,30,39,223472,55197
+2013,8,2013-08,completa,Cuidado personal,43,89,212760,68492
+2013,8,2013-08,completa,Snacks y confitería,57,131,159450,27002
+2013,8,2013-08,completa,Carnes y embutidos,17,49,134228,21788
+2013,8,2013-08,completa,Helados y postres,21,76,97087,13455
+2013,8,2013-08,completa,Frutas y verduras,1,4,24440,2856
+2013,8,2013-08,completa,Otros / sin clasificar,30,54,19064,4727
+2013,9,2013-09,completa,Snacks y confitería,65,355,395586,103138
+2013,9,2013-09,completa,Belleza y maquillaje,65,181,292230,74300
+2013,9,2013-09,completa,Panadería y galletas,55,207,267296,43709
+2013,9,2013-09,completa,Abarrotes,82,221,218591,42878
+2013,9,2013-09,completa,Aseo del hogar,77,167,201218,40360
+2013,9,2013-09,completa,Lácteos y huevos,66,182,193417,54998
+2013,9,2013-09,completa,Bebidas sin alcohol,40,108,173439,39172
+2013,9,2013-09,completa,Cuidado personal,44,86,133925,42485
+2013,9,2013-09,completa,Carnes y embutidos,14,25,93113,13239
+2013,9,2013-09,completa,Licores y cervezas,20,32,92031,13143
+2013,9,2013-09,completa,Helados y postres,17,28,46478,6319
+2013,9,2013-09,completa,Otros / sin clasificar,18,45,12414,2251
+2013,10,2013-10,completa,Abarrotes,80,291,308777,53111
+2013,10,2013-10,completa,Panadería y galletas,54,253,229621,38322
+2013,10,2013-10,completa,Belleza y maquillaje,65,129,214788,51005
+2013,10,2013-10,completa,Bebidas sin alcohol,45,143,184551,33106
+2013,10,2013-10,completa,Lácteos y huevos,56,146,157800,63012
+2013,10,2013-10,completa,Cuidado personal,42,75,133402,23806
+2013,10,2013-10,completa,Aseo del hogar,65,162,133113,24785
+2013,10,2013-10,completa,Licores y cervezas,16,28,128807,16313
+2013,10,2013-10,completa,Snacks y confitería,28,72,104835,23931
+2013,10,2013-10,completa,Carnes y embutidos,14,41,103527,26410
+2013,10,2013-10,completa,Frutas y verduras,1,6,36660,5130
+2013,10,2013-10,completa,Helados y postres,11,42,36181,5226
+2013,10,2013-10,completa,Otros / sin clasificar,19,49,17909,2543
+2013,11,2013-11,completa,Aseo del hogar,63,224,372527,67486
+2013,11,2013-11,completa,Bebidas sin alcohol,30,151,360946,51015
+2013,11,2013-11,completa,Lácteos y huevos,44,268,290182,75229
+2013,11,2013-11,completa,Belleza y maquillaje,56,135,240532,53594
+2013,11,2013-11,completa,Abarrotes,84,246,239116,62808
+2013,11,2013-11,completa,Cuidado personal,41,80,196104,51946
+2013,11,2013-11,completa,Panadería y galletas,46,133,182490,33819
+2013,11,2013-11,completa,Snacks y confitería,33,105,114611,23259
+2013,11,2013-11,completa,Carnes y embutidos,13,29,83514,16954
+2013,11,2013-11,completa,Helados y postres,8,28,58688,13688
+2013,11,2013-11,completa,Licores y cervezas,18,22,34572,10065
+2013,11,2013-11,completa,Otros / sin clasificar,8,23,8863,1880
+2013,12,2013-12,completa,Abarrotes,118,460,415984,92179
+2013,12,2013-12,completa,Lácteos y huevos,56,219,296999,75005
+2013,12,2013-12,completa,Cuidado personal,44,91,268276,84611
+2013,12,2013-12,completa,Panadería y galletas,50,152,260320,42248
+2013,12,2013-12,completa,Belleza y maquillaje,52,157,234740,61177
+2013,12,2013-12,completa,Bebidas sin alcohol,35,88,175938,30081
+2013,12,2013-12,completa,Aseo del hogar,68,199,160763,27138
+2013,12,2013-12,completa,Snacks y confitería,46,108,126125,23659
+2013,12,2013-12,completa,Carnes y embutidos,17,34,92881,12345
+2013,12,2013-12,completa,Licores y cervezas,17,28,69766,10543
+2013,12,2013-12,completa,Helados y postres,14,31,44396,10583
+2013,12,2013-12,completa,Otros / sin clasificar,12,28,8091,1843
+2014,1,2014-01,completa,Panadería y galletas,45,375,466289,119724
+2014,1,2014-01,completa,Belleza y maquillaje,65,155,319908,74225
+2014,1,2014-01,completa,Abarrotes,94,346,305627,88296
+2014,1,2014-01,completa,Lácteos y huevos,65,160,191525,58270
+2014,1,2014-01,completa,Cuidado personal,45,98,191191,49719
+2014,1,2014-01,completa,Snacks y confitería,43,144,187596,35660
+2014,1,2014-01,completa,Bebidas sin alcohol,31,88,162906,24067
+2014,1,2014-01,completa,Aseo del hogar,64,105,153535,28564
+2014,1,2014-01,completa,Licores y cervezas,18,27,95797,13938
+2014,1,2014-01,completa,Helados y postres,25,87,83848,23836
+2014,1,2014-01,completa,Carnes y embutidos,13,24,83228,12725
+2014,1,2014-01,completa,Otros / sin clasificar,12,20,9234,2497
+2014,2,2014-02,completa,Belleza y maquillaje,48,772,485821,100270
+2014,2,2014-02,completa,Bebidas sin alcohol,30,154,387556,55496
+2014,2,2014-02,completa,Aseo del hogar,57,179,353201,53870
+2014,2,2014-02,completa,Abarrotes,74,204,195920,43412
+2014,2,2014-02,completa,Lácteos y huevos,48,108,185572,34235
+2014,2,2014-02,completa,Cuidado personal,38,72,182596,39035
+2014,2,2014-02,completa,Panadería y galletas,53,103,151301,24624
+2014,2,2014-02,completa,Snacks y confitería,43,138,147467,32970
+2014,2,2014-02,completa,Helados y postres,16,40,77257,12558
+2014,2,2014-02,completa,Licores y cervezas,12,21,67232,13055
+2014,2,2014-02,completa,Carnes y embutidos,12,26,58735,15261
+2014,2,2014-02,completa,Otros / sin clasificar,11,55,32134,12304
+2014,3,2014-03,completa,Abarrotes,100,306,548693,118212
+2014,3,2014-03,completa,Panadería y galletas,74,255,540192,103010
+2014,3,2014-03,completa,Lácteos y huevos,58,399,496187,128467
+2014,3,2014-03,completa,Snacks y confitería,44,210,242292,51499
+2014,3,2014-03,completa,Cuidado personal,43,113,201111,57991
+2014,3,2014-03,completa,Belleza y maquillaje,64,148,199766,44646
+2014,3,2014-03,completa,Aseo del hogar,78,150,190696,28151
+2014,3,2014-03,completa,Bebidas sin alcohol,41,89,165241,28519
+2014,3,2014-03,completa,Licores y cervezas,17,31,105166,29673
+2014,3,2014-03,completa,Carnes y embutidos,14,24,83339,10919
+2014,3,2014-03,completa,Helados y postres,14,47,43537,6368
+2014,3,2014-03,completa,Otros / sin clasificar,27,46,25447,4418
+2014,4,2014-04,completa,Abarrotes,101,351,537096,139269
+2014,4,2014-04,completa,Bebidas sin alcohol,42,156,332847,59331
+2014,4,2014-04,completa,Belleza y maquillaje,59,132,314552,57012
+2014,4,2014-04,completa,Aseo del hogar,85,187,291946,45497
+2014,4,2014-04,completa,Panadería y galletas,48,176,271949,40172
+2014,4,2014-04,completa,Lácteos y huevos,66,198,263709,56564
+2014,4,2014-04,completa,Snacks y confitería,52,136,216105,62102
+2014,4,2014-04,completa,Cuidado personal,38,66,127152,37019
+2014,4,2014-04,completa,Carnes y embutidos,19,35,111747,22586
+2014,4,2014-04,completa,Licores y cervezas,20,27,55418,10310
+2014,4,2014-04,completa,Helados y postres,20,43,34597,4937
+2014,4,2014-04,completa,Otros / sin clasificar,18,48,13859,2063
+2014,5,2014-05,completa,Bebidas sin alcohol,45,770,864455,113146
+2014,5,2014-05,completa,Abarrotes,101,413,412286,81091
+2014,5,2014-05,completa,Belleza y maquillaje,39,353,344949,131574
+2014,5,2014-05,completa,Lácteos y huevos,54,146,280171,52903
+2014,5,2014-05,completa,Panadería y galletas,42,115,193578,30080
+2014,5,2014-05,completa,Aseo del hogar,60,164,178534,31456
+2014,5,2014-05,completa,Licores y cervezas,24,30,125044,23911
+2014,5,2014-05,completa,Carnes y embutidos,20,66,124742,29919
+2014,5,2014-05,completa,Cuidado personal,31,53,122653,36349
+2014,5,2014-05,completa,Snacks y confitería,43,102,114863,19758
+2014,5,2014-05,completa,Helados y postres,15,37,93553,30681
+2014,5,2014-05,completa,Otros / sin clasificar,17,50,21627,6090
+2014,6,2014-06,completa,Bebidas sin alcohol,31,1893,1950611,225079
+2014,6,2014-06,completa,Panadería y galletas,54,137,320318,50063
+2014,6,2014-06,completa,Abarrotes,82,214,313044,54603
+2014,6,2014-06,completa,Belleza y maquillaje,60,909,301143,83208
+2014,6,2014-06,completa,Lácteos y huevos,49,132,192321,33208
+2014,6,2014-06,completa,Aseo del hogar,70,176,149206,27226
+2014,6,2014-06,completa,Licores y cervezas,16,20,138181,40731
+2014,6,2014-06,completa,Snacks y confitería,36,106,95730,22719
+2014,6,2014-06,completa,Cuidado personal,43,83,91838,31495
+2014,6,2014-06,completa,Carnes y embutidos,13,21,79817,12432
+2014,6,2014-06,completa,Helados y postres,10,29,22115,5636
+2014,6,2014-06,completa,Otros / sin clasificar,17,40,12143,2326
+2014,7,2014-07,completa,Belleza y maquillaje,61,874,597777,251614
+2014,7,2014-07,completa,Abarrotes,95,502,510217,156233
+2014,7,2014-07,completa,Bebidas sin alcohol,30,130,325522,59609
+2014,7,2014-07,completa,Aseo del hogar,65,139,252621,38692
+2014,7,2014-07,completa,Lácteos y huevos,53,133,211383,72685
+2014,7,2014-07,completa,Snacks y confitería,51,159,182896,40381
+2014,7,2014-07,completa,Panadería y galletas,43,87,162697,25076
+2014,7,2014-07,completa,Licores y cervezas,25,33,106873,14628
+2014,7,2014-07,completa,Cuidado personal,33,55,97859,32569
+2014,7,2014-07,completa,Helados y postres,14,70,87344,20654
+2014,7,2014-07,completa,Carnes y embutidos,15,23,66139,10295
+2014,7,2014-07,completa,Otros / sin clasificar,16,25,20651,2901
+2014,8,2014-08,completa,Snacks y confitería,50,246,401505,110612
+2014,8,2014-08,completa,Abarrotes,97,337,343572,98229
+2014,8,2014-08,completa,Aseo del hogar,73,150,245907,52488
+2014,8,2014-08,completa,Panadería y galletas,50,118,213606,33219
+2014,8,2014-08,completa,Bebidas sin alcohol,48,144,203310,40759
+2014,8,2014-08,completa,Belleza y maquillaje,56,107,172525,47620
+2014,8,2014-08,completa,Cuidado personal,51,110,164724,56373
+2014,8,2014-08,completa,Lácteos y huevos,59,122,124441,37286
+2014,8,2014-08,completa,Licores y cervezas,26,42,118096,24390
+2014,8,2014-08,completa,Carnes y embutidos,17,32,111737,13815
+2014,8,2014-08,completa,Helados y postres,20,47,83501,11422
+2014,8,2014-08,completa,Otros / sin clasificar,18,29,14828,2810
+2014,8,2014-08,completa,Frutas y verduras,1,2,12570,1760
+2014,9,2014-09,completa,Abarrotes,100,382,458923,104975
+2014,9,2014-09,completa,Panadería y galletas,52,173,332235,82780
+2014,9,2014-09,completa,Belleza y maquillaje,71,186,315093,76033
+2014,9,2014-09,completa,Cuidado personal,52,140,293599,92707
+2014,9,2014-09,completa,Aseo del hogar,78,214,279263,59633
+2014,9,2014-09,completa,Bebidas sin alcohol,48,153,242000,51566
+2014,9,2014-09,completa,Snacks y confitería,40,177,193095,46919
+2014,9,2014-09,completa,Licores y cervezas,25,43,128214,22587
+2014,9,2014-09,completa,Lácteos y huevos,60,139,109644,36054
+2014,9,2014-09,completa,Carnes y embutidos,13,16,40371,6602
+2014,9,2014-09,completa,Helados y postres,11,26,23590,3288
+2014,9,2014-09,completa,Otros / sin clasificar,13,24,21041,2900
+2014,9,2014-09,completa,Frutas y verduras,1,2,12570,1760
+2014,10,2014-10,completa,Abarrotes,96,315,444432,94396
+2014,10,2014-10,completa,Panadería y galletas,62,203,434133,82339
+2014,10,2014-10,completa,Belleza y maquillaje,63,149,313475,74052
+2014,10,2014-10,completa,Snacks y confitería,50,246,263619,49825
+2014,10,2014-10,completa,Aseo del hogar,86,163,233785,43392
+2014,10,2014-10,completa,Bebidas sin alcohol,43,163,230690,46017
+2014,10,2014-10,completa,Cuidado personal,52,95,173422,48865
+2014,10,2014-10,completa,Lácteos y huevos,72,133,128210,34855
+2014,10,2014-10,completa,Licores y cervezas,20,24,122555,18071
+2014,10,2014-10,completa,Helados y postres,19,51,53675,7294
+2014,10,2014-10,completa,Carnes y embutidos,11,18,38690,4501
+2014,10,2014-10,completa,Otros / sin clasificar,20,31,25652,6953
+2014,10,2014-10,completa,Frutas y verduras,1,1,72,10
+2014,11,2014-11,completa,Belleza y maquillaje,53,955,944244,383937
+2014,11,2014-11,completa,Abarrotes,106,340,465648,108459
+2014,11,2014-11,completa,Bebidas sin alcohol,43,160,357385,57723
+2014,11,2014-11,completa,Aseo del hogar,76,158,230351,41049
+2014,11,2014-11,completa,Snacks y confitería,44,162,224573,46427
+2014,11,2014-11,completa,Panadería y galletas,61,143,196473,31595
+2014,11,2014-11,completa,Cuidado personal,49,110,178671,46876
+2014,11,2014-11,completa,Lácteos y huevos,65,123,159295,53554
+2014,11,2014-11,completa,Helados y postres,21,68,122795,19255
+2014,11,2014-11,completa,Carnes y embutidos,17,38,119583,17278
+2014,11,2014-11,completa,Licores y cervezas,19,27,111786,20527
+2014,11,2014-11,completa,Otros / sin clasificar,14,21,17964,5051
+2014,11,2014-11,completa,Frutas y verduras,1,4,396,52
+2014,12,2014-12,completa,Abarrotes,102,298,344404,71127
+2014,12,2014-12,completa,Snacks y confitería,50,208,272576,46453
+2014,12,2014-12,completa,Panadería y galletas,55,156,268459,41850
+2014,12,2014-12,completa,Lácteos y huevos,58,203,200527,54621
+2014,12,2014-12,completa,Bebidas sin alcohol,48,131,200097,42376
+2014,12,2014-12,completa,Aseo del hogar,78,161,180852,27894
+2014,12,2014-12,completa,Carnes y embutidos,20,34,117918,18495
+2014,12,2014-12,completa,Licores y cervezas,20,25,115361,16066
+2014,12,2014-12,completa,Cuidado personal,46,87,115063,33252
+2014,12,2014-12,completa,Belleza y maquillaje,41,81,103961,25698
+2014,12,2014-12,completa,Helados y postres,18,31,57539,8526
+2014,12,2014-12,completa,Otros / sin clasificar,21,31,17972,3810
+2015,1,2015-01,completa,Bebidas sin alcohol,38,1066,923558,110763
+2015,1,2015-01,completa,Belleza y maquillaje,64,963,726837,310800
+2015,1,2015-01,completa,Abarrotes,91,257,238820,40858
+2015,1,2015-01,completa,Aseo del hogar,72,206,196100,37907
+2015,1,2015-01,completa,Panadería y galletas,45,133,151164,30489
+2015,1,2015-01,completa,Lácteos y huevos,68,141,134641,31482
+2015,1,2015-01,completa,Snacks y confitería,45,190,133790,38313
+2015,1,2015-01,completa,Cuidado personal,40,79,118894,28434
+2015,1,2015-01,completa,Licores y cervezas,22,28,93683,22800
+2015,1,2015-01,completa,Helados y postres,23,45,44762,6006
+2015,1,2015-01,completa,Carnes y embutidos,10,13,36677,5241
+2015,1,2015-01,completa,Otros / sin clasificar,12,19,6798,1164
+2015,1,2015-01,completa,Frutas y verduras,1,2,160,22
+2015,2,2015-02,completa,Abarrotes,95,297,398351,86072
+2015,2,2015-02,completa,Belleza y maquillaje,44,627,227389,62703
+2015,2,2015-02,completa,Lácteos y huevos,51,170,190024,52142
+2015,2,2015-02,completa,Bebidas sin alcohol,45,134,186453,32828
+2015,2,2015-02,completa,Panadería y galletas,62,196,172255,27224
+2015,2,2015-02,completa,Aseo del hogar,62,148,167070,32971
+2015,2,2015-02,completa,Cuidado personal,52,93,127885,29277
+2015,2,2015-02,completa,Snacks y confitería,49,171,123336,19014
+2015,2,2015-02,completa,Licores y cervezas,16,18,56311,7573
+2015,2,2015-02,completa,Carnes y embutidos,11,23,48294,11755
+2015,2,2015-02,completa,Helados y postres,20,48,34273,7331
+2015,2,2015-02,completa,Otros / sin clasificar,13,16,6094,1333
+2015,2,2015-02,completa,Frutas y verduras,1,4,3008,420
+2015,3,2015-03,completa,Belleza y maquillaje,61,179,358817,88136
+2015,3,2015-03,completa,Abarrotes,97,286,304021,59543
+2015,3,2015-03,completa,Panadería y galletas,73,219,248948,38396
+2015,3,2015-03,completa,Lácteos y huevos,59,192,173558,55561
+2015,3,2015-03,completa,Aseo del hogar,72,151,166753,28672
+2015,3,2015-03,completa,Snacks y confitería,48,112,157970,45547
+2015,3,2015-03,completa,Cuidado personal,63,111,142905,34574
+2015,3,2015-03,completa,Licores y cervezas,26,46,128002,16426
+2015,3,2015-03,completa,Carnes y embutidos,27,52,121601,20921
+2015,3,2015-03,completa,Bebidas sin alcohol,41,91,95043,18499
+2015,3,2015-03,completa,Helados y postres,29,66,71640,9625
+2015,3,2015-03,completa,Otros / sin clasificar,12,21,10128,2137
+2015,4,2015-04,completa,Abarrotes,105,386,482932,78262
+2015,4,2015-04,completa,Bebidas sin alcohol,53,266,355986,81472
+2015,4,2015-04,completa,Panadería y galletas,63,217,295705,47937
+2015,4,2015-04,completa,Belleza y maquillaje,70,203,233376,53245
+2015,4,2015-04,completa,Aseo del hogar,80,184,222681,46752
+2015,4,2015-04,completa,Snacks y confitería,58,175,158197,36505
+2015,4,2015-04,completa,Cuidado personal,48,90,133533,31856
+2015,4,2015-04,completa,Lácteos y huevos,60,99,106764,15329
+2015,4,2015-04,completa,Carnes y embutidos,25,47,87177,12090
+2015,4,2015-04,completa,Licores y cervezas,24,37,79347,12998
+2015,4,2015-04,completa,Helados y postres,14,23,35133,8956
+2015,4,2015-04,completa,Otros / sin clasificar,17,29,8518,1783
+2015,5,2015-05,completa,Panadería y galletas,75,235,317775,52477
+2015,5,2015-05,completa,Belleza y maquillaje,72,151,301471,60140
+2015,5,2015-05,completa,Abarrotes,106,416,283414,66530
+2015,5,2015-05,completa,Bebidas sin alcohol,61,205,279853,50894
+2015,5,2015-05,completa,Aseo del hogar,89,227,274333,45239
+2015,5,2015-05,completa,Licores y cervezas,28,40,188270,42512
+2015,5,2015-05,completa,Lácteos y huevos,76,216,179350,45426
+2015,5,2015-05,completa,Cuidado personal,51,111,154231,45138
+2015,5,2015-05,completa,Snacks y confitería,56,160,144287,34250
+2015,5,2015-05,completa,Carnes y embutidos,18,41,73316,12164
+2015,5,2015-05,completa,Helados y postres,26,50,60493,13900
+2015,5,2015-05,completa,Frutas y verduras,1,4,20756,3420
+2015,5,2015-05,completa,Otros / sin clasificar,11,22,18476,2619
+2015,6,2015-06,completa,Abarrotes,117,386,606751,170673
+2015,6,2015-06,completa,Bebidas sin alcohol,43,162,274741,54409
+2015,6,2015-06,completa,Aseo del hogar,86,223,233362,37770
+2015,6,2015-06,completa,Lácteos y huevos,76,210,228841,64268
+2015,6,2015-06,completa,Belleza y maquillaje,63,136,188599,34011
+2015,6,2015-06,completa,Panadería y galletas,67,139,164070,31222
+2015,6,2015-06,completa,Snacks y confitería,50,178,149852,28966
+2015,6,2015-06,completa,Cuidado personal,44,89,140791,42710
+2015,6,2015-06,completa,Licores y cervezas,23,34,101575,15067
+2015,6,2015-06,completa,Helados y postres,23,52,68719,9135
+2015,6,2015-06,completa,Carnes y embutidos,17,36,59767,8684
+2015,6,2015-06,completa,Otros / sin clasificar,23,47,25024,4190
+2015,6,2015-06,completa,Frutas y verduras,1,1,5040,818
+2015,7,2015-07,completa,Abarrotes,135,465,494543,97726
+2015,7,2015-07,completa,Aseo del hogar,96,267,331911,62721
+2015,7,2015-07,completa,Belleza y maquillaje,79,185,316333,80241
+2015,7,2015-07,completa,Lácteos y huevos,100,341,297461,72149
+2015,7,2015-07,completa,Panadería y galletas,77,222,242712,52122
+2015,7,2015-07,completa,Bebidas sin alcohol,53,153,220173,41058
+2015,7,2015-07,completa,Cuidado personal,60,116,172850,49463
+2015,7,2015-07,completa,Licores y cervezas,33,51,143074,27028
+2015,7,2015-07,completa,Snacks y confitería,57,109,140766,28323
+2015,7,2015-07,completa,Helados y postres,34,87,116826,19415
+2015,7,2015-07,completa,Carnes y embutidos,30,43,78078,12025
+2015,7,2015-07,completa,Frutas y verduras,3,15,75600,10424
+2015,7,2015-07,completa,Otros / sin clasificar,20,33,18392,2649
+2015,8,2015-08,completa,Bebidas sin alcohol,77,2570,2157265,288113
+2015,8,2015-08,completa,Abarrotes,164,757,630892,107064
+2015,8,2015-08,completa,Panadería y galletas,117,338,548667,97185
+2015,8,2015-08,completa,Snacks y confitería,105,369,468370,119350
+2015,8,2015-08,completa,Belleza y maquillaje,86,234,427293,131519
+2015,8,2015-08,completa,Cuidado personal,85,185,332204,99938
+2015,8,2015-08,completa,Lácteos y huevos,92,300,310575,70205
+2015,8,2015-08,completa,Aseo del hogar,114,254,227311,37221
+2015,8,2015-08,completa,Licores y cervezas,34,50,164962,27428
+2015,8,2015-08,completa,Carnes y embutidos,31,68,120393,29811
+2015,8,2015-08,completa,Helados y postres,32,55,63022,12498
+2015,8,2015-08,completa,Otros / sin clasificar,26,50,13359,2085
+2015,9,2015-09,completa,Belleza y maquillaje,123,409,718165,186207
+2015,9,2015-09,completa,Panadería y galletas,114,536,647013,115957
+2015,9,2015-09,completa,Abarrotes,181,550,539942,102166
+2015,9,2015-09,completa,Snacks y confitería,104,522,516765,102988
+2015,9,2015-09,completa,Aseo del hogar,161,402,455016,78291
+2015,9,2015-09,completa,Bebidas sin alcohol,85,344,437538,88466
+2015,9,2015-09,completa,Cuidado personal,86,197,302777,89565
+2015,9,2015-09,completa,Lácteos y huevos,123,352,297625,70463
+2015,9,2015-09,completa,Carnes y embutidos,30,100,126855,30894
+2015,9,2015-09,completa,Licores y cervezas,31,41,120666,23079
+2015,9,2015-09,completa,Helados y postres,39,85,98140,14281
+2015,9,2015-09,completa,Otros / sin clasificar,35,66,33198,6011
+2015,9,2015-09,completa,Frutas y verduras,1,3,15120,2118
+2015,10,2015-10,completa,Belleza y maquillaje,107,1086,610610,155053
+2015,10,2015-10,completa,Abarrotes,189,507,485122,112152
+2015,10,2015-10,completa,Aseo del hogar,121,258,405448,76269
+2015,10,2015-10,completa,Snacks y confitería,86,304,375493,127974
+2015,10,2015-10,completa,Panadería y galletas,109,271,368948,76277
+2015,10,2015-10,completa,Bebidas sin alcohol,82,414,364474,101195
+2015,10,2015-10,completa,Lácteos y huevos,119,292,355528,103055
+2015,10,2015-10,completa,Cuidado personal,84,178,289902,89491
+2015,10,2015-10,completa,Carnes y embutidos,35,71,137086,23047
+2015,10,2015-10,completa,Licores y cervezas,31,42,136302,23994
+2015,10,2015-10,completa,Helados y postres,43,97,121955,19183
+2015,10,2015-10,completa,Frutas y verduras,2,12,60480,8472
+2015,10,2015-10,completa,Otros / sin clasificar,33,80,27329,5610
+2015,11,2015-11,completa,Belleza y maquillaje,109,510,877360,257898
+2015,11,2015-11,completa,Abarrotes,180,553,588367,146968
+2015,11,2015-11,completa,Panadería y galletas,99,270,420847,80524
+2015,11,2015-11,completa,Aseo del hogar,106,352,350839,53392
+2015,11,2015-11,completa,Snacks y confitería,95,304,297635,77117
+2015,11,2015-11,completa,Bebidas sin alcohol,77,202,284253,63722
+2015,11,2015-11,completa,Lácteos y huevos,111,227,268709,71057
+2015,11,2015-11,completa,Cuidado personal,92,191,209861,69362
+2015,11,2015-11,completa,Licores y cervezas,35,57,147024,23910
+2015,11,2015-11,completa,Helados y postres,43,103,146138,29097
+2015,11,2015-11,completa,Carnes y embutidos,41,62,120677,19470
+2015,11,2015-11,completa,Frutas y verduras,1,6,30240,4236
+2015,11,2015-11,completa,Otros / sin clasificar,28,46,19378,3305
+2015,12,2015-12,completa,Bebidas sin alcohol,79,1223,1159590,166865
+2015,12,2015-12,completa,Abarrotes,188,610,662252,161948
+2015,12,2015-12,completa,Belleza y maquillaje,112,2037,473625,141236
+2015,12,2015-12,completa,Panadería y galletas,117,300,410429,73240
+2015,12,2015-12,completa,Lácteos y huevos,118,293,345580,81368
+2015,12,2015-12,completa,Cuidado personal,102,195,293577,92372
+2015,12,2015-12,completa,Snacks y confitería,87,249,266871,52920
+2015,12,2015-12,completa,Aseo del hogar,121,263,257715,41375
+2015,12,2015-12,completa,Licores y cervezas,30,53,195699,32667
+2015,12,2015-12,completa,Helados y postres,44,79,157869,37887
+2015,12,2015-12,completa,Carnes y embutidos,36,88,124028,31267
+2015,12,2015-12,completa,Frutas y verduras,2,6,30240,4188
+2015,12,2015-12,completa,Otros / sin clasificar,32,53,23086,5024
+2016,1,2016-01,completa,Belleza y maquillaje,105,300,470776,146066
+2016,1,2016-01,completa,Abarrotes,127,370,453050,90725
+2016,1,2016-01,completa,Aseo del hogar,121,395,325080,56510
+2016,1,2016-01,completa,Snacks y confitería,99,451,323589,68865
+2016,1,2016-01,completa,Panadería y galletas,98,239,317279,55778
+2016,1,2016-01,completa,Lácteos y huevos,113,276,304139,70638
+2016,1,2016-01,completa,Cuidado personal,95,209,281521,85000
+2016,1,2016-01,completa,Bebidas sin alcohol,59,188,281366,48389
+2016,1,2016-01,completa,Helados y postres,44,163,175249,24931
+2016,1,2016-01,completa,Licores y cervezas,40,55,173143,27892
+2016,1,2016-01,completa,Carnes y embutidos,27,41,85585,15438
+2016,1,2016-01,completa,Otros / sin clasificar,31,52,19016,3494
+2016,1,2016-01,completa,Frutas y verduras,1,1,4559,638
+2016,2,2016-02,completa,Abarrotes,112,375,460440,105052
+2016,2,2016-02,completa,Bebidas sin alcohol,59,265,300651,54120
+2016,2,2016-02,completa,Lácteos y huevos,82,299,268175,59226
+2016,2,2016-02,completa,Snacks y confitería,70,239,267188,74560
+2016,2,2016-02,completa,Panadería y galletas,63,252,252036,43873
+2016,2,2016-02,completa,Belleza y maquillaje,78,168,240839,54106
+2016,2,2016-02,completa,Aseo del hogar,111,295,213856,43701
+2016,2,2016-02,completa,Cuidado personal,56,168,193641,62519
+2016,2,2016-02,completa,Helados y postres,34,103,117326,27925
+2016,2,2016-02,completa,Licores y cervezas,26,35,76801,12132
+2016,2,2016-02,completa,Carnes y embutidos,26,43,52067,7772
+2016,2,2016-02,completa,Otros / sin clasificar,20,32,12958,2608
+2016,3,2016-03,completa,Bebidas sin alcohol,56,971,728386,104208
+2016,3,2016-03,completa,Aseo del hogar,113,325,434162,77421
+2016,3,2016-03,completa,Abarrotes,126,372,420789,89476
+2016,3,2016-03,completa,Panadería y galletas,72,250,297263,45886
+2016,3,2016-03,completa,Snacks y confitería,84,252,267990,92834
+2016,3,2016-03,completa,Cuidado personal,83,210,244463,56003
+2016,3,2016-03,completa,Belleza y maquillaje,86,193,224985,63271
+2016,3,2016-03,completa,Lácteos y huevos,88,320,221240,56097
+2016,3,2016-03,completa,Carnes y embutidos,32,100,159787,25292
+2016,3,2016-03,completa,Licores y cervezas,35,46,133327,30281
+2016,3,2016-03,completa,Helados y postres,28,81,83666,15087
+2016,3,2016-03,completa,Otros / sin clasificar,18,43,20867,4708
+2016,3,2016-03,completa,Frutas y verduras,1,3,13677,1914
+2016,4,2016-04,completa,Abarrotes,152,1396,1012562,375478
+2016,4,2016-04,completa,Bebidas sin alcohol,69,449,513491,94547
+2016,4,2016-04,completa,Belleza y maquillaje,94,286,444660,122843
+2016,4,2016-04,completa,Snacks y confitería,89,353,398649,83593
+2016,4,2016-04,completa,Aseo del hogar,122,342,332759,64203
+2016,4,2016-04,completa,Panadería y galletas,100,278,326586,56184
+2016,4,2016-04,completa,Licores y cervezas,21,45,220729,27826
+2016,4,2016-04,completa,Lácteos y huevos,95,224,216321,49137
+2016,4,2016-04,completa,Cuidado personal,82,176,204564,67882
+2016,4,2016-04,completa,Carnes y embutidos,35,96,184063,27962
+2016,4,2016-04,completa,Helados y postres,33,67,60938,13045
+2016,4,2016-04,completa,Otros / sin clasificar,22,40,14037,3768
+2016,4,2016-04,completa,Frutas y verduras,1,1,4559,638
+2016,5,2016-05,completa,Abarrotes,184,677,645113,126442
+2016,5,2016-05,completa,Bebidas sin alcohol,74,469,585533,89050
+2016,5,2016-05,completa,Belleza y maquillaje,107,950,471252,130760
+2016,5,2016-05,completa,Aseo del hogar,120,387,387503,94653
+2016,5,2016-05,completa,Snacks y confitería,92,411,364618,79729
+2016,5,2016-05,completa,Panadería y galletas,101,242,283150,42683
+2016,5,2016-05,completa,Lácteos y huevos,99,296,241460,54981
+2016,5,2016-05,completa,Carnes y embutidos,31,78,222618,33033
+2016,5,2016-05,completa,Cuidado personal,81,162,165961,42712
+2016,5,2016-05,completa,Licores y cervezas,25,31,112125,22181
+2016,5,2016-05,completa,Helados y postres,29,82,101779,22136
+2016,5,2016-05,completa,Otros / sin clasificar,21,53,15422,2755
+2016,5,2016-05,completa,Frutas y verduras,2,3,12326,1725
+2016,6,2016-06,completa,Bebidas sin alcohol,68,1307,985650,137694
+2016,6,2016-06,completa,Abarrotes,140,499,422333,77845
+2016,6,2016-06,completa,Belleza y maquillaje,90,292,390878,112082
+2016,6,2016-06,completa,Panadería y galletas,85,254,335311,67451
+2016,6,2016-06,completa,Aseo del hogar,105,248,320228,52476
+2016,6,2016-06,completa,Snacks y confitería,71,251,286051,75231
+2016,6,2016-06,completa,Cuidado personal,65,171,280232,100598
+2016,6,2016-06,completa,Lácteos y huevos,93,231,226333,55363
+2016,6,2016-06,completa,Licores y cervezas,28,48,132557,20549
+2016,6,2016-06,completa,Carnes y embutidos,36,69,123815,16988
+2016,6,2016-06,completa,Helados y postres,30,75,100138,13085
+2016,6,2016-06,completa,Otros / sin clasificar,22,37,17305,3762
+2016,7,2016-07,completa,Belleza y maquillaje,95,428,645160,165674
+2016,7,2016-07,completa,Aseo del hogar,112,407,526463,120752
+2016,7,2016-07,completa,Abarrotes,143,496,490237,102685
+2016,7,2016-07,completa,Panadería y galletas,91,325,454926,76621
+2016,7,2016-07,completa,Snacks y confitería,68,250,269124,59090
+2016,7,2016-07,completa,Bebidas sin alcohol,60,182,240240,39532
+2016,7,2016-07,completa,Carnes y embutidos,30,64,177026,26859
+2016,7,2016-07,completa,Licores y cervezas,35,60,167392,24584
+2016,7,2016-07,completa,Cuidado personal,61,120,145422,31258
+2016,7,2016-07,completa,Helados y postres,25,87,104301,23689
+2016,7,2016-07,completa,Lácteos y huevos,66,142,101950,31462
+2016,7,2016-07,completa,Otros / sin clasificar,19,29,16562,2594
+2016,7,2016-07,completa,Frutas y verduras,1,1,1219,152
+2016,8,2016-08,completa,Abarrotes,142,604,821568,192943
+2016,8,2016-08,completa,Panadería y galletas,94,311,468686,88459
+2016,8,2016-08,completa,Belleza y maquillaje,82,257,459799,124343
+2016,8,2016-08,completa,Bebidas sin alcohol,66,337,423954,73382
+2016,8,2016-08,completa,Snacks y confitería,68,282,379960,88698
+2016,8,2016-08,completa,Lácteos y huevos,108,351,278503,78658
+2016,8,2016-08,completa,Aseo del hogar,108,215,247142,60095
+2016,8,2016-08,completa,Cuidado personal,78,163,224981,68086
+2016,8,2016-08,completa,Carnes y embutidos,25,59,104706,14947
+2016,8,2016-08,completa,Helados y postres,24,70,96355,16799
+2016,8,2016-08,completa,Licores y cervezas,21,32,86854,13740
+2016,8,2016-08,completa,Otros / sin clasificar,23,45,17150,2975
+2016,8,2016-08,completa,Frutas y verduras,1,4,4876,804
+2016,9,2016-09,completa,Abarrotes,141,516,557683,160693
+2016,9,2016-09,completa,Aseo del hogar,147,438,557636,91028
+2016,9,2016-09,completa,Snacks y confitería,90,531,550952,114298
+2016,9,2016-09,completa,Belleza y maquillaje,90,308,427751,117155
+2016,9,2016-09,completa,Panadería y galletas,95,298,371230,66162
+2016,9,2016-09,completa,Lácteos y huevos,110,310,324183,71411
+2016,9,2016-09,completa,Bebidas sin alcohol,67,283,320968,59078
+2016,9,2016-09,completa,Cuidado personal,85,154,193709,46982
+2016,9,2016-09,completa,Helados y postres,24,86,155936,54685
+2016,9,2016-09,completa,Licores y cervezas,36,47,145349,25299
+2016,9,2016-09,completa,Carnes y embutidos,27,68,108178,21303
+2016,9,2016-09,completa,Otros / sin clasificar,22,34,12247,2317
+2016,10,2016-10,completa,Panadería y galletas,99,349,550212,94661
+2016,10,2016-10,completa,Abarrotes,138,454,530506,127675
+2016,10,2016-10,completa,Aseo del hogar,109,442,494517,155357
+2016,10,2016-10,completa,Bebidas sin alcohol,63,403,420319,95649
+2016,10,2016-10,completa,Belleza y maquillaje,97,313,394014,105993
+2016,10,2016-10,completa,Licores y cervezas,40,53,245523,40512
+2016,10,2016-10,completa,Lácteos y huevos,101,285,243922,64094
+2016,10,2016-10,completa,Snacks y confitería,79,231,239221,55650
+2016,10,2016-10,completa,Cuidado personal,84,184,201190,53168
+2016,10,2016-10,completa,Helados y postres,39,130,140147,19616
+2016,10,2016-10,completa,Carnes y embutidos,31,61,113555,18609
+2016,10,2016-10,completa,Frutas y verduras,1,4,18568,2884
+2016,10,2016-10,completa,Otros / sin clasificar,19,31,15511,2725
+2016,11,2016-11,completa,Aseo del hogar,104,431,556793,174014
+2016,11,2016-11,completa,Panadería y galletas,95,310,399421,82081
+2016,11,2016-11,completa,Belleza y maquillaje,85,240,376918,100346
+2016,11,2016-11,completa,Abarrotes,137,437,364843,84785
+2016,11,2016-11,completa,Snacks y confitería,88,342,346964,73530
+2016,11,2016-11,completa,Lácteos y huevos,87,206,210214,47231
+2016,11,2016-11,completa,Bebidas sin alcohol,62,210,203726,42488
+2016,11,2016-11,completa,Carnes y embutidos,26,78,188799,29400
+2016,11,2016-11,completa,Helados y postres,31,102,152075,42492
+2016,11,2016-11,completa,Cuidado personal,74,129,147946,38844
+2016,11,2016-11,completa,Licores y cervezas,32,43,138326,23008
+2016,11,2016-11,completa,Otros / sin clasificar,24,33,12165,2384
+2016,12,2016-12,completa,Abarrotes,134,526,833947,220751
+2016,12,2016-12,completa,Bebidas sin alcohol,45,1051,802324,99500
+2016,12,2016-12,completa,Belleza y maquillaje,76,239,427673,126360
+2016,12,2016-12,completa,Snacks y confitería,86,300,340013,74406
+2016,12,2016-12,completa,Panadería y galletas,90,235,314786,75016
+2016,12,2016-12,completa,Lácteos y huevos,90,252,274525,72568
+2016,12,2016-12,completa,Aseo del hogar,103,196,210987,45060
+2016,12,2016-12,completa,Licores y cervezas,31,37,128777,27899
+2016,12,2016-12,completa,Helados y postres,29,84,127071,22522
+2016,12,2016-12,completa,Cuidado personal,58,114,106564,32110
+2016,12,2016-12,completa,Carnes y embutidos,33,58,90697,11500
+2016,12,2016-12,completa,Otros / sin clasificar,31,54,21001,3246
+2016,12,2016-12,completa,Frutas y verduras,1,3,13677,1584
+2017,1,2017-01,completa,Bebidas sin alcohol,44,940,760109,98682
+2017,1,2017-01,completa,Panadería y galletas,97,414,419533,70386
+2017,1,2017-01,completa,Abarrotes,142,409,403694,113629
+2017,1,2017-01,completa,Lácteos y huevos,76,231,269235,51560
+2017,1,2017-01,completa,Belleza y maquillaje,72,187,224161,57184
+2017,1,2017-01,completa,Snacks y confitería,64,157,181265,33398
+2017,1,2017-01,completa,Aseo del hogar,89,231,160874,31816
+2017,1,2017-01,completa,Licores y cervezas,34,48,134526,23606
+2017,1,2017-01,completa,Cuidado personal,58,92,108183,30630
+2017,1,2017-01,completa,Carnes y embutidos,30,85,97549,16698
+2017,1,2017-01,completa,Helados y postres,26,72,87098,12676
+2017,1,2017-01,completa,Frutas y verduras,1,6,26550,4374
+2017,1,2017-01,completa,Otros / sin clasificar,16,28,16008,2482
+2017,2,2017-02,completa,Belleza y maquillaje,75,231,334811,88949
+2017,2,2017-02,completa,Abarrotes,118,330,288545,69337
+2017,2,2017-02,completa,Snacks y confitería,67,232,263312,62947
+2017,2,2017-02,completa,Aseo del hogar,80,203,213251,58941
+2017,2,2017-02,completa,Panadería y galletas,67,130,185655,32351
+2017,2,2017-02,completa,Bebidas sin alcohol,52,150,178870,35884
+2017,2,2017-02,completa,Lácteos y huevos,65,178,152481,53148
+2017,2,2017-02,completa,Cuidado personal,63,141,150072,43227
+2017,2,2017-02,completa,Carnes y embutidos,14,53,131601,22782
+2017,2,2017-02,completa,Licores y cervezas,31,54,130715,22192
+2017,2,2017-02,completa,Helados y postres,20,51,46416,6930
+2017,2,2017-02,completa,Otros / sin clasificar,17,29,12715,2189
+2017,3,2017-03,completa,Bebidas sin alcohol,65,1821,1315889,169590
+2017,3,2017-03,completa,Belleza y maquillaje,81,1116,532532,162726
+2017,3,2017-03,completa,Panadería y galletas,97,282,354953,58397
+2017,3,2017-03,completa,Snacks y confitería,78,253,348379,67916
+2017,3,2017-03,completa,Abarrotes,139,363,337559,79528
+2017,3,2017-03,completa,Licores y cervezas,28,71,336229,51189
+2017,3,2017-03,completa,Cuidado personal,83,172,212956,52030
+2017,3,2017-03,completa,Lácteos y huevos,91,272,204512,45280
+2017,3,2017-03,completa,Aseo del hogar,105,237,193359,31138
+2017,3,2017-03,completa,Carnes y embutidos,26,43,97086,14490
+2017,3,2017-03,completa,Helados y postres,19,63,68730,14096
+2017,3,2017-03,completa,Frutas y verduras,1,5,22125,3100
+2017,3,2017-03,completa,Otros / sin clasificar,26,40,12503,2299
+2017,4,2017-04,completa,Abarrotes,121,441,627824,101987
+2017,4,2017-04,completa,Bebidas sin alcohol,82,313,343405,55757
+2017,4,2017-04,completa,Belleza y maquillaje,111,241,304310,81748
+2017,4,2017-04,completa,Aseo del hogar,123,351,291164,51989
+2017,4,2017-04,completa,Panadería y galletas,84,202,271595,47636
+2017,4,2017-04,completa,Cuidado personal,55,131,261399,85210
+2017,4,2017-04,completa,Snacks y confitería,71,256,211849,41532
+2017,4,2017-04,completa,Lácteos y huevos,85,304,184452,37187
+2017,4,2017-04,completa,Helados y postres,31,73,116491,22462
+2017,4,2017-04,completa,Licores y cervezas,31,61,97023,16614
+2017,4,2017-04,completa,Carnes y embutidos,28,47,85214,11190
+2017,4,2017-04,completa,Otros / sin clasificar,26,36,16638,2302
+2017,5,2017-05,completa,Abarrotes,137,433,409810,87086
+2017,5,2017-05,completa,Belleza y maquillaje,81,223,392994,129268
+2017,5,2017-05,completa,Bebidas sin alcohol,66,328,331083,66243
+2017,5,2017-05,completa,Snacks y confitería,76,245,321356,82147
+2017,5,2017-05,completa,Panadería y galletas,68,190,253362,42110
+2017,5,2017-05,completa,Cuidado personal,62,159,206150,65050
+2017,5,2017-05,completa,Lácteos y huevos,91,299,199189,52923
+2017,5,2017-05,completa,Aseo del hogar,115,201,174350,34629
+2017,5,2017-05,completa,Helados y postres,28,83,111826,26343
+2017,5,2017-05,completa,Licores y cervezas,22,35,98284,14635
+2017,5,2017-05,completa,Carnes y embutidos,22,34,83831,13165
+2017,5,2017-05,completa,Frutas y verduras,2,9,39825,5580
+2017,5,2017-05,completa,Otros / sin clasificar,20,28,14603,2313
+2017,6,2017-06,completa,Abarrotes,128,460,472636,113746
+2017,6,2017-06,completa,Aseo del hogar,103,275,309177,59405
+2017,6,2017-06,completa,Belleza y maquillaje,79,231,298996,82854
+2017,6,2017-06,completa,Panadería y galletas,94,249,248903,57808
+2017,6,2017-06,completa,Bebidas sin alcohol,55,218,208228,41800
+2017,6,2017-06,completa,Lácteos y huevos,81,203,205688,44728
+2017,6,2017-06,completa,Snacks y confitería,68,211,170201,35622
+2017,6,2017-06,completa,Cuidado personal,67,132,161833,42138
+2017,6,2017-06,completa,Licores y cervezas,26,36,108284,16852
+2017,6,2017-06,completa,Carnes y embutidos,30,51,97826,13774
+2017,6,2017-06,completa,Helados y postres,27,74,95909,14760
+2017,6,2017-06,completa,Frutas y verduras,1,9,39825,5580
+2017,6,2017-06,completa,Otros / sin clasificar,27,37,27174,3805
+2017,7,2017-07,completa,Abarrotes,136,447,467878,89752
+2017,7,2017-07,completa,Bebidas sin alcohol,61,405,461951,93215
+2017,7,2017-07,completa,Snacks y confitería,86,355,388522,77419
+2017,7,2017-07,completa,Belleza y maquillaje,108,316,375050,105096
+2017,7,2017-07,completa,Panadería y galletas,94,261,296306,56479
+2017,7,2017-07,completa,Aseo del hogar,120,308,260559,57640
+2017,7,2017-07,completa,Carnes y embutidos,32,114,219505,29296
+2017,7,2017-07,completa,Lácteos y huevos,100,326,208081,50849
+2017,7,2017-07,completa,Licores y cervezas,34,46,188776,29388
+2017,7,2017-07,completa,Cuidado personal,75,165,186144,46966
+2017,7,2017-07,completa,Helados y postres,29,68,81779,18463
+2017,7,2017-07,completa,Frutas y verduras,2,18,72134,10054
+2017,7,2017-07,completa,Otros / sin clasificar,29,63,14434,2850
+2017,8,2017-08,completa,Abarrotes,163,429,446597,83152
+2017,8,2017-08,completa,Belleza y maquillaje,103,280,442741,112695
+2017,8,2017-08,completa,Panadería y galletas,95,276,313140,60244
+2017,8,2017-08,completa,Aseo del hogar,108,219,282720,63874
+2017,8,2017-08,completa,Cuidado personal,85,180,234029,71655
+2017,8,2017-08,completa,Snacks y confitería,89,255,211591,42889
+2017,8,2017-08,completa,Lácteos y huevos,97,248,198869,49443
+2017,8,2017-08,completa,Bebidas sin alcohol,62,171,191741,36107
+2017,8,2017-08,completa,Licores y cervezas,43,59,169633,26296
+2017,8,2017-08,completa,Helados y postres,29,70,113928,17854
+2017,8,2017-08,completa,Carnes y embutidos,32,61,111238,16139
+2017,8,2017-08,completa,Otros / sin clasificar,21,34,17637,3569
+2017,8,2017-08,completa,Frutas y verduras,1,1,1183,166
+2017,9,2017-09,completa,Abarrotes,163,648,577484,113005
+2017,9,2017-09,completa,Belleza y maquillaje,93,215,311821,68570
+2017,9,2017-09,completa,Panadería y galletas,104,298,283822,47210
+2017,9,2017-09,completa,Lácteos y huevos,89,262,232015,54926
+2017,9,2017-09,completa,Licores y cervezas,31,51,227171,37044
+2017,9,2017-09,completa,Bebidas sin alcohol,60,172,212759,37874
+2017,9,2017-09,completa,Cuidado personal,83,149,207073,63409
+2017,9,2017-09,completa,Aseo del hogar,105,259,163362,28061
+2017,9,2017-09,completa,Snacks y confitería,77,187,158699,45553
+2017,9,2017-09,completa,Helados y postres,29,100,124975,22698
+2017,9,2017-09,completa,Carnes y embutidos,23,46,60530,7516
+2017,9,2017-09,completa,Frutas y verduras,3,9,30099,4216
+2017,9,2017-09,completa,Otros / sin clasificar,27,40,17891,2470
+2017,10,2017-10,completa,Bebidas sin alcohol,93,486,467773,96572
+2017,10,2017-10,completa,Abarrotes,127,398,439763,123447
+2017,10,2017-10,completa,Aseo del hogar,152,421,391761,78846
+2017,10,2017-10,completa,Panadería y galletas,103,237,370634,68997
+2017,10,2017-10,completa,Belleza y maquillaje,89,232,251614,69764
+2017,10,2017-10,completa,Snacks y confitería,80,212,222496,62266
+2017,10,2017-10,completa,Lácteos y huevos,104,248,172372,48485
+2017,10,2017-10,completa,Cuidado personal,65,132,171765,53868
+2017,10,2017-10,completa,Licores y cervezas,30,40,126535,19845
+2017,10,2017-10,completa,Helados y postres,26,60,92640,22386
+2017,10,2017-10,completa,Carnes y embutidos,15,29,67062,9934
+2017,10,2017-10,completa,Otros / sin clasificar,20,44,23670,5543
+2017,10,2017-10,completa,Frutas y verduras,2,2,8850,1286
+2017,11,2017-11,completa,Abarrotes,115,399,436689,102121
+2017,11,2017-11,completa,Panadería y galletas,83,205,339569,67571
+2017,11,2017-11,completa,Belleza y maquillaje,84,258,337708,92833
+2017,11,2017-11,completa,Cuidado personal,56,149,200458,71368
+2017,11,2017-11,completa,Aseo del hogar,80,185,196914,31597
+2017,11,2017-11,completa,Snacks y confitería,69,201,195103,41966
+2017,11,2017-11,completa,Lácteos y huevos,88,295,149670,32382
+2017,11,2017-11,completa,Bebidas sin alcohol,51,133,129491,25078
+2017,11,2017-11,completa,Licores y cervezas,25,34,118053,19314
+2017,11,2017-11,completa,Helados y postres,17,45,78637,11227
+2017,11,2017-11,completa,Carnes y embutidos,17,21,31765,4583
+2017,11,2017-11,completa,Otros / sin clasificar,17,31,14497,1975
+2017,11,2017-11,completa,Frutas y verduras,1,2,8850,1240
+2017,12,2017-12,completa,Bebidas sin alcohol,67,957,765638,105630
+2017,12,2017-12,completa,Belleza y maquillaje,72,971,736367,308703
+2017,12,2017-12,completa,Abarrotes,132,386,354225,76310
+2017,12,2017-12,completa,Aseo del hogar,113,330,306332,70764
+2017,12,2017-12,completa,Snacks y confitería,58,230,242525,48030
+2017,12,2017-12,completa,Cuidado personal,68,153,239518,65597
+2017,12,2017-12,completa,Panadería y galletas,80,229,178222,31066
+2017,12,2017-12,completa,Licores y cervezas,36,46,168842,29259
+2017,12,2017-12,completa,Lácteos y huevos,67,172,149074,36963
+2017,12,2017-12,completa,Carnes y embutidos,19,53,127383,17977
+2017,12,2017-12,completa,Helados y postres,23,57,91119,16136
+2017,12,2017-12,completa,Frutas y verduras,1,5,22125,3100
+2017,12,2017-12,completa,Otros / sin clasificar,22,42,14879,2543
+2018,1,2018-01,completa,Belleza y maquillaje,79,915,766011,295117
+2018,1,2018-01,completa,Abarrotes,121,443,554084,143687
+2018,1,2018-01,completa,Aseo del hogar,118,347,362061,64150
+2018,1,2018-01,completa,Bebidas sin alcohol,57,290,322355,56019
+2018,1,2018-01,completa,Panadería y galletas,87,197,289924,56337
+2018,1,2018-01,completa,Lácteos y huevos,88,261,228279,60767
+2018,1,2018-01,completa,Cuidado personal,75,174,217959,71665
+2018,1,2018-01,completa,Snacks y confitería,63,193,155167,47039
+2018,1,2018-01,completa,Licores y cervezas,27,31,124855,20725
+2018,1,2018-01,completa,Carnes y embutidos,20,31,64197,9991
+2018,1,2018-01,completa,Helados y postres,17,34,29470,3782
+2018,1,2018-01,completa,Otros / sin clasificar,22,45,22019,3430
+2018,1,2018-01,completa,Frutas y verduras,1,1,639,64
+2018,2,2018-02,completa,Aseo del hogar,101,254,346465,58700
+2018,2,2018-02,completa,Abarrotes,120,408,283743,66650
+2018,2,2018-02,completa,Belleza y maquillaje,76,321,248812,52311
+2018,2,2018-02,completa,Bebidas sin alcohol,50,235,211714,40418
+2018,2,2018-02,completa,Panadería y galletas,73,193,201351,41469
+2018,2,2018-02,completa,Lácteos y huevos,83,223,196591,46715
+2018,2,2018-02,completa,Snacks y confitería,62,194,191006,50924
+2018,2,2018-02,completa,Helados y postres,29,144,181010,25111
+2018,2,2018-02,completa,Cuidado personal,61,119,142746,43841
+2018,2,2018-02,completa,Licores y cervezas,20,46,105455,17932
+2018,2,2018-02,completa,Carnes y embutidos,25,48,75400,11140
+2018,2,2018-02,completa,Otros / sin clasificar,27,58,12520,2065
+2018,3,2018-03,completa,Abarrotes,156,529,462046,111228
+2018,3,2018-03,completa,Panadería y galletas,106,248,375813,69967
+2018,3,2018-03,completa,Aseo del hogar,133,395,357849,71063
+2018,3,2018-03,completa,Belleza y maquillaje,102,305,338403,104316
+2018,3,2018-03,completa,Lácteos y huevos,98,251,240330,58564
+2018,3,2018-03,completa,Licores y cervezas,42,65,215233,39086
+2018,3,2018-03,completa,Snacks y confitería,83,201,167348,34562
+2018,3,2018-03,completa,Bebidas sin alcohol,57,142,166774,28496
+2018,3,2018-03,completa,Cuidado personal,55,127,165210,51012
+2018,3,2018-03,completa,Helados y postres,36,145,160232,31826
+2018,3,2018-03,completa,Carnes y embutidos,31,51,77171,11434
+2018,3,2018-03,completa,Frutas y verduras,2,7,29708,4463
+2018,3,2018-03,completa,Otros / sin clasificar,23,36,15786,3019
+2018,4,2018-04,completa,Abarrotes,160,555,433864,99305
+2018,4,2018-04,completa,Aseo del hogar,125,309,367290,75647
+2018,4,2018-04,completa,Belleza y maquillaje,92,246,314745,79877
+2018,4,2018-04,completa,Panadería y galletas,97,256,297741,46479
+2018,4,2018-04,completa,Bebidas sin alcohol,69,235,235701,42857
+2018,4,2018-04,completa,Snacks y confitería,91,223,227305,50238
+2018,4,2018-04,completa,Cuidado personal,75,161,211329,55325
+2018,4,2018-04,completa,Lácteos y huevos,92,247,197332,47133
+2018,4,2018-04,completa,Licores y cervezas,29,44,118512,22556
+2018,4,2018-04,completa,Helados y postres,34,155,113374,18023
+2018,4,2018-04,completa,Carnes y embutidos,29,49,106523,15843
+2018,4,2018-04,completa,Otros / sin clasificar,20,45,21663,3657
+2018,4,2018-04,completa,Frutas y verduras,1,2,8488,1190
+2018,5,2018-05,completa,Bebidas sin alcohol,86,2113,1555261,201577
+2018,5,2018-05,completa,Abarrotes,167,617,650548,155974
+2018,5,2018-05,completa,Aseo del hogar,170,396,533844,97759
+2018,5,2018-05,completa,Panadería y galletas,96,356,463206,72924
+2018,5,2018-05,completa,Belleza y maquillaje,129,372,445396,110840
+2018,5,2018-05,completa,Snacks y confitería,98,267,343005,79064
+2018,5,2018-05,completa,Licores y cervezas,38,65,250278,45000
+2018,5,2018-05,completa,Lácteos y huevos,116,300,185513,52776
+2018,5,2018-05,completa,Carnes y embutidos,42,81,166654,24753
+2018,5,2018-05,completa,Cuidado personal,72,156,164746,36165
+2018,5,2018-05,completa,Helados y postres,40,134,138306,26269
+2018,5,2018-05,completa,Otros / sin clasificar,27,38,20865,4251
+2018,6,2018-06,completa,Belleza y maquillaje,129,1629,1180774,453888
+2018,6,2018-06,completa,Abarrotes,178,658,751089,164384
+2018,6,2018-06,completa,Panadería y galletas,113,326,475586,75889
+2018,6,2018-06,completa,Aseo del hogar,167,472,468609,88324
+2018,6,2018-06,completa,Bebidas sin alcohol,93,351,325107,72773
+2018,6,2018-06,completa,Snacks y confitería,112,379,320143,66235
+2018,6,2018-06,completa,Lácteos y huevos,154,362,239377,58677
+2018,6,2018-06,completa,Cuidado personal,95,183,223550,72324
+2018,6,2018-06,completa,Helados y postres,49,185,163776,26430
+2018,6,2018-06,completa,Carnes y embutidos,34,77,134877,21598
+2018,6,2018-06,completa,Licores y cervezas,21,26,87001,18327
+2018,6,2018-06,completa,Frutas y verduras,2,21,86974,12998
+2018,6,2018-06,completa,Otros / sin clasificar,23,48,35160,7379
+2018,7,2018-07,completa,Belleza y maquillaje,116,2481,1361358,569904
+2018,7,2018-07,completa,Bebidas sin alcohol,93,517,546389,105314
+2018,7,2018-07,completa,Aseo del hogar,151,365,510074,93140
+2018,7,2018-07,completa,Abarrotes,187,515,462069,119317
+2018,7,2018-07,completa,Snacks y confitería,108,316,408122,80612
+2018,7,2018-07,completa,Panadería y galletas,113,293,376223,60617
+2018,7,2018-07,completa,Carnes y embutidos,41,113,365771,76506
+2018,7,2018-07,completa,Lácteos y huevos,136,346,264338,64506
+2018,7,2018-07,completa,Cuidado personal,96,201,220799,57696
+2018,7,2018-07,completa,Licores y cervezas,49,74,216751,37215
+2018,7,2018-07,completa,Helados y postres,31,63,70871,19416
+2018,7,2018-07,completa,Otros / sin clasificar,24,36,9543,2110
+2018,7,2018-07,completa,Frutas y verduras,1,2,8488,1188
+2018,8,2018-08,completa,Abarrotes,216,875,977080,262643
+2018,8,2018-08,completa,Belleza y maquillaje,137,463,679251,181231
+2018,8,2018-08,completa,Panadería y galletas,113,285,420124,67313
+2018,8,2018-08,completa,Aseo del hogar,155,407,353523,69503
+2018,8,2018-08,completa,Bebidas sin alcohol,85,362,342801,76983
+2018,8,2018-08,completa,Lácteos y huevos,169,416,333339,71442
+2018,8,2018-08,completa,Snacks y confitería,115,351,310670,73797
+2018,8,2018-08,completa,Licores y cervezas,43,62,244608,36429
+2018,8,2018-08,completa,Cuidado personal,88,160,227229,77787
+2018,8,2018-08,completa,Carnes y embutidos,51,104,218096,33903
+2018,8,2018-08,completa,Helados y postres,46,139,135319,28001
+2018,8,2018-08,completa,Otros / sin clasificar,34,52,20342,4892
+2018,8,2018-08,completa,Frutas y verduras,1,1,644,69
+2018,9,2018-09,completa,Aseo del hogar,221,651,937541,168821
+2018,9,2018-09,completa,Belleza y maquillaje,145,1007,880075,301457
+2018,9,2018-09,completa,Abarrotes,250,863,816119,182311
+2018,9,2018-09,completa,Panadería y galletas,149,420,453703,93314
+2018,9,2018-09,completa,Bebidas sin alcohol,107,383,442122,93543
+2018,9,2018-09,completa,Snacks y confitería,131,477,408434,78673
+2018,9,2018-09,completa,Lácteos y huevos,176,413,253016,67776
+2018,9,2018-09,completa,Cuidado personal,109,205,237999,57349
+2018,9,2018-09,completa,Carnes y embutidos,41,83,191412,32804
+2018,9,2018-09,completa,Licores y cervezas,45,64,155995,30855
+2018,9,2018-09,completa,Helados y postres,48,150,99683,17873
+2018,9,2018-09,completa,Otros / sin clasificar,30,45,28729,3950
+2018,10,2018-10,completa,Bebidas sin alcohol,97,1808,1361200,202705
+2018,10,2018-10,completa,Belleza y maquillaje,154,1006,773770,253727
+2018,10,2018-10,completa,Abarrotes,229,671,631017,146283
+2018,10,2018-10,completa,Aseo del hogar,212,501,615691,141153
+2018,10,2018-10,completa,Panadería y galletas,154,405,497559,85530
+2018,10,2018-10,completa,Snacks y confitería,146,750,471028,85171
+2018,10,2018-10,completa,Lácteos y huevos,147,334,318581,87264
+2018,10,2018-10,completa,Cuidado personal,104,189,239731,76171
+2018,10,2018-10,completa,Licores y cervezas,43,64,220674,42502
+2018,10,2018-10,completa,Helados y postres,53,146,179010,36222
+2018,10,2018-10,completa,Carnes y embutidos,47,92,167037,26082
+2018,10,2018-10,completa,Frutas y verduras,1,7,29708,4158
+2018,10,2018-10,completa,Otros / sin clasificar,29,52,21622,4195
+2018,11,2018-11,completa,Belleza y maquillaje,165,1192,891356,318646
+2018,11,2018-11,completa,Abarrotes,213,785,737879,175394
+2018,11,2018-11,completa,Carnes y embutidos,69,218,622457,129570
+2018,11,2018-11,completa,Bebidas sin alcohol,121,446,528055,101564
+2018,11,2018-11,completa,Panadería y galletas,128,479,469865,113693
+2018,11,2018-11,completa,Snacks y confitería,129,316,363124,82914
+2018,11,2018-11,completa,Aseo del hogar,181,328,326766,69131
+2018,11,2018-11,completa,Cuidado personal,99,211,229683,59502
+2018,11,2018-11,completa,Lácteos y huevos,154,331,210535,65557
+2018,11,2018-11,completa,Helados y postres,52,207,185231,29896
+2018,11,2018-11,completa,Licores y cervezas,40,53,158037,27036
+2018,11,2018-11,completa,Otros / sin clasificar,19,42,19078,3633
+2018,12,2018-12,completa,Belleza y maquillaje,207,3355,1014090,314284
+2018,12,2018-12,completa,Abarrotes,288,1230,967869,268572
+2018,12,2018-12,completa,Aseo del hogar,236,526,670142,148161
+2018,12,2018-12,completa,Bebidas sin alcohol,119,500,545221,100303
+2018,12,2018-12,completa,Panadería y galletas,148,516,421272,89165
+2018,12,2018-12,completa,Cuidado personal,136,290,336098,97284
+2018,12,2018-12,completa,Snacks y confitería,139,344,316422,80316
+2018,12,2018-12,completa,Carnes y embutidos,55,102,315889,57691
+2018,12,2018-12,completa,Lácteos y huevos,174,363,286686,71671
+2018,12,2018-12,completa,Licores y cervezas,43,70,275227,52708
+2018,12,2018-12,completa,Helados y postres,85,258,210929,48228
+2018,12,2018-12,completa,Otros / sin clasificar,29,46,14361,2716
+2019,1,2019-01,completa,Abarrotes,246,1000,848136,229679
+2019,1,2019-01,completa,Belleza y maquillaje,194,487,678947,196531
+2019,1,2019-01,completa,Aseo del hogar,222,488,551116,124179
+2019,1,2019-01,completa,Panadería y galletas,142,449,532476,95579
+2019,1,2019-01,completa,Bebidas sin alcohol,108,418,426180,87406
+2019,1,2019-01,completa,Snacks y confitería,111,311,311418,53625
+2019,1,2019-01,completa,Cuidado personal,105,211,306724,90687
+2019,1,2019-01,completa,Lácteos y huevos,161,387,282406,82062
+2019,1,2019-01,completa,Helados y postres,64,195,156088,30170
+2019,1,2019-01,completa,Carnes y embutidos,40,88,138831,20341
+2019,1,2019-01,completa,Licores y cervezas,35,41,128970,26014
+2019,1,2019-01,completa,Otros / sin clasificar,30,58,19994,3317
+2019,1,2019-01,completa,Frutas y verduras,1,2,5640,704
+2019,2,2019-02,completa,Abarrotes,175,645,871707,151148
+2019,2,2019-02,completa,Belleza y maquillaje,138,1248,573431,173726
+2019,2,2019-02,completa,Aseo del hogar,184,416,474806,94091
+2019,2,2019-02,completa,Snacks y confitería,120,506,443459,106725
+2019,2,2019-02,completa,Bebidas sin alcohol,91,306,326117,62277
+2019,2,2019-02,completa,Panadería y galletas,106,251,290122,48981
+2019,2,2019-02,completa,Lácteos y huevos,151,307,260577,82583
+2019,2,2019-02,completa,Cuidado personal,75,149,206763,70707
+2019,2,2019-02,completa,Licores y cervezas,42,56,170907,31622
+2019,2,2019-02,completa,Helados y postres,47,152,138753,19020
+2019,2,2019-02,completa,Carnes y embutidos,38,64,123765,19609
+2019,2,2019-02,completa,Otros / sin clasificar,29,51,20992,3605
+2019,2,2019-02,completa,Frutas y verduras,3,6,17474,2471
+2019,3,2019-03,completa,Abarrotes,234,848,1252432,186787
+2019,3,2019-03,completa,Belleza y maquillaje,153,1921,1002497,353847
+2019,3,2019-03,completa,Panadería y galletas,144,458,775799,196855
+2019,3,2019-03,completa,Aseo del hogar,199,523,639736,147933
+2019,3,2019-03,completa,Bebidas sin alcohol,102,397,388181,74064
+2019,3,2019-03,completa,Lácteos y huevos,189,436,354473,119915
+2019,3,2019-03,completa,Snacks y confitería,138,361,348336,78635
+2019,3,2019-03,completa,Licores y cervezas,47,78,286884,45127
+2019,3,2019-03,completa,Cuidado personal,115,228,192878,51299
+2019,3,2019-03,completa,Helados y postres,67,189,148037,24908
+2019,3,2019-03,completa,Carnes y embutidos,53,80,144072,24634
+2019,3,2019-03,completa,Otros / sin clasificar,35,77,27800,4346
+2019,3,2019-03,completa,Frutas y verduras,2,3,8230,1149
+2019,4,2019-04,completa,Belleza y maquillaje,182,680,744205,245813
+2019,4,2019-04,completa,Aseo del hogar,221,573,688485,137806
+2019,4,2019-04,completa,Abarrotes,246,807,675412,140189
+2019,4,2019-04,completa,Snacks y confitería,129,451,502704,113549
+2019,4,2019-04,completa,Panadería y galletas,154,413,445961,91925
+2019,4,2019-04,completa,Bebidas sin alcohol,110,462,404192,86672
+2019,4,2019-04,completa,Carnes y embutidos,61,152,353980,68297
+2019,4,2019-04,completa,Lácteos y huevos,182,387,308938,73953
+2019,4,2019-04,completa,Helados y postres,71,258,264021,50154
+2019,4,2019-04,completa,Cuidado personal,112,208,243185,58596
+2019,4,2019-04,completa,Licores y cervezas,46,59,208770,40610
+2019,4,2019-04,completa,Otros / sin clasificar,39,68,32456,6466
+2019,5,2019-05,completa,Bebidas sin alcohol,152,2405,1720764,236525
+2019,5,2019-05,completa,Abarrotes,274,1109,1195191,302922
+2019,5,2019-05,completa,Belleza y maquillaje,188,684,814601,254715
+2019,5,2019-05,completa,Aseo del hogar,214,484,654101,138864
+2019,5,2019-05,completa,Lácteos y huevos,179,456,492235,153603
+2019,5,2019-05,completa,Panadería y galletas,127,450,491521,90213
+2019,5,2019-05,completa,Snacks y confitería,152,440,424015,87922
+2019,5,2019-05,completa,Cuidado personal,121,287,259427,71339
+2019,5,2019-05,completa,Carnes y embutidos,59,119,254862,47638
+2019,5,2019-05,completa,Licores y cervezas,51,77,216055,38780
+2019,5,2019-05,completa,Helados y postres,58,198,153762,26478
+2019,5,2019-05,completa,Otros / sin clasificar,27,46,18451,2844
+2019,5,2019-05,completa,Frutas y verduras,1,1,73,8
+2019,6,2019-06,completa,Belleza y maquillaje,177,1198,823126,248730
+2019,6,2019-06,completa,Abarrotes,257,974,778229,168423
+2019,6,2019-06,completa,Bebidas sin alcohol,106,998,767241,122892
+2019,6,2019-06,completa,Aseo del hogar,209,549,670042,130592
+2019,6,2019-06,completa,Panadería y galletas,116,388,394169,71885
+2019,6,2019-06,completa,Snacks y confitería,137,427,391186,83174
+2019,6,2019-06,completa,Lácteos y huevos,187,499,378484,96530
+2019,6,2019-06,completa,Cuidado personal,107,218,224165,72050
+2019,6,2019-06,completa,Licores y cervezas,43,71,181300,33037
+2019,6,2019-06,completa,Helados y postres,68,218,162527,23878
+2019,6,2019-06,completa,Carnes y embutidos,38,76,90206,23897
+2019,6,2019-06,completa,Otros / sin clasificar,25,49,32125,6905
+2019,6,2019-06,completa,Frutas y verduras,1,1,1090,152
+2019,7,2019-07,completa,Abarrotes,263,1287,953887,253936
+2019,7,2019-07,completa,Belleza y maquillaje,188,1093,936181,337515
+2019,7,2019-07,completa,Aseo del hogar,202,453,516213,100099
+2019,7,2019-07,completa,Panadería y galletas,135,350,402119,80304
+2019,7,2019-07,completa,Snacks y confitería,133,374,390751,81960
+2019,7,2019-07,completa,Bebidas sin alcohol,115,364,343821,70932
+2019,7,2019-07,completa,Cuidado personal,116,230,298336,85738
+2019,7,2019-07,completa,Lácteos y huevos,157,339,270617,74825
+2019,7,2019-07,completa,Helados y postres,59,190,199461,39065
+2019,7,2019-07,completa,Licores y cervezas,48,59,142616,26196
+2019,7,2019-07,completa,Carnes y embutidos,46,76,137853,23258
+2019,7,2019-07,completa,Otros / sin clasificar,39,74,30390,6802
+2019,7,2019-07,completa,Frutas y verduras,1,3,12234,1713
+2019,8,2019-08,completa,Abarrotes,240,985,1126664,284928
+2019,8,2019-08,completa,Belleza y maquillaje,187,1111,882342,314074
+2019,8,2019-08,completa,Aseo del hogar,212,540,578481,116055
+2019,8,2019-08,completa,Bebidas sin alcohol,127,598,574657,101426
+2019,8,2019-08,completa,Cuidado personal,102,303,394212,131460
+2019,8,2019-08,completa,Panadería y galletas,127,349,372164,62469
+2019,8,2019-08,completa,Snacks y confitería,143,379,335097,71994
+2019,8,2019-08,completa,Helados y postres,78,223,234776,46866
+2019,8,2019-08,completa,Carnes y embutidos,57,93,205635,33823
+2019,8,2019-08,completa,Frutas y verduras,3,52,205164,28708
+2019,8,2019-08,completa,Licores y cervezas,44,62,204879,32389
+2019,8,2019-08,completa,Lácteos y huevos,148,313,197361,55932
+2019,8,2019-08,completa,Otros / sin clasificar,30,57,20180,3429
+2019,9,2019-09,completa,Belleza y maquillaje,156,1156,1019103,388840
+2019,9,2019-09,completa,Abarrotes,209,905,839039,185307
+2019,9,2019-09,completa,Bebidas sin alcohol,113,514,571091,98441
+2019,9,2019-09,completa,Panadería y galletas,131,396,456536,108160
+2019,9,2019-09,completa,Aseo del hogar,175,402,452905,89946
+2019,9,2019-09,completa,Lácteos y huevos,151,425,362549,87577
+2019,9,2019-09,completa,Snacks y confitería,130,454,348961,72479
+2019,9,2019-09,completa,Cuidado personal,98,204,252832,73324
+2019,9,2019-09,completa,Licores y cervezas,49,68,229183,37696
+2019,9,2019-09,completa,Carnes y embutidos,60,120,224529,40725
+2019,9,2019-09,completa,Helados y postres,64,284,213390,38620
+2019,9,2019-09,completa,Otros / sin clasificar,33,63,43267,6550
+2019,10,2019-10,completa,Belleza y maquillaje,158,1265,737628,228536
+2019,10,2019-10,completa,Abarrotes,220,884,716448,130561
+2019,10,2019-10,completa,Aseo del hogar,173,458,583370,116113
+2019,10,2019-10,completa,Bebidas sin alcohol,91,418,404157,79942
+2019,10,2019-10,completa,Panadería y galletas,124,269,347802,68865
+2019,10,2019-10,completa,Lácteos y huevos,129,350,301675,76654
+2019,10,2019-10,completa,Snacks y confitería,125,326,259934,55555
+2019,10,2019-10,completa,Cuidado personal,80,172,226769,65297
+2019,10,2019-10,completa,Carnes y embutidos,50,102,205136,44020
+2019,10,2019-10,completa,Licores y cervezas,40,63,187372,32544
+2019,10,2019-10,completa,Helados y postres,50,153,157688,24558
+2019,10,2019-10,completa,Otros / sin clasificar,31,55,35213,6363
+2019,10,2019-10,completa,Frutas y verduras,1,1,4078,571
+2019,11,2019-11,completa,Abarrotes,197,990,810558,193077
+2019,11,2019-11,completa,Belleza y maquillaje,133,1386,799945,290637
+2019,11,2019-11,completa,Aseo del hogar,167,413,398026,71372
+2019,11,2019-11,completa,Bebidas sin alcohol,86,346,305592,63861
+2019,11,2019-11,completa,Panadería y galletas,100,278,263020,54163
+2019,11,2019-11,completa,Snacks y confitería,107,272,225662,42097
+2019,11,2019-11,completa,Lácteos y huevos,120,302,225549,54673
+2019,11,2019-11,completa,Licores y cervezas,47,60,183528,37666
+2019,11,2019-11,completa,Cuidado personal,94,182,165342,40760
+2019,11,2019-11,completa,Helados y postres,56,153,117070,17076
+2019,11,2019-11,completa,Carnes y embutidos,40,67,91544,12564
+2019,11,2019-11,completa,Otros / sin clasificar,34,65,19430,3980
+2019,11,2019-11,completa,Frutas y verduras,1,2,8156,1142
+2019,12,2019-12,completa,Belleza y maquillaje,142,499,706532,247971
+2019,12,2019-12,completa,Abarrotes,233,887,669216,135711
+2019,12,2019-12,completa,Aseo del hogar,207,498,604744,125680
+2019,12,2019-12,completa,Bebidas sin alcohol,103,502,413582,83882
+2019,12,2019-12,completa,Panadería y galletas,117,327,409642,71930
+2019,12,2019-12,completa,Lácteos y huevos,136,426,314110,65144
+2019,12,2019-12,completa,Snacks y confitería,138,381,294543,68556
+2019,12,2019-12,completa,Licores y cervezas,54,76,273117,40242
+2019,12,2019-12,completa,Carnes y embutidos,40,78,205134,37197
+2019,12,2019-12,completa,Cuidado personal,101,190,189451,50362
+2019,12,2019-12,completa,Helados y postres,57,219,182035,29160
+2019,12,2019-12,completa,Otros / sin clasificar,43,72,25913,4924
+2019,12,2019-12,completa,Frutas y verduras,2,2,1228,122
+2020,1,2020-01,completa,Abarrotes,204,695,750364,150929
+2020,1,2020-01,completa,Aseo del hogar,155,430,590849,111734
+2020,1,2020-01,completa,Belleza y maquillaje,122,369,550288,187809
+2020,1,2020-01,completa,Bebidas sin alcohol,108,441,408973,78483
+2020,1,2020-01,completa,Snacks y confitería,101,351,400188,68797
+2020,1,2020-01,completa,Panadería y galletas,109,227,275411,51136
+2020,1,2020-01,completa,Lácteos y huevos,127,311,251924,85234
+2020,1,2020-01,completa,Cuidado personal,79,155,196997,51268
+2020,1,2020-01,completa,Licores y cervezas,44,55,173040,37226
+2020,1,2020-01,completa,Helados y postres,30,263,172672,27069
+2020,1,2020-01,completa,Carnes y embutidos,47,85,163747,31757
+2020,1,2020-01,completa,Otros / sin clasificar,26,53,24981,4104
+2020,1,2020-01,completa,Frutas y verduras,1,4,15852,2220
+2020,2,2020-02,completa,Abarrotes,149,653,478853,93930
+2020,2,2020-02,completa,Belleza y maquillaje,102,323,387445,124858
+2020,2,2020-02,completa,Aseo del hogar,120,306,281100,58657
+2020,2,2020-02,completa,Snacks y confitería,98,387,275061,48443
+2020,2,2020-02,completa,Panadería y galletas,108,255,269983,45131
+2020,2,2020-02,completa,Bebidas sin alcohol,88,292,263939,48950
+2020,2,2020-02,completa,Lácteos y huevos,112,254,205703,55332
+2020,2,2020-02,completa,Cuidado personal,73,132,151681,31882
+2020,2,2020-02,completa,Licores y cervezas,30,44,98234,17294
+2020,2,2020-02,completa,Carnes y embutidos,28,50,89758,15270
+2020,2,2020-02,completa,Helados y postres,33,86,87353,11734
+2020,2,2020-02,completa,Otros / sin clasificar,23,45,18519,3889
+2020,2,2020-02,completa,Frutas y verduras,1,2,2128,306
+2020,3,2020-03,completa,Abarrotes,169,472,522609,99429
+2020,3,2020-03,completa,Aseo del hogar,171,412,472072,95935
+2020,3,2020-03,completa,Panadería y galletas,137,373,361869,64054
+2020,3,2020-03,completa,Belleza y maquillaje,118,325,339665,94579
+2020,3,2020-03,completa,Snacks y confitería,85,326,329434,67466
+2020,3,2020-03,completa,Bebidas sin alcohol,84,410,309569,59528
+2020,3,2020-03,completa,Lácteos y huevos,98,293,251766,55323
+2020,3,2020-03,completa,Carnes y embutidos,49,94,231648,37411
+2020,3,2020-03,completa,Cuidado personal,78,159,187263,58409
+2020,3,2020-03,completa,Licores y cervezas,39,51,180356,34324
+2020,3,2020-03,completa,Helados y postres,38,154,128684,21480
+2020,3,2020-03,completa,Frutas y verduras,2,6,17080,2358
+2020,3,2020-03,completa,Otros / sin clasificar,22,36,13038,2503
+2020,4,2020-04,completa,Belleza y maquillaje,86,389,633269,218281
+2020,4,2020-04,completa,Abarrotes,137,443,466892,101534
+2020,4,2020-04,completa,Bebidas sin alcohol,83,397,399712,74324
+2020,4,2020-04,completa,Aseo del hogar,138,326,339133,59413
+2020,4,2020-04,completa,Panadería y galletas,80,198,305669,47399
+2020,4,2020-04,completa,Lácteos y huevos,109,297,299102,65201
+2020,4,2020-04,completa,Snacks y confitería,90,212,211465,44894
+2020,4,2020-04,completa,Cuidado personal,79,154,169054,54050
+2020,4,2020-04,completa,Licores y cervezas,41,56,158448,25837
+2020,4,2020-04,completa,Carnes y embutidos,41,92,138224,21719
+2020,4,2020-04,completa,Helados y postres,38,81,59504,8625
+2020,4,2020-04,completa,Otros / sin clasificar,23,43,15092,3315
+2020,4,2020-04,completa,Frutas y verduras,1,1,3963,555
+2020,5,2020-05,completa,Abarrotes,148,493,450434,100324
+2020,5,2020-05,completa,Belleza y maquillaje,92,252,393489,105306
+2020,5,2020-05,completa,Lácteos y huevos,108,279,285040,61578
+2020,5,2020-05,completa,Aseo del hogar,131,310,282739,63859
+2020,5,2020-05,completa,Bebidas sin alcohol,77,204,258643,49430
+2020,5,2020-05,completa,Panadería y galletas,95,216,234415,42317
+2020,5,2020-05,completa,Snacks y confitería,96,289,225967,44463
+2020,5,2020-05,completa,Licores y cervezas,39,53,219284,31470
+2020,5,2020-05,completa,Cuidado personal,74,153,167433,40832
+2020,5,2020-05,completa,Carnes y embutidos,43,91,163902,30927
+2020,5,2020-05,completa,Helados y postres,23,95,93572,13400
+2020,5,2020-05,completa,Frutas y verduras,3,40,16558,1831
+2020,5,2020-05,completa,Otros / sin clasificar,24,43,11715,2046
+2020,6,2020-06,completa,Belleza y maquillaje,89,351,505301,168933
+2020,6,2020-06,completa,Abarrotes,139,358,417588,85634
+2020,6,2020-06,completa,Bebidas sin alcohol,74,287,365205,62655
+2020,6,2020-06,completa,Aseo del hogar,122,289,263184,54385
+2020,6,2020-06,completa,Lácteos y huevos,128,304,257655,68946
+2020,6,2020-06,completa,Panadería y galletas,78,205,222414,39410
+2020,6,2020-06,completa,Snacks y confitería,85,279,173280,34776
+2020,6,2020-06,completa,Cuidado personal,70,123,140776,45258
+2020,6,2020-06,completa,Licores y cervezas,30,40,105103,22012
+2020,6,2020-06,completa,Carnes y embutidos,32,82,102411,26070
+2020,6,2020-06,completa,Helados y postres,29,100,84283,11698
+2020,6,2020-06,completa,Otros / sin clasificar,17,36,14011,2374
+2020,6,2020-06,completa,Frutas y verduras,2,3,238,28
+2020,7,2020-07,completa,Abarrotes,153,430,524405,148692
+2020,7,2020-07,completa,Belleza y maquillaje,92,959,420362,125735
+2020,7,2020-07,completa,Aseo del hogar,155,424,378278,64423
+2020,7,2020-07,completa,Panadería y galletas,93,223,244823,34745
+2020,7,2020-07,completa,Bebidas sin alcohol,76,196,230360,41753
+2020,7,2020-07,completa,Licores y cervezas,44,63,226501,44077
+2020,7,2020-07,completa,Snacks y confitería,82,288,217433,49658
+2020,7,2020-07,completa,Lácteos y huevos,112,265,174668,41141
+2020,7,2020-07,completa,Cuidado personal,74,150,148562,50258
+2020,7,2020-07,completa,Carnes y embutidos,37,71,143247,28816
+2020,7,2020-07,completa,Helados y postres,32,94,76409,10583
+2020,7,2020-07,completa,Otros / sin clasificar,22,65,14139,3074
+2020,8,2020-08,completa,Belleza y maquillaje,83,2225,552868,176401
+2020,8,2020-08,completa,Abarrotes,147,480,517490,108949
+2020,8,2020-08,completa,Snacks y confitería,79,402,348880,91171
+2020,8,2020-08,completa,Aseo del hogar,119,334,340963,67581
+2020,8,2020-08,completa,Panadería y galletas,97,262,262375,46090
+2020,8,2020-08,completa,Bebidas sin alcohol,80,244,215143,46958
+2020,8,2020-08,completa,Lácteos y huevos,93,302,213071,46246
+2020,8,2020-08,completa,Cuidado personal,77,132,181667,42290
+2020,8,2020-08,completa,Carnes y embutidos,31,55,104747,24358
+2020,8,2020-08,completa,Licores y cervezas,27,36,102618,20612
+2020,8,2020-08,completa,Helados y postres,40,126,90488,16760
+2020,8,2020-08,completa,Frutas y verduras,2,5,19729,4017
+2020,8,2020-08,completa,Otros / sin clasificar,22,34,19329,3254
+2020,9,2020-09,completa,Abarrotes,153,539,582335,121135
+2020,9,2020-09,completa,Panadería y galletas,96,239,336015,73591
+2020,9,2020-09,completa,Belleza y maquillaje,118,279,314831,91997
+2020,9,2020-09,completa,Bebidas sin alcohol,72,329,297751,60521
+2020,9,2020-09,completa,Snacks y confitería,88,258,224608,65571
+2020,9,2020-09,completa,Aseo del hogar,139,371,215997,47845
+2020,9,2020-09,completa,Lácteos y huevos,103,266,176144,40684
+2020,9,2020-09,completa,Cuidado personal,83,168,156489,44983
+2020,9,2020-09,completa,Helados y postres,27,70,102641,18190
+2020,9,2020-09,completa,Carnes y embutidos,27,53,96318,12275
+2020,9,2020-09,completa,Licores y cervezas,28,37,91414,21766
+2020,9,2020-09,completa,Frutas y verduras,2,5,15703,2007
+2020,9,2020-09,completa,Otros / sin clasificar,29,47,14800,2707
+2020,10,2020-10,completa,Bebidas sin alcohol,80,1237,862923,121066
+2020,10,2020-10,completa,Abarrotes,137,691,506035,89385
+2020,10,2020-10,completa,Belleza y maquillaje,98,394,362318,115007
+2020,10,2020-10,completa,Lácteos y huevos,107,323,355403,82518
+2020,10,2020-10,completa,Snacks y confitería,97,322,306865,76100
+2020,10,2020-10,completa,Aseo del hogar,130,267,260018,47005
+2020,10,2020-10,completa,Panadería y galletas,104,237,228370,36908
+2020,10,2020-10,completa,Cuidado personal,82,138,132322,33847
+2020,10,2020-10,completa,Carnes y embutidos,24,48,132236,27266
+2020,10,2020-10,completa,Licores y cervezas,34,42,116700,18226
+2020,10,2020-10,completa,Helados y postres,30,74,89440,26102
+2020,10,2020-10,completa,Otros / sin clasificar,33,56,25162,3749
+2020,10,2020-10,completa,Frutas y verduras,3,12,24198,3366
+2020,11,2020-11,completa,Abarrotes,153,498,638211,126792
+2020,11,2020-11,completa,Bebidas sin alcohol,81,320,310512,60807
+2020,11,2020-11,completa,Belleza y maquillaje,90,211,293792,78215
+2020,11,2020-11,completa,Aseo del hogar,121,323,260672,61217
+2020,11,2020-11,completa,Lácteos y huevos,115,316,257613,62500
+2020,11,2020-11,completa,Snacks y confitería,76,225,244329,60306
+2020,11,2020-11,completa,Panadería y galletas,75,192,207480,46310
+2020,11,2020-11,completa,Licores y cervezas,35,53,192052,24260
+2020,11,2020-11,completa,Cuidado personal,71,156,165468,51762
+2020,11,2020-11,completa,Helados y postres,38,109,142038,34614
+2020,11,2020-11,completa,Carnes y embutidos,23,72,106723,25081
+2020,11,2020-11,completa,Frutas y verduras,1,3,11886,1710
+2020,11,2020-11,completa,Otros / sin clasificar,20,33,10572,2516
+2020,12,2020-12,completa,Abarrotes,113,419,387499,79307
+2020,12,2020-12,completa,Panadería y galletas,81,190,299244,53172
+2020,12,2020-12,completa,Belleza y maquillaje,94,220,257056,74651
+2020,12,2020-12,completa,Lácteos y huevos,102,236,226389,63432
+2020,12,2020-12,completa,Aseo del hogar,95,193,224111,46850
+2020,12,2020-12,completa,Bebidas sin alcohol,62,180,218728,44766
+2020,12,2020-12,completa,Snacks y confitería,74,218,174893,32266
+2020,12,2020-12,completa,Licores y cervezas,30,37,148918,30427
+2020,12,2020-12,completa,Cuidado personal,59,112,131749,30084
+2020,12,2020-12,completa,Carnes y embutidos,29,47,66270,9489
+2020,12,2020-12,completa,Helados y postres,18,38,44973,6472
+2020,12,2020-12,completa,Otros / sin clasificar,21,32,18661,3613
+2021,1,2021-01,parcial,Belleza y maquillaje,57,179,197284,50056
+2021,1,2021-01,parcial,Abarrotes,84,261,194026,44228
+2021,1,2021-01,parcial,Snacks y confitería,66,224,191023,38039
+2021,1,2021-01,parcial,Lácteos y huevos,50,131,187223,41291
+2021,1,2021-01,parcial,Panadería y galletas,60,137,139811,23589
+2021,1,2021-01,parcial,Licores y cervezas,18,34,113904,17609
+2021,1,2021-01,parcial,Bebidas sin alcohol,46,177,109957,28639
+2021,1,2021-01,parcial,Cuidado personal,50,128,106109,25564
+2021,1,2021-01,parcial,Aseo del hogar,59,105,99633,18523
+2021,1,2021-01,parcial,Helados y postres,21,79,41396,6025
+2021,1,2021-01,parcial,Carnes y embutidos,12,15,15648,2102
+2021,1,2021-01,parcial,Otros / sin clasificar,5,11,3018,325
+2021,1,2021-01,parcial,Frutas y verduras,1,4,252,24
+2021,2,2021-02,parcial,Abarrotes,35,85,90282,26040
+2021,2,2021-02,parcial,Lácteos y huevos,37,103,58815,15029
+2021,2,2021-02,parcial,Licores y cervezas,14,17,50898,15077
+2021,2,2021-02,parcial,Belleza y maquillaje,25,49,49029,15019
+2021,2,2021-02,parcial,Aseo del hogar,36,69,47390,11303
+2021,2,2021-02,parcial,Panadería y galletas,28,44,41848,8199
+2021,2,2021-02,parcial,Snacks y confitería,24,43,39505,10851
+2021,2,2021-02,parcial,Bebidas sin alcohol,19,29,26375,4458
+2021,2,2021-02,parcial,Cuidado personal,21,38,23487,6924
+2021,2,2021-02,parcial,Helados y postres,7,20,18890,2567
+2021,2,2021-02,parcial,Carnes y embutidos,7,10,8897,792
+2021,2,2021-02,parcial,Otros / sin clasificar,6,9,2737,367
+2021,3,2021-03,parcial,Abarrotes,31,186,307268,92975
+2021,3,2021-03,parcial,Belleza y maquillaje,19,67,104980,39929
+2021,3,2021-03,parcial,Snacks y confitería,24,110,61099,14221
+2021,3,2021-03,parcial,Lácteos y huevos,24,80,50137,13565
+2021,3,2021-03,parcial,Aseo del hogar,38,84,47313,7640
+2021,3,2021-03,parcial,Panadería y galletas,20,44,43088,6953
+2021,3,2021-03,parcial,Cuidado personal,18,38,39738,11798
+2021,3,2021-03,parcial,Carnes y embutidos,13,23,36933,5183
+2021,3,2021-03,parcial,Bebidas sin alcohol,12,33,33262,7751
+2021,3,2021-03,parcial,Licores y cervezas,6,9,28127,5498
+2021,3,2021-03,parcial,Otros / sin clasificar,11,17,6980,1139
+2021,3,2021-03,parcial,Helados y postres,4,6,6710,610
+2021,4,2021-04,parcial,Panadería y galletas,21,281,188534,53401
+2021,4,2021-04,parcial,Belleza y maquillaje,31,97,82873,29662
+2021,4,2021-04,parcial,Snacks y confitería,21,94,77083,14028
+2021,4,2021-04,parcial,Abarrotes,33,79,75093,15689
+2021,4,2021-04,parcial,Licores y cervezas,10,17,43468,8283
+2021,4,2021-04,parcial,Bebidas sin alcohol,18,58,39129,6992
+2021,4,2021-04,parcial,Lácteos y huevos,30,66,30683,5975
+2021,4,2021-04,parcial,Cuidado personal,17,26,26053,6514
+2021,4,2021-04,parcial,Aseo del hogar,26,42,25658,5107
+2021,4,2021-04,parcial,Carnes y embutidos,6,8,11939,1436
+2021,4,2021-04,parcial,Helados y postres,6,13,9144,1184
+2021,4,2021-04,parcial,Otros / sin clasificar,6,9,1640,413
+2021,5,2021-05,parcial,Belleza y maquillaje,17,55,72041,22293
+2021,5,2021-05,parcial,Abarrotes,34,109,54719,11488
+2021,5,2021-05,parcial,Snacks y confitería,19,63,53489,10309
+2021,5,2021-05,parcial,Aseo del hogar,31,56,49373,12477
+2021,5,2021-05,parcial,Panadería y galletas,17,33,44244,11961
+2021,5,2021-05,parcial,Lácteos y huevos,20,46,30337,7547
+2021,5,2021-05,parcial,Carnes y embutidos,11,20,27605,4284
+2021,5,2021-05,parcial,Bebidas sin alcohol,14,57,27403,5813
+2021,5,2021-05,parcial,Licores y cervezas,7,8,26839,8979
+2021,5,2021-05,parcial,Cuidado personal,20,32,21676,5261
+2021,5,2021-05,parcial,Helados y postres,8,23,9930,1340
+2021,5,2021-05,parcial,Otros / sin clasificar,3,7,3476,487
+2021,6,2021-06,parcial,Snacks y confitería,17,92,141645,29809
+2021,6,2021-06,parcial,Bebidas sin alcohol,21,108,112128,16143
+2021,6,2021-06,parcial,Belleza y maquillaje,27,82,96062,29227
+2021,6,2021-06,parcial,Abarrotes,27,89,86960,15689
+2021,6,2021-06,parcial,Panadería y galletas,21,36,52548,9626
+2021,6,2021-06,parcial,Licores y cervezas,11,19,48563,14210
+2021,6,2021-06,parcial,Cuidado personal,19,33,44665,12888
+2021,6,2021-06,parcial,Lácteos y huevos,14,35,36160,7562
+2021,6,2021-06,parcial,Aseo del hogar,14,34,35172,5614
+2021,6,2021-06,parcial,Helados y postres,9,22,19772,6697
+2021,6,2021-06,parcial,Carnes y embutidos,5,7,11394,1694
+2021,6,2021-06,parcial,Otros / sin clasificar,4,6,2113,486
+2021,7,2021-07,parcial,Panadería y galletas,26,59,67441,14939
+2021,7,2021-07,parcial,Aseo del hogar,19,53,53526,7028
+2021,7,2021-07,parcial,Lácteos y huevos,22,48,45067,16392
+2021,7,2021-07,parcial,Bebidas sin alcohol,12,95,42828,9293
+2021,7,2021-07,parcial,Abarrotes,26,65,29085,6939
+2021,7,2021-07,parcial,Licores y cervezas,8,17,25779,5253
+2021,7,2021-07,parcial,Snacks y confitería,12,32,16905,2297
+2021,7,2021-07,parcial,Belleza y maquillaje,11,23,14376,4317
+2021,7,2021-07,parcial,Helados y postres,5,9,12601,1763
+2021,7,2021-07,parcial,Carnes y embutidos,7,7,8788,1036
+2021,7,2021-07,parcial,Otros / sin clasificar,6,12,5867,1031
+2021,7,2021-07,parcial,Cuidado personal,8,14,5614,1210
+2021,7,2021-07,parcial,Frutas y verduras,2,4,5134,714
+2021,8,2021-08,parcial,Belleza y maquillaje,9,43,75890,21109
+2021,8,2021-08,parcial,Helados y postres,8,56,67116,9053
+2021,8,2021-08,parcial,Bebidas sin alcohol,12,67,65887,13326
+2021,8,2021-08,parcial,Aseo del hogar,25,57,44443,7497
+2021,8,2021-08,parcial,Panadería y galletas,18,39,36403,5550
+2021,8,2021-08,parcial,Cuidado personal,15,41,33861,8889
+2021,8,2021-08,parcial,Lácteos y huevos,16,32,30951,8859
+2021,8,2021-08,parcial,Abarrotes,21,70,28983,9096
+2021,8,2021-08,parcial,Snacks y confitería,17,30,28062,4275
+2021,8,2021-08,parcial,Licores y cervezas,6,6,21990,7199
+2021,8,2021-08,parcial,Carnes y embutidos,4,6,5050,711
+2021,8,2021-08,parcial,Otros / sin clasificar,1,1,304,42
+2021,9,2021-09,parcial,Abarrotes,17,42,39722,5621
+2021,9,2021-09,parcial,Bebidas sin alcohol,7,56,32289,6531
+2021,9,2021-09,parcial,Lácteos y huevos,10,30,25639,7425
+2021,9,2021-09,parcial,Helados y postres,7,17,20378,2933
+2021,9,2021-09,parcial,Aseo del hogar,15,27,17191,3722
+2021,9,2021-09,parcial,Panadería y galletas,5,16,16334,7605
+2021,9,2021-09,parcial,Belleza y maquillaje,10,17,15250,3295
+2021,9,2021-09,parcial,Snacks y confitería,7,10,14321,3094
+2021,9,2021-09,parcial,Carnes y embutidos,6,8,12425,2113
+2021,9,2021-09,parcial,Licores y cervezas,3,4,4513,486
+2021,9,2021-09,parcial,Cuidado personal,3,3,1290,512
+2021,9,2021-09,parcial,Otros / sin clasificar,4,5,791,163
+2021,10,2021-10,parcial,Belleza y maquillaje,8,32,23804,5346
+2021,10,2021-10,parcial,Lácteos y huevos,13,41,21778,3941
+2021,10,2021-10,parcial,Licores y cervezas,3,5,19540,2574
+2021,10,2021-10,parcial,Bebidas sin alcohol,11,19,18073,3420
+2021,10,2021-10,parcial,Abarrotes,10,19,14373,2795
+2021,10,2021-10,parcial,Aseo del hogar,7,11,12923,1984
+2021,10,2021-10,parcial,Cuidado personal,5,12,10046,2222
+2021,10,2021-10,parcial,Carnes y embutidos,1,3,6030,720
+2021,10,2021-10,parcial,Panadería y galletas,4,6,5056,698
+2021,10,2021-10,parcial,Snacks y confitería,2,4,1418,378
+2021,10,2021-10,parcial,Otros / sin clasificar,1,2,390,54
+2021,11,2021-11,parcial,Abarrotes,10,21,20773,7667
+2021,11,2021-11,parcial,Belleza y maquillaje,6,15,12506,5580
+2021,11,2021-11,parcial,Lácteos y huevos,6,8,10060,2839
+2021,11,2021-11,parcial,Aseo del hogar,5,16,8835,2236
+2021,11,2021-11,parcial,Panadería y galletas,5,11,8535,1024
+2021,11,2021-11,parcial,Otros / sin clasificar,3,10,4989,667
+2021,11,2021-11,parcial,Snacks y confitería,2,4,4546,620
+2021,11,2021-11,parcial,Licores y cervezas,3,3,4053,671
+2021,11,2021-11,parcial,Helados y postres,2,3,3287,404
+2021,11,2021-11,parcial,Cuidado personal,3,4,1969,224
+2021,11,2021-11,parcial,Bebidas sin alcohol,4,6,1908,281
+2021,11,2021-11,parcial,Carnes y embutidos,1,2,104,36
+2021,12,2021-12,parcial,Bebidas sin alcohol,8,767,454521,54269
+2021,12,2021-12,parcial,Snacks y confitería,7,12,14104,3150
+2021,12,2021-12,parcial,Licores y cervezas,1,2,12466,1064
+2021,12,2021-12,parcial,Belleza y maquillaje,5,13,12431,2984
+2021,12,2021-12,parcial,Helados y postres,1,9,10233,1449
+2021,12,2021-12,parcial,Abarrotes,7,24,9857,3212
+2021,12,2021-12,parcial,Panadería y galletas,3,5,6426,899
+2021,12,2021-12,parcial,Carnes y embutidos,3,3,5388,1114
+2021,12,2021-12,parcial,Aseo del hogar,6,7,5113,1064
+2021,12,2021-12,parcial,Lácteos y huevos,4,4,3163,461
+2021,12,2021-12,parcial,Cuidado personal,1,2,2880,402
+2021,12,2021-12,parcial,Otros / sin clasificar,2,2,273,39
+2022,1,2022-01,parcial,Lácteos y huevos,7,19,23417,5830
+2022,1,2022-01,parcial,Carnes y embutidos,3,7,15840,2627
+2022,1,2022-01,parcial,Snacks y confitería,7,22,12557,1847
+2022,1,2022-01,parcial,Abarrotes,7,15,10219,3606
+2022,1,2022-01,parcial,Bebidas sin alcohol,1,5,7990,1120
+2022,1,2022-01,parcial,Belleza y maquillaje,4,5,5745,2497
+2022,1,2022-01,parcial,Licores y cervezas,1,1,5639,1410
+2022,1,2022-01,parcial,Cuidado personal,4,9,4164,828
+2022,1,2022-01,parcial,Helados y postres,3,5,3965,1259
+2022,1,2022-01,parcial,Panadería y galletas,2,5,2579,362
+2022,1,2022-01,parcial,Otros / sin clasificar,2,3,1063,129
+2022,1,2022-01,parcial,Aseo del hogar,2,3,822,90
+2022,2,2022-02,parcial,Bebidas sin alcohol,3,54,17096,7024
+2022,2,2022-02,parcial,Aseo del hogar,6,14,8833,3454
+2022,2,2022-02,parcial,Helados y postres,2,5,4463,621
+2022,2,2022-02,parcial,Cuidado personal,5,7,4339,1749
+2022,2,2022-02,parcial,Panadería y galletas,3,3,3636,525
+2022,2,2022-02,parcial,Snacks y confitería,4,5,2614,418
+2022,2,2022-02,parcial,Belleza y maquillaje,2,2,1301,409
+2022,2,2022-02,parcial,Abarrotes,2,3,762,107
+2022,2,2022-02,parcial,Lácteos y huevos,2,3,631,304
+2022,2,2022-02,parcial,Otros / sin clasificar,2,3,593,110
+2022,3,2022-03,parcial,Abarrotes,6,210,55956,27434
+2022,3,2022-03,parcial,Snacks y confitería,4,9,14131,4873
+2022,3,2022-03,parcial,Licores y cervezas,1,1,7583,1085
+2022,3,2022-03,parcial,Lácteos y huevos,4,16,6968,1956
+2022,3,2022-03,parcial,Carnes y embutidos,2,2,3821,641
+2022,3,2022-03,parcial,Aseo del hogar,6,9,3463,730
+2022,3,2022-03,parcial,Cuidado personal,2,4,3258,1609
+2022,3,2022-03,parcial,Bebidas sin alcohol,2,5,2565,360
+2022,3,2022-03,parcial,Panadería y galletas,2,3,750,81
+2022,3,2022-03,parcial,Belleza y maquillaje,1,1,191,26
+2022,3,2022-03,parcial,Otros / sin clasificar,1,2,126,44
+2022,4,2022-04,parcial,Belleza y maquillaje,4,20,31490,11690
+2022,4,2022-04,parcial,Aseo del hogar,3,23,16866,2944
+2022,4,2022-04,parcial,Lácteos y huevos,3,13,13726,4430
+2022,4,2022-04,parcial,Licores y cervezas,4,5,8704,1140
+2022,4,2022-04,parcial,Helados y postres,2,2,6397,3113
+2022,4,2022-04,parcial,Panadería y galletas,2,5,5508,959
+2022,4,2022-04,parcial,Snacks y confitería,2,3,5153,722
+2022,4,2022-04,parcial,Abarrotes,3,16,4632,1514
+2022,4,2022-04,parcial,Cuidado personal,1,2,1134,114
+2022,4,2022-04,parcial,Bebidas sin alcohol,3,3,812,148
+2022,5,2022-05,parcial,Abarrotes,7,23,40749,5338
+2022,5,2022-05,parcial,Aseo del hogar,6,20,11725,2921
+2022,5,2022-05,parcial,Lácteos y huevos,3,12,8860,4248
+2022,5,2022-05,parcial,Panadería y galletas,5,8,7539,1181
+2022,5,2022-05,parcial,Carnes y embutidos,1,2,6920,198
+2022,5,2022-05,parcial,Belleza y maquillaje,1,3,2007,978
+2022,5,2022-05,parcial,Licores y cervezas,1,1,1545,154
+2022,5,2022-05,parcial,Cuidado personal,1,2,1276,446
+2022,5,2022-05,parcial,Snacks y confitería,1,1,440,62
+2022,5,2022-05,parcial,Otros / sin clasificar,1,2,346,48
+2022,6,2022-06,parcial,Bebidas sin alcohol,3,13,18095,2537
+2022,6,2022-06,parcial,Licores y cervezas,3,4,11900,1172
+2022,6,2022-06,parcial,Belleza y maquillaje,4,5,5787,796
+2022,6,2022-06,parcial,Helados y postres,3,4,5067,1221
+2022,6,2022-06,parcial,Aseo del hogar,3,4,3983,615
+2022,6,2022-06,parcial,Snacks y confitería,4,5,3813,613
+2022,6,2022-06,parcial,Lácteos y huevos,4,10,3490,515
+2022,6,2022-06,parcial,Abarrotes,1,2,1736,218
+2022,6,2022-06,parcial,Cuidado personal,2,2,449,50
+2022,6,2022-06,parcial,Panadería y galletas,1,1,193,77
+2022,7,2022-07,parcial,Bebidas sin alcohol,2,7,10074,1434
+2022,7,2022-07,parcial,Snacks y confitería,3,15,8213,444
+2022,7,2022-07,parcial,Panadería y galletas,3,11,8001,1258
+2022,7,2022-07,parcial,Lácteos y huevos,8,12,5837,1988
+2022,7,2022-07,parcial,Belleza y maquillaje,1,2,2046,286
+2022,7,2022-07,parcial,Aseo del hogar,1,1,835,142
+2022,7,2022-07,parcial,Abarrotes,1,2,168,24
+2022,8,2022-08,parcial,Abarrotes,2,7,3871,768
+2022,8,2022-08,parcial,Aseo del hogar,3,5,3276,361
+2022,8,2022-08,parcial,Licores y cervezas,1,1,2892,723
+2022,8,2022-08,parcial,Lácteos y huevos,4,10,2686,635
+2022,8,2022-08,parcial,Cuidado personal,3,4,1253,175
+2022,8,2022-08,parcial,Bebidas sin alcohol,1,3,810,90
+2022,8,2022-08,parcial,Snacks y confitería,2,3,495,158
+2022,8,2022-08,parcial,Panadería y galletas,1,3,390,135
+2022,8,2022-08,parcial,Belleza y maquillaje,1,1,241,121
+2022,8,2022-08,parcial,Otros / sin clasificar,1,1,143,20
+2022,9,2022-09,parcial,Panadería y galletas,3,3,3847,390
+2022,9,2022-09,parcial,Abarrotes,2,3,2104,295
+2022,9,2022-09,parcial,Helados y postres,1,1,1465,188
+2022,9,2022-09,parcial,Lácteos y huevos,2,5,875,167
+2022,9,2022-09,parcial,Aseo del hogar,1,1,472,66
+2022,10,2022-10,parcial,Aseo del hogar,2,4,4959,824
+2022,10,2022-10,parcial,Belleza y maquillaje,1,2,3044,426
+2022,10,2022-10,parcial,Cuidado personal,2,3,976,409
+2022,10,2022-10,parcial,Abarrotes,1,1,77,13
+2022,11,2022-11,parcial,Aseo del hogar,1,2,352,56
