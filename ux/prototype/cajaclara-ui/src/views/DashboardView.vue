@@ -113,21 +113,27 @@ const handleModalSuccess = (data) => {
     </section>
 
     <section class="dashboard-grid" aria-label="Análisis principal de caja">
-      <div class="dashboard-column">
-        <CashChart :weeklyData="mockData.weeklyFlow" />
-        <RecentOperations :operations="mockData.recentOperations" />
-      </div>
-
-      <div class="dashboard-column">
-        <PriorityCollections
-          :collections="mockData.priorityCollections"
-          @pay-collection="handlePayCollection"
-        />
-        <section class="operations-row" aria-label="Información operativa">
-          <OperationsSummary :summary="mockData.operationsSummary" />
-          <TopProducts :products="mockData.topProducts" />
-        </section>
-      </div>
+      <CashChart
+        class="dashboard-grid__chart"
+        :weeklyData="mockData.weeklyFlow"
+      />
+      <PriorityCollections
+        class="dashboard-grid__collections"
+        :collections="mockData.priorityCollections"
+        @pay-collection="handlePayCollection"
+      />
+      <RecentOperations
+        class="dashboard-grid__recent"
+        :operations="mockData.recentOperations"
+      />
+      <OperationsSummary
+        class="dashboard-grid__summary"
+        :summary="mockData.operationsSummary"
+      />
+      <TopProducts
+        class="dashboard-grid__products"
+        :products="mockData.topProducts"
+      />
     </section>
 
     <!-- Modal for New Operation / Collection -->
@@ -203,32 +209,33 @@ const handleModalSuccess = (data) => {
   }
 }
 
-/* Separate column flows keep the chart independent of the sidebar height. */
 .dashboard-grid {
   display: grid;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "chart"
+    "collections"
+    "recent"
+    "summary"
+    "products";
   gap: var(--layout-card-gap);
   align-items: start;
 }
 
-.dashboard-column {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--layout-card-gap);
-}
+.dashboard-grid__chart { grid-area: chart; }
+.dashboard-grid__collections { grid-area: collections; }
+.dashboard-grid__recent { grid-area: recent; }
+.dashboard-grid__summary { grid-area: summary; }
+.dashboard-grid__products { grid-area: products; }
 
-.operations-row {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--layout-card-gap);
-}
-
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .dashboard-grid {
     grid-template-columns: minmax(0, 2fr) minmax(20rem, 1fr);
+    grid-template-areas:
+      "chart collections"
+      "recent recent"
+      "summary products";
   }
 }
 
