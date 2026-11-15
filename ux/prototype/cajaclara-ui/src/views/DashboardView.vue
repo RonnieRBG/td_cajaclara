@@ -112,22 +112,22 @@ const handleModalSuccess = (data) => {
       </div>
     </section>
 
-    <!-- Main analytics: cash flow and priority collections -->
-    <section class="analytics-row" aria-label="Análisis principal de caja">
-      <CashChart :weeklyData="mockData.weeklyFlow" />
-      <PriorityCollections
-        :collections="mockData.priorityCollections"
-        @pay-collection="handlePayCollection"
-      />
-    </section>
+    <section class="dashboard-grid" aria-label="Análisis principal de caja">
+      <div class="dashboard-column">
+        <CashChart :weeklyData="mockData.weeklyFlow" />
+        <RecentOperations :operations="mockData.recentOperations" />
+      </div>
 
-    <!-- Recent cash movements use the full available width -->
-    <RecentOperations :operations="mockData.recentOperations" />
-
-    <!-- Operational information -->
-    <section class="operations-row" aria-label="Información operativa">
-      <OperationsSummary :summary="mockData.operationsSummary" />
-      <TopProducts :products="mockData.topProducts" />
+      <div class="dashboard-column">
+        <PriorityCollections
+          :collections="mockData.priorityCollections"
+          @pay-collection="handlePayCollection"
+        />
+        <section class="operations-row" aria-label="Información operativa">
+          <OperationsSummary :summary="mockData.operationsSummary" />
+          <TopProducts :products="mockData.topProducts" />
+        </section>
+      </div>
     </section>
 
     <!-- Modal for New Operation / Collection -->
@@ -203,30 +203,32 @@ const handleModalSuccess = (data) => {
   }
 }
 
-/* Independent rows prevent unrelated cards from sharing column heights. */
-.analytics-row {
+/* Separate column flows keep the chart independent of the sidebar height. */
+.dashboard-grid {
   display: grid;
-  min-width: var(--content-min-width);
+  min-width: 0;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--layout-card-gap);
   align-items: start;
+}
+
+.dashboard-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--layout-card-gap);
 }
 
 .operations-row {
-  display: grid;
-  min-width: var(--content-min-width);
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   gap: var(--layout-card-gap);
-  align-items: start;
 }
 
-@media (min-width: 1280px) {
-  .analytics-row {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  }
-
-  .operations-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(20rem, 1fr);
   }
 }
 
