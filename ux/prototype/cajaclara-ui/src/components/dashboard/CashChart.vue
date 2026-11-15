@@ -14,19 +14,29 @@ const props = defineProps({
 })
 
 const hoveredBar = ref(null)
+const focusedBar = ref(null)
+const selectedBar = ref(null)
+const activeBar = computed(() => hoveredBar.value ?? focusedBar.value ?? selectedBar.value)
 
 // Calculate max value to scale chart proportionally
 const maxValue = computed(() => {
   let max = 0
   props.weeklyData.forEach(item => {
-    if (item.ventas > max) max = item.ventas
-    if (item.gastos > max) max = item.gastos
+    const ventas = Number.isFinite(item.ventas) ? Math.max(item.ventas, 0) : 0
+    const gastos = Number.isFinite(item.gastos) ? Math.max(item.gastos, 0) : 0
+    max = Math.max(max, ventas, gastos)
   })
-  return Math.max(max * 1.15, 100000)
+  return Math.max(Math.min(max * 1.15, Number.MAX_SAFE_INTEGER), 100000)
 })
 
 const getBarHeight = (value) => {
-  return `${Math.round((value / maxValue.value) * 100)}%`
+  const safeValue = Number.isFinite(value) ? Math.max(value, 0) : 0
+  const height = Math.min(safeValue, maxValue.value) / maxValue.value * 100
+  return `${Math.round(height)}%`
+}
+
+const showTooltip = (week, type, value) => {
+  hoveredBar.value = { ...week, type, value }
 }
 
 const totalVentas = computed(() => {
@@ -46,7 +56,7 @@ const totalGastos = computed(() => {
         <p class="chart-subtitle">{{ subtitle }}</p>
       </div>
 
-      <div class="chart-legend" aria-hidden="true">
+      <div class="chart-legend">
         <div class="legend-item">
           <span class="legend-dot dot-ventas"></span>
           <span class="legend-label">Ventas (Entradas): <strong>{{ formatCLP(totalVentas) }}</strong></span>
@@ -78,13 +88,16 @@ const totalGastos = computed(() => {
             <!-- Ventas Bar -->
             <div
               class="bar-wrapper"
-              @mouseenter="hoveredBar = { ...week, type: 'venta', value: week.ventas }"
+              @mouseenter="showTooltip(week, 'venta', week.ventas)"
               @mouseleave="hoveredBar = null"
+              @focus="focusedBar = { ...week, type: 'venta', value: week.ventas }"
+              @blur="focusedBar = null"
+              @click="selectedBar = { ...week, type: 'venta', value: week.ventas }"
               tabindex="0"
               :aria-label="`${week.semana}: Ventas de ${formatCLP(week.ventas)}`"
             >
               <div
-                class="bar bar-ventas"
+                class="chart-bar chart-bar--income"
                 :style="{ height: getBarHeight(week.ventas) }"
               >
                 <span class="bar-value-top">{{ formatCLP(week.ventas) }}</span>
@@ -94,13 +107,16 @@ const totalGastos = computed(() => {
             <!-- Gastos Bar -->
             <div
               class="bar-wrapper"
-              @mouseenter="hoveredBar = { ...week, type: 'gasto', value: week.gastos }"
+              @mouseenter="showTooltip(week, 'gasto', week.gastos)"
               @mouseleave="hoveredBar = null"
+              @focus="focusedBar = { ...week, type: 'gasto', value: week.gastos }"
+              @blur="focusedBar = null"
+              @click="selectedBar = { ...week, type: 'gasto', value: week.gastos }"
               tabindex="0"
               :aria-label="`${week.semana}: Compras y gastos de ${formatCLP(week.gastos)}`"
             >
               <div
-                class="bar bar-gastos"
+                class="chart-bar chart-bar--expense"
                 :style="{ height: getBarHeight(week.gastos) }"
               >
                 <span class="bar-value-top">{{ formatCLP(week.gastos) }}</span>
@@ -116,12 +132,12 @@ const totalGastos = computed(() => {
 
     <!-- Dynamic hover hint/tooltip for micro-businesses -->
     <div class="chart-footer-note">
-      <div v-if="hoveredBar" class="active-tooltip">
-        <span class="tooltip-badge" :class="hoveredBar.type === 'venta' ? 'badge-ingreso' : 'badge-salida'">
-          {{ hoveredBar.type === 'venta' ? 'Entrada / Venta' : 'Salida / Gasto' }}
+      <div v-if="activeBar" class="active-tooltip">
+        <span class="tooltip-badge" :class="activeBar.type === 'venta' ? 'badge-ingreso' : 'badge-salida'">
+          {{ activeBar.type === 'venta' ? 'Entrada / Venta' : 'Salida / Gasto' }}
         </span>
         <span class="tooltip-text">
-          <strong>{{ hoveredBar.semana }}</strong>: {{ formatCLP(hoveredBar.value) }}
+          <strong>{{ activeBar.semana }}</strong>: {{ formatCLP(activeBar.value) }}
         </span>
       </div>
       <div v-else class="default-hint">
@@ -130,7 +146,7 @@ const totalGastos = computed(() => {
           <line x1="12" y1="16" x2="12" y2="12" />
           <line x1="12" y1="8" x2="12.01" y2="8" />
         </svg>
-        <span>Pasa el cursor o pulsa en una barra para ver el detalle de cada semana.</span>
+        <span>Enfoca, pasa el cursor o pulsa en una barra para ver el detalle de cada semana.</span>
       </div>
     </div>
   </div>
@@ -197,11 +213,11 @@ const totalGastos = computed(() => {
 }
 
 .dot-ventas {
-  background-color: var(--color-emerald-500);
+  background-color: var(--color-income);
 }
 
 .dot-gastos {
-  background-color: var(--color-amber-500);
+  background-color: var(--color-expense);
 }
 
 .legend-label {
@@ -295,36 +311,38 @@ const totalGastos = computed(() => {
   outline: none;
 }
 
-.bar {
+.chart-bar {
   width: 100%;
   min-height: 6px;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  transition: all var(--transition-normal);
+  opacity: 1;
+  visibility: visible;
+  transform: scaleY(1);
+  transform-origin: bottom;
+  transition: filter var(--transition-normal);
   position: relative;
 }
 
-.bar-ventas {
-  background: linear-gradient(180deg, var(--color-emerald-400) 0%, var(--color-emerald-600) 100%);
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+.chart-bar--income {
+  background-color: var(--color-income);
 }
 
-.bar-wrapper:hover .bar-ventas,
-.bar-wrapper:focus .bar-ventas {
-  background: linear-gradient(180deg, var(--color-emerald-500) 0%, var(--color-emerald-700) 100%);
-  transform: scaleY(1.03);
-  transform-origin: bottom;
+.chart-bar--expense {
+  background-color: var(--color-expense);
 }
 
-.bar-gastos {
-  background: linear-gradient(180deg, var(--color-amber-400) 0%, var(--color-amber-600) 100%);
-  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+.chart-bar:hover,
+.bar-wrapper:focus-visible .chart-bar {
+  filter: brightness(0.94);
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
 }
 
-.bar-wrapper:hover .bar-gastos,
-.bar-wrapper:focus .bar-gastos {
-  background: linear-gradient(180deg, var(--color-amber-500) 0%, var(--color-amber-700) 100%);
-  transform: scaleY(1.03);
-  transform-origin: bottom;
+@media (prefers-reduced-motion: reduce) {
+  .chart-bar {
+    transition: none;
+    transform: scaleY(1);
+  }
 }
 
 .bar-value-top {
