@@ -20,228 +20,188 @@ Guía para conectar las tres capas del proyecto (**Base de Datos → Backend Dja
 > - 🟦 **BACKEND**
 > - 🟩 **FRONTEND**
 > - 🟨 **AMBOS**
-> - ⚠️ **Pxx** =(#anexo--pendientes-y-correcciones-a-futuro).
+> - ⚠️ **Pxx** = ver el [anexo](#anexo--pendientes-y-correcciones-a-futuro).
 
 ---
 
 ## 0. Visión general: cómo se conectan las piezas
 
 ```
-┌──────────────────────┐   fetch /api/...   ┌──────────────────────┐   ORM Django   ┌──────────────────┐
-│  FRONTEND (Vue 3)    │ ─────────────────▶ │  BACKEND (Django/DRF)│ ─────────────▶ │  BASE DE DATOS   │
-│  localhost:5173      │                    │  127.0.0.1:8000      │                │  SQLite / Postgres│
-│                      │ ◀───────────────── │                      │ ◀───────────── │  / MySQL         │
-│  services/api.js     │       JSON         │  /api/finanzas/...   │                │                  │
-└──────────────────────┘                    └──────────────────────┘                └──────────────────┘
+┌──────────────────────┐   fetch /api/...   ┌──────────────────────┐   ORM Django   ┌──────────────────────────┐
+│  FRONTEND (Vue 3)    │ ─────────────────▶ │  BACKEND (Django/DRF)│ ─────────────▶ │  BASE DE DATOS (Neon)    │
+│  localhost:5173      │                    │  127.0.0.1:8000      │                │  esquema del equipo de   │
+│                      │ ◀───────────────── │                      │ ◀───────────── │  datos + vistas Power BI │
+│  services/api.js     │       JSON         │  /api/finanzas/...   │                │                          │
+└──────────────────────┘                    └──────────────────────┘                └──────────────────────────┘
         ▲                                             ▲
-        │ Proxy de Vite: /api → :8000                 │ Variables de entorno DB_*
+        │ Proxy de Vite: /api → :8000                 │ Variables de entorno DB_* (usuario cajaclara_app_rw)
 ```
 
-**Idea clave:** el único punto de contacto entre frontend y backend es el **contrato de la API** (rutas, parámetros y nombres de campos JSON, Parte 3 y Parte 5). Mientras ese contrato no cambie, cada equipo puede modificar su código libremente.
+**Idea clave:** las tablas las define el **equipo de datos** (rama `datos`, `Etapa_4_Carga_y_Nube/schema_postgresql.sql`). El backend usa **exactamente** esas tablas y columnas, sin agregar ni cambiar nada, y la API devuelve los campos con **los mismos nombres de columna** (`id_factura`, `id_cliente`, `id_producto`, `precio_venta`…). Así la base, la API, el frontend y Power BI hablan el mismo idioma.
 
-| Equipo        | Lo que entrega                                         | Lo que necesita del otro equipo          |
-| :------------ | :----------------------------------------------------- | :--------------------------------------- |
-| Base de datos | Servidor de BD accesible + credenciales                | Nada (el backend crea las tablas)        |
-| Backend       | Endpoints `/api/finanzas/...` que respetan el contrato | Credenciales de la BD (variables `DB_*`) |
-| Frontend      | Dashboard que consume la API                           | Backend corriendo en el puerto 8000      |
+| Equipo        | Lo que entrega                                                  | Lo que necesita del otro equipo                    |
+| :------------ | :-------------------------------------------------------------- | :------------------------------------------------- |
+| Base de datos | Tablas en Neon con datos + usuario `cajaclara_app_rw`          | Nada                                               |
+| Backend       | Endpoints `/api/finanzas/...` que respetan el contrato         | Credenciales de Neon (variables `DB_*`)            |
+| Frontend      | Dashboard que consume la API                                    | Backend corriendo en el puerto 8000                |
+
+### Las 6 tablas (iguales al esquema del equipo de datos)
+
+| Tabla               | Columnas                                                                                 | Modelo Django    |
+| :------------------ | :--------------------------------------------------------------------------------------- | :--------------- |
+| `cliente`           | `id_cliente` (PK), `nombre`, `contacto` (único)                                          | `Cliente`        |
+| `producto`          | `id_producto` (PK), `categoria`, `producto`, `unidad_negocio`                            | `Producto`       |
+| `venta`             | `id_factura` (PK), `id_cliente`, `fecha`, `tipo_compra` (`Física` / `En Línea`), `por_cobrar` | `Venta`     |
+| `detalle_venta`     | `id_detalle` (PK), `id_factura`, `id_producto`, `cantidad`, `precio_venta`, `costo_venta` | `DetalleVenta`  |
+| `cuenta_por_cobrar` | `id_cuenta` (PK), `id_factura` (único), `id_cliente`, `monto`, `fecha_vencimiento`, `estado` (`PAGADA` / `PENDIENTE` / `VENCIDA`), `fecha_pago` | `CuentaPorCobrar` |
+| `gastos_insumo`     | `id_gasto` (PK), `id_producto`, `fecha`, `monto`                                         | `GastoInsumo`    |
+
+- **Montos enteros** en pesos chilenos (sin decimales).
+- **Fechas sin hora** (`AAAA-MM-DD`).
+- Los ID numéricos **no los genera la base** (en el esquema son `INTEGER PRIMARY KEY` sin secuencia): el backend asigna el siguiente número (`finanzas/ids.py`).
+- El backend **no borra filas**: el usuario `cajaclara_app_rw` solo puede leer, insertar y actualizar.
 
 ---
 
 ## Parte 1 — Equipo de Base de Datos
 
-El backend es **agnóstico al motor de base de datos**. No hay que tocar código Python para cambiar de motor: todo se controla con variables de entorno.
+### 1.1 Lo que el backend necesita
 
-### 1.1 Variables de entorno
+1. El esquema `schema_postgresql.sql` y los datos ya cargados en Neon (Etapa 4).
+2. El script `roles_y_permisos_postgresql.sql` aplicado (usuario `cajaclara_app_rw`).
+3. **Una sola vez**, con el usuario administrador (`neondb_owner`), crear las tablas propias de Django (usuarios, login, sesiones) y registrar que las 6 tablas ya existen:
 
-Si no se define ninguna, el backend usa SQLite (`db.sqlite3`) para desarrollo local.
-
-La forma más simple de definirlas es copiar **`.env.example`** como **`.env`** (en la carpeta de `manage.py`) y completar los valores: el backend lo lee al arrancar. El archivo `.env` está en el `.gitignore`, así que las claves nunca se suben al repositorio.
-
-| Variable      | Para qué sirve                            | Ejemplo PostgreSQL                        | Ejemplo MySQL              |
-| :------------ | :---------------------------------------- | :---------------------------------------- | :------------------------- |
-| `DB_ENGINE`   | Driver del motor                          | `django.db.backends.postgresql`           | `django.db.backends.mysql` |
-| `DB_NAME`     | Nombre de la base de datos                | `cajaclara_db`                            | `cajaclara_db`             |
-| `DB_USER`     | Usuario con permisos de lectura/escritura | `postgres`                                | `app_user`                 |
-| `DB_PASSWORD` | Contraseña del usuario                    | `tu_password_segura`                      | `tu_password_segura`       |
-| `DB_HOST`     | Host o IP del servidor                    | `localhost`, `10.x.x.x` o Cloud SQL Proxy | `127.0.0.1`                |
-| `DB_PORT`     | Puerto                                    | `5432`                                    | `3306`                     |
-
-Ejemplo en **PowerShell**:
-
-```powershell
-$env:DB_ENGINE="django.db.backends.postgresql"
-$env:DB_NAME="cajaclara"
-$env:DB_USER="postgres"
-$env:DB_PASSWORD="secretpassword"
-$env:DB_HOST="127.0.0.1"
-$env:DB_PORT="5432"
+```bash
+# con DB_USER=neondb_owner en el .env (solo para este paso)
+python manage.py migrate --fake-initial
+python manage.py createsuperuser
 ```
 
-> 💡 Según el motor, el backend necesita el driver de Python instalado en su entorno virtual: `psycopg2-binary` (PostgreSQL) o `mysqlclient` (MySQL). `requirements.txt`.
+`--fake-initial` hace que Django **no toque** las 6 tablas del equipo de datos: ve que ya existen y solo las anota como creadas. Las tablas de Django (`auth_user`, `token_blacklist_*`, `django_*`) sí se crean; como las crea `neondb_owner`, los permisos por defecto del script de roles se las dan a `cajaclara_app_rw`.
 
-### 1.2 Crear las tablas (migraciones)
+4. Comprobar que todo calza (solo lee, no modifica nada):
 
-Con las variables ya definidas, ejecutar desde la carpeta del backend:
+```bash
+python manage.py verificar_esquema
+```
+
+```
+✓ cliente: contacto, id_cliente, nombre
+✓ producto: categoria, id_producto, producto, unidad_negocio
+✓ venta: fecha, id_cliente, id_factura, por_cobrar, tipo_compra
+✓ detalle_venta: cantidad, costo_venta, id_detalle, id_factura, id_producto, precio_venta
+✓ cuenta_por_cobrar: estado, fecha_pago, fecha_vencimiento, id_cliente, id_cuenta, id_factura, monto
+✓ gastos_insumo: fecha, id_gasto, id_producto, monto
+El esquema de la base coincide con el backend.
+```
+
+> ⚠️ Si el equipo de datos cambia una tabla o columna, el backend tiene que cambiar el modelo en el mismo momento. `verificar_esquema` avisa qué falta.
+
+### 1.2 Variables de entorno
+
+Se copian de **`.env.example`** a **`.env`** (en la carpeta de `manage.py`). El `.env` está en el `.gitignore`: las claves nunca se suben al repositorio. Sin `DB_ENGINE`, el backend usa SQLite local.
+
+| Variable      | Para qué sirve                    | Neon                                 |
+| :------------ | :-------------------------------- | :----------------------------------- |
+| `DB_ENGINE`   | Driver del motor                  | `django.db.backends.postgresql`      |
+| `DB_NAME`     | Nombre de la base                 | `neondb`                             |
+| `DB_USER`     | Usuario                           | `cajaclara_app_rw`                   |
+| `DB_PASSWORD` | Contraseña                        | (la entrega el equipo de datos)      |
+| `DB_HOST`     | Servidor                          | `ep-xxxx.aws.neon.tech`              |
+| `DB_PORT`     | Puerto                            | `5432`                               |
+| `DB_SSLMODE`  | Conexión cifrada                  | `require` (Neon lo exige)            |
+
+### 1.3 Base local para desarrollo (sin Neon)
+
+Para trabajar sin conexión, el backend crea en SQLite las mismas 6 tablas y carga los CSV del equipo de datos (`data/` = copia de `Etapa_4_Carga_y_Nube/datos_procesados/`):
 
 ```bash
 python manage.py migrate
-```
-
-Este comando crea todas las tablas, llaves foráneas e índices (por ejemplo, sobre la `fecha` de las facturas y el `estado` de las cuentas por cobrar) a partir de los modelos de Django. **No hay que escribir SQL a mano.**
-
-### 1.3 Cargar los datos iniciales
-
-Para poblar la base con los 6 archivos CSV del supermercado:
-
-```bash
 python manage.py importar_csv
 ```
 
-Para vaciar las tablas y volver a importar desde cero:
+- `--limpiar` vacía las tablas antes de importar.
+- `--fechas-originales` mantiene las fechas de los CSV (2010-2022). Por defecto se desplazan un número exacto de semanas para que la última venta quede en la semana actual (cada venta conserva su día de la semana y los plazos de cobro no cambian).
+- `--carpeta "ruta"` usa otra carpeta. El comando acepta tanto el formato de la Etapa 4 (con `estado` y `fecha_pago`) como el de la Etapa 3.
 
-```bash
-python manage.py importar_csv --limpiar
-```
-
-Por defecto las fechas se desplazan un número exacto de semanas para que la última venta quede en la semana actual (cada venta conserva su día de la semana y los plazos de cobro no cambian). Para importar las fechas originales de los CSV (2010-2022):
-
-```bash
-python manage.py importar_csv --limpiar --fechas-originales
-```
-
-> Si ya tenías la base cargada antes del cambio a la hora de Chile, vuelve a importar con `--limpiar`.
-
-El comando busca los CSV en `data/`. Si esa carpeta no existe, usa la de la Etapa 3 de la rama `datos` (`datos/Etapas_1-2-3/Etapa_3 Elaboracion de tablas/`). También se puede indicar otra:
-
-```bash
-python manage.py importar_csv --limpiar --carpeta "ruta/a/los/csv"
-```
-
-> **Después de actualizar el código, ejecuta `python manage.py migrate`.** La migración `0003_ordenar_modelo` reorganiza las tablas sin perder datos, pero se recomienda reimportar con `--limpiar` para partir de cero.
+> Si tenías un `db.sqlite3` anterior a este cambio, **bórralo** y vuelve a correr `migrate` e `importar_csv`: las tablas cambiaron de nombre y de columnas.
 
 ### ✅ Checklist del equipo de Base de Datos
 
-- [ ] Servidor de BD creado y accesible desde la máquina donde corre Django.
-- [ ] Usuario con permisos de lectura y escritura sobre la base `DB_NAME`.
-- [ ] Variables `DB_*` entregadas al equipo de backend (por canal seguro, **nunca en el repositorio**).
-- [ ] `migrate` ejecutado sin errores.
-- [ ] `importar_csv` ejecutado y datos verificados (por ejemplo, que `facturas` tenga ~100.067 registros).
+- [ ] Esquema y datos cargados en Neon (Etapa 4).
+- [ ] `roles_y_permisos_postgresql.sql` aplicado con contraseñas reales.
+- [ ] `migrate --fake-initial` y `createsuperuser` ejecutados una vez con `neondb_owner`.
+- [ ] Variables `DB_*` entregadas al equipo backend por canal seguro (**nunca en el repositorio**).
+- [ ] `verificar_esquema` sin errores.
 
 ---
 
 ## Parte 2 — Equipo de Backend
 
-Esta sección esta lista **las piezas del código Django de las que depende el acoplamiento**. Si alguna se modifica, puede romper al frontend o a la base de datos.
+Las piezas del código Django de las que depende el acoplamiento. Si alguna se modifica, puede romper al frontend o a la base de datos.
 
-### 2.1 🟦 Configuración de base de datos (`settings.py`)
+### 2.1 🟦 Modelos = esquema del equipo de datos (`finanzas/models.py`)
 
-El bloque `DATABASES` debe leer las variables de entorno y usar SQLite como respaldo. La forma esperada es:
+- Cada modelo tiene `db_table` y `db_column` con los nombres exactos del esquema.
+- **No agregar columnas ni tablas** a esos modelos: el usuario `cajaclara_app_rw` no puede alterar el esquema. Si hace falta un dato nuevo, se acuerda con el equipo de datos y ellos lo agregan primero.
+- La prueba `EsquemaDelEquipoDeDatosTests` falla si una tabla o columna deja de calzar.
 
-```python
-import os
+### 2.2 🟦 Configuración de base de datos (`settings.py`)
 
-DATABASES = {
-    "default": {
-        "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.environ.get("DB_NAME", BASE_DIR / "db.sqlite3"),
-        "USER": os.environ.get("DB_USER", ""),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", ""),
-        "PORT": os.environ.get("DB_PORT", ""),
-    }
-}
-```
+`DATABASES` lee las variables `DB_*` (y `DB_SSLMODE`). Sin `DB_ENGINE` usa SQLite. **No escribir credenciales en el código.**
 
-**Regla:** no escribir credenciales directamente en este archivo.
+### 2.3 🟦 CORS (`settings.py`)
 
-### 2.2 🟦 CORS (`settings.py`)
+Solo los sitios de `CORS_ALLOWED_ORIGINS` pueden llamar a la API desde el navegador. Por defecto, el servidor de Vite (`http://localhost:5173` y `http://127.0.0.1:5173`). Al publicar el frontend en otro dominio se agrega en el `.env`.
 
-Solo los sitios listados en la variable `CORS_ALLOWED_ORIGINS` pueden llamar a la API desde el navegador. Por defecto se permite el servidor de Vite (`http://localhost:5173` y `http://127.0.0.1:5173`):
+### 2.4 🟦 Paginación
 
-```python
-CORS_ALLOWED_ORIGINS = _lista(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
-)
-```
+En **todos** los listados: 50 por página por defecto, `?page_size=N` hasta 500, y respuesta con `count`, `next`, `previous` y `results`.
 
-Al publicar el frontend en otro dominio, se agrega ese dominio en el `.env` (por ejemplo `CORS_ALLOWED_ORIGINS=https://cajaclara.ejemplo.cl`).
+### 2.5 🟦 Formatos de fecha aceptados
 
-> Con el proxy de Vite (Parte 4.2), el navegador cree que le habla al mismo origen, así que en desarrollo CORS ni siquiera entra en juego. Sí importa si el frontend se despliega en otro dominio.
+`fecha_inicio` y `fecha_fin` aceptan `DD/MM/AAAA` (`31/12/2012`) y `AAAA-MM-DD` (`2012-12-31`).
 
-### 2.3 🟦 Paginación (`settings.py` o clase propia)
+### 2.6 🟦 Serializers: el verdadero contrato
 
-El frontend asume este comportamiento en **todos** los listados:
+**Los nombres de campo que devuelven los serializers son lo que el frontend lee.** Son los mismos nombres de columna del esquema de datos. Antes de cambiar uno, revisar la [Parte 5](#parte-5--punto-de-acoplamiento).
 
-- Tamaño por defecto: **50**.
-- Se puede cambiar con `?page_size=N`, con un **máximo de 500**.
-- Respuesta con las claves `count`, `next`, `previous` y `results`.
+### 2.7 🟦 Seguridad y login (`settings.py`)
 
-Configuración equivalente en DRF:
-
-```python
-from rest_framework.pagination import PageNumberPagination
-
-class PaginacionEstandar(PageNumberPagination):
-    page_size = 50
-    page_size_query_param = "page_size"
-    max_page_size = 500
-```
-
-### 2.4 🟦 Formatos de fecha aceptados
-
-Todos los parámetros `fecha_inicio` y `fecha_fin` deben aceptar **los dos formatos**:
-
-- `DD/MM/AAAA` (formato chileno, por ejemplo `31/12/2012`)
-- `AAAA-MM-DD` (ISO, por ejemplo `2012-12-31`)
-
-El frontend envía el formato `DD/MM/AAAA` porque usa `min_display` y `max_display` de `opciones-filtros`.
-
-### 2.5 🟦 Serializers: el verdadero contrato
-
-**Los nombres de campo que devuelven los serializers son lo que el frontend lee.** Renombrar un campo (por ejemplo, `cliente_nombre` → `nombre_cliente`) rompe el dashboard sin dar error en el backend.
-
-La lista exacta de campos que el frontend consume está en la [Parte 5](#parte-5--punto-de-acoplamiento). Antes de cambiar un serializer, revisar esa tabla.
-
-### 2.6 🟦 Seguridad y login (`settings.py`)
-
-- **Toda la API exige login** (`IsAuthenticated` por defecto). Solo `/api/` (el catálogo) y las rutas de `/api/auth/` son públicas.
-- **Clave secreta, modo depuración y dominios** se leen del `.env`: `DJANGO_SECRET_KEY`, `DJANGO_DEBUG` y `DJANGO_ALLOWED_HOSTS`. Con `DJANGO_DEBUG=False` el backend no arranca si falta la clave.
-- **Duración de los tokens:** `JWT_ACCESS_MINUTOS` (30 por defecto) y `JWT_REFRESH_DIAS` (7 por defecto).
-- **Intentos de login:** máximo `LOGIN_RATE` (10 por minuto por defecto); después responde `429`.
-- **Usuarios:** como hay un solo negocio, no hay registro público. Los crea un administrador con `python manage.py createsuperuser` o desde `/admin/` → *Usuarios*.
+- **Toda la API exige login** (`IsAuthenticated`). Solo `/api/` (el catálogo) y `/api/auth/` son públicas.
+- `DJANGO_SECRET_KEY`, `DJANGO_DEBUG` y `DJANGO_ALLOWED_HOSTS` se leen del `.env`. Con `DJANGO_DEBUG=False` el backend no arranca si falta la clave.
+- Tokens: `JWT_ACCESS_MINUTOS` (30) y `JWT_REFRESH_DIAS` (7). Intentos de login: `LOGIN_RATE` (10 por minuto).
+- No hay registro público: los usuarios los crea un administrador.
 
 ### ✅ Checklist del equipo de Backend
 
-- [ ] `DATABASES` lee las variables `DB_*` (2.1).
-- [ ] Driver de la BD de producción incluido en `requirements.txt`.
-- [ ] `corsheaders` instalado y configurado (2.2).
-- [ ] Paginación con `page_size` configurable y máximo de 500 (2.3).
-- [ ] Filtros de fecha aceptan `DD/MM/AAAA` y `AAAA-MM-DD` (2.4).
-- [ ] Todos los campos marcados como 🟦 en la [Parte 5](#parte-5--punto-de-acoplamiento) existen en las respuestas (⚠️ ver P02 y P03).
+- [ ] `python manage.py test` sin errores (incluye la prueba del esquema).
+- [ ] `verificar_esquema` sin errores contra Neon.
+- [ ] `.env` creado a partir de `.env.example` (en producción: `DJANGO_DEBUG=False` y `DJANGO_SECRET_KEY` propia).
 - [ ] Servidor corriendo en `127.0.0.1:8000`.
-- [ ] Archivo `.env` creado a partir de `.env.example` (en producción: `DJANGO_DEBUG=False` y `DJANGO_SECRET_KEY` propia).
-- [ ] Al menos un usuario creado (`python manage.py createsuperuser`).
-- [ ] `python manage.py test` sin errores.
 
 ---
 
 ## Parte 3 — Contrato de la API
 
-Referencia común para **ambos equipos**. Todas las rutas cuelgan de:
+Referencia común para **ambos equipos**.
 
 - **URL base en desarrollo:** `http://localhost:8000`
 - **Prefijo:** `/api/finanzas/`
+- **Montos:** números enteros en pesos chilenos (ya no llegan como texto ni con decimales).
+- **Fechas:** `AAAA-MM-DD`.
+- **`tipo_compra`:** `"Física"` o `"En Línea"` (como en la base). Como parámetro también se acepta sin tilde o en mayúsculas (`fisica`, `EN LINEA`, `ONLINE`).
 
 ### 🔐 Autenticación (JWT)
 
 **Todas las rutas de `/api/finanzas/` exigen iniciar sesión.** Sin token responden `401`.
 
-| Método y ruta            | Para qué sirve                                  | Cuerpo (JSON)              |
-| :----------------------- | :---------------------------------------------- | :------------------------- |
-| `POST /api/auth/login/`   | Iniciar sesión                                  | `username`, `password`     |
-| `POST /api/auth/refresh/` | Obtener un `access` nuevo cuando el actual vence | `refresh`                  |
-| `POST /api/auth/logout/`  | Cerrar sesión (invalida el `refresh`)           | `refresh`                  |
-| `GET /api/auth/perfil/`   | Datos del usuario que inició sesión             | —                          |
+| Método y ruta             | Para qué sirve                                   | Cuerpo (JSON)          |
+| :------------------------ | :----------------------------------------------- | :--------------------- |
+| `POST /api/auth/login/`   | Iniciar sesión                                   | `username`, `password` |
+| `POST /api/auth/refresh/` | Obtener un `access` nuevo cuando el actual vence | `refresh`              |
+| `POST /api/auth/logout/`  | Cerrar sesión (invalida el `refresh`)            | `refresh`              |
+| `GET /api/auth/perfil/`   | Datos del usuario que inició sesión              | —                      |
 
 **Login:**
 
@@ -253,57 +213,42 @@ Referencia común para **ambos equipos**. Todas las rutas cuelgan de:
 {
   "refresh": "eyJhbGciOiJIUzI1NiIs...",
   "access": "eyJhbGciOiJIUzI1NiIs...",
-  "usuario": {
-    "id": 1,
-    "username": "admin",
-    "nombre": "Ana Pérez",
-    "email": "admin@cajaclara.cl",
-    "es_admin": true
-  }
+  "usuario": { "id": 1, "username": "admin", "nombre": "Ana Pérez", "email": "admin@cajaclara.cl", "es_admin": true }
 }
 ```
 
-**Cómo se usa el token:** en cada consulta se envía el encabezado
+En cada consulta se envía el encabezado `Authorization: Bearer <access>`. El `access` dura **30 minutos** y el `refresh` **7 días**. Cuando una consulta responde `401`, el frontend llama a `/api/auth/refresh/` con el `refresh`; recibe un `access` **y un `refresh` nuevos** y repite la consulta. Si el refresh también falla, se vuelve a la pantalla de login.
 
-```
-Authorization: Bearer <access>
-```
-
-**Cuánto duran:** el `access` dura **30 minutos** y el `refresh` **7 días**. Cuando una consulta responde `401`, el frontend llama a `/api/auth/refresh/` con el `refresh`; recibe un `access` **y un `refresh` nuevos** (el anterior deja de servir) y repite la consulta. Si el refresh también falla, se vuelve a la pantalla de login.
-
-| Respuesta | Cuándo                                                  |
-| :-------: | :------------------------------------------------------ |
+| Respuesta | Cuándo                                                                                         |
+| :-------: | :--------------------------------------------------------------------------------------------- |
 |   `401`   | Sin token, token vencido o inválido, o clave incorrecta (`"Usuario o contraseña incorrectos."`) |
-|   `429`   | Demasiados intentos de login seguidos (10 por minuto)   |
-
-> No hay registro público de usuarios: los crea un administrador (ver 2.6).
+|   `429`   | Demasiados intentos de login seguidos (10 por minuto)                                          |
 
 ### Resumen de endpoints
 
-| #   | Método y ruta              | Para qué sirve                         | Paginado | Lo usa el dashboard |
-| :-- | :------------------------- | :------------------------------------- | :------: | :-----------------: |
-| 1   | `GET /opciones-filtros/`   | Valores para selects y rango de fechas |    No    |         ✅          |
-| 2   | `GET /resumen-mensual/`    | KPIs financieros de un rango de fechas |    No    |         ✅          |
-| 3   | `GET /resumen-agrupado/`   | Serie temporal para gráficos           |    No    |         ✅          |
-| 4   | `GET /exportar-excel/`     | Descarga de archivo `.xlsx`            |    No    |   (botón export)    |
-| 5   | `GET /clientes/`           | Listado de clientes                    |    Sí    |          —          |
-| 6   | `GET /productos/`          | Listado de productos                   |    Sí    |         ✅          |
-| 7   | `GET /facturas/`           | Listado de facturas (ventas)           |    Sí    |          —          |
-| 8   | `GET /ventas/`             | Líneas de venta detalladas             |    Sí    |         ✅          |
-| 9   | `GET /cuentas-por-cobrar/` | Deuda de clientes + resumen global     |    Sí    |         ✅          |
-| 10  | `GET /gastos/`             | Gastos (compras y otros) + resumen     |    Sí    |          —          |
+| #   | Método y ruta              | Para qué sirve                         | Tabla                | Paginado | Lo usa el dashboard |
+| :-- | :------------------------- | :------------------------------------- | :------------------- | :------: | :-----------------: |
+| 1   | `GET /opciones-filtros/`   | Valores para selects y rango de fechas | varias               |    No    |         ✅          |
+| 2   | `GET /resumen-mensual/`    | KPIs financieros de un rango de fechas | varias               |    No    |         ✅          |
+| 3   | `GET /resumen-agrupado/`   | Serie temporal para gráficos           | varias               |    No    |         ✅          |
+| 4   | `GET /exportar-excel/`     | Descarga de archivo `.xlsx`            | `detalle_venta`      |    No    |   (botón export)    |
+| 5   | `GET /clientes/`           | Listado de clientes                    | `cliente`            |    Sí    |          —          |
+| 6   | `GET /productos/`          | Listado de productos                   | `producto`           |    Sí    |         ✅          |
+| 7   | `GET /facturas/`           | Listado de ventas                      | `venta`              |    Sí    |          —          |
+| 8   | `GET /ventas/`             | Líneas de venta                        | `detalle_venta`      |    Sí    |         ✅          |
+| 9   | `GET /cuentas-por-cobrar/` | Deudas de clientes + resumen global    | `cuenta_por_cobrar`  |    Sí    |         ✅          |
+| 10  | `GET /gastos/`             | Gastos en insumos + resumen            | `gastos_insumo`      |    Sí    |          —          |
 
 **Registrar datos** (detalle en el endpoint 11):
 
-| Método y ruta                                  | Para qué sirve                                   |
-| :--------------------------------------------- | :----------------------------------------------- |
-| `POST /facturas/`                              | Registrar una venta (al contado o a crédito)     |
-| `GET /facturas/{factura}/`                     | Ver una venta con sus productos y su deuda       |
-| `POST /facturas/{factura}/anular/`             | Anular una venta                                 |
-| `POST /cuentas-por-cobrar/{id}/pagar/`         | Registrar el pago de una deuda                   |
-| `POST /cuentas-por-cobrar/{id}/revertir-pago/` | Deshacer un pago registrado por error            |
-| `POST /gastos/`                                | Registrar una compra u otro gasto                |
-| `POST /clientes/`                              | Registrar un cliente                             |
+| Método y ruta                                        | Para qué sirve                               |
+| :--------------------------------------------------- | :------------------------------------------- |
+| `POST /facturas/`                                    | Registrar una venta (al contado o a crédito) |
+| `GET /facturas/{id_factura}/`                        | Ver una venta con sus productos y su deuda   |
+| `POST /cuentas-por-cobrar/{id_cuenta}/pagar/`        | Registrar el pago de una deuda               |
+| `POST /cuentas-por-cobrar/{id_cuenta}/revertir-pago/`| Deshacer un pago registrado por error        |
+| `POST /gastos/`                                      | Registrar un gasto en insumos                |
+| `POST /clientes/`                                    | Registrar un cliente                         |
 
 ### Estructura de los listados paginados
 
@@ -316,7 +261,7 @@ Authorization: Bearer <access>
 }
 ```
 
-Los endpoints 9 y 10 agregan además una clave `resumen` con totales globales, que **no depende de la página**.
+Los endpoints 9 y 10 agregan una clave `resumen` con totales que **no dependen de la página**.
 
 ---
 
@@ -324,20 +269,24 @@ Los endpoints 9 y 10 agregan además una clave `resumen` con totales globales, q
 
 `GET /api/finanzas/opciones-filtros/`
 
-Devuelve los valores para inicializar los `<select>` y los selectores de fecha. **El frontend lo llama primero** para saber qué rango de fechas pedir.
+**El frontend lo llama primero** para saber qué rango de fechas pedir.
 
 ```json
 {
-  "categorias": ["Abarrotes", "Carnes", "Lácteos", "Limpieza"],
+  "categorias": ["Abarrotes", "Aseo del hogar", "Bebidas sin alcohol", "..."],
   "unidades_negocio": ["Supermercado"],
   "tipos_compra": [
-    { "codigo": "FISICA", "nombre": "Física" },
-    { "codigo": "ONLINE", "nombre": "En línea" }
+    { "codigo": "Física", "nombre": "Física" },
+    { "codigo": "En Línea", "nombre": "En Línea" }
   ],
   "estados_pago": [
     { "codigo": "PAGADO", "nombre": "Pagado" },
+    { "codigo": "PENDIENTE", "nombre": "Pendiente" }
+  ],
+  "estados_cuenta": [
     { "codigo": "PENDIENTE", "nombre": "Pendiente" },
-    { "codigo": "ANULADO", "nombre": "Anulado" }
+    { "codigo": "VENCIDA", "nombre": "Vencida" },
+    { "codigo": "PAGADA", "nombre": "Pagada" }
   ],
   "rango_fechas_disponible": {
     "min": "2010-01-05",
@@ -354,73 +303,48 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 `GET /api/finanzas/resumen-mensual/` ⚠️ P06
 
-| Parámetro      | Obligatorio | Valores                              |
-| :------------- | :---------: | :----------------------------------- |
-| `fecha_inicio` |     No      | `01/01/2010` o `2010-01-01`          |
-| `fecha_fin`    |     No      | `31/12/2012` o `2012-12-31`          |
-| `tipo_compra`  |     No      | `FISICA` u `ONLINE` (omitir = todos) |
+| Parámetro      | Obligatorio | Valores                                                          |
+| :------------- | :---------: | :--------------------------------------------------------------- |
+| `periodo`      |     No      | `mensual` (por defecto), `trimestral` o `anual`: hasta hoy       |
+| `fecha_inicio` |     No      | `01/08/2022` o `2022-08-01` (junto con `fecha_fin`)              |
+| `fecha_fin`    |     No      | `31/08/2022` o `2022-08-31`                                      |
+| `tipo_compra`  |     No      | `Física` o `En Línea` (omitir = todos)                           |
 
 ```json
+// GET /api/finanzas/resumen-mensual/?fecha_inicio=2022-08-01&fecha_fin=2022-08-31
 {
-  "rango_aplicado": {
-    "fecha_inicio": "01/01/2026",
-    "fecha_fin": "30/06/2026",
-    "periodo_tipo": "personalizado"
-  },
+  "rango_aplicado": { "fecha_inicio": "01/08/2022", "fecha_fin": "31/08/2022", "periodo_tipo": "personalizado" },
   "filtro_tipo_compra": "TODOS",
-  "total_transacciones": 176,
-  "total_unidades": 654,
-  "total_ingresos": 445662.0,
-  "total_costos": 325328.0,
-  "utilidad_bruta": 120334.0,
-  "flujo_caja_neto": 120334.0,
-  "margen_porcentaje": 27.0,
+  "total_transacciones": 19,
+  "total_unidades": 38,
+  "total_ingresos": 16057,
+  "total_costos": 12871,
+  "utilidad_bruta": 3186,
+  "margen_porcentaje": 19.84,
   "por_estado_pago": {
-    "PAGADO": {
-      "nombre": "Pagado",
-      "transacciones": 149,
-      "ingresos": 373181.0
-    },
-    "PENDIENTE": {
-      "nombre": "Pendiente",
-      "transacciones": 27,
-      "ingresos": 72481.0
-    },
-    "ANULADO": {
-      "nombre": "Anulado",
-      "transacciones": 0,
-      "ingresos": 0.0
-    }
+    "PAGADO": { "nombre": "Pagado", "transacciones": 17, "ingresos": 12902 },
+    "PENDIENTE": { "nombre": "Pendiente", "transacciones": 2, "ingresos": 3155 }
   },
   "flujo_caja": {
-    "entradas": {
-      "ventas_contado": 373181.0,
-      "cobros": 0.0,
-      "total": 373181.0
-    },
-    "salidas": {
-      "compras": 984629.0,
-      "otros_gastos": 0.0,
-      "total": 984629.0
-    },
-    "saldo": -611448.0
+    "entradas": { "ventas_contado": 12902, "cobros": 11613, "total": 24515 },
+    "salidas": { "gastos_insumo": 188863, "total": 188863 },
+    "saldo": -164348
   }
 }
 ```
 
-| Campo                 | Significado                                                                                                              |
-| :-------------------- | :----------------------------------------------------------------------------------------------------------------------- |
-| `total_ingresos`      | Todo lo **vendido** en el período (al contado y a crédito), sin anuladas.                                                |
-| `total_costos`        | Costo de la mercadería vendida.                                                                                          |
-| `utilidad_bruta`      | `total_ingresos - total_costos`.                                                                                         |
-| `flujo_caja_neto`     | ⚠️ Se mantiene por compatibilidad, pero es **igual a `utilidad_bruta`**, no al dinero en caja. Usar `flujo_caja.saldo`.  |
-| `total_unidades`      | Unidades vendidas (suma de cantidades).                                                                                  |
-| `flujo_caja.entradas` | Dinero que **entró**: ventas al contado del período (`ventas_contado`) + deudas **cobradas** en el período (`cobros`).   |
-| `flujo_caja.salidas`  | Dinero que **salió**: `compras` de mercadería + `otros_gastos` (arriendo, flete, servicios…).                            |
-| `flujo_caja.saldo`    | `entradas.total - salidas.total`. Es el "Saldo del periodo" del dashboard.                                               |
+| Campo                 | Significado                                                                                                            |
+| :-------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| `total_transacciones` | Líneas de venta del período (filas de `detalle_venta`).                                                                |
+| `total_ingresos`      | Todo lo **vendido** en el período (al contado y a crédito).                                                            |
+| `total_costos`        | Costo de la mercadería vendida (`cantidad × costo_venta`).                                                             |
+| `utilidad_bruta`      | `total_ingresos - total_costos`.                                                                                       |
+| `total_unidades`      | Unidades vendidas (suma de cantidades).                                                                                |
+| `flujo_caja.entradas` | Dinero que **entró**: ventas al contado (`ventas_contado`) + deudas **cobradas** en el período (`cobros`).             |
+| `flujo_caja.salidas`  | Dinero que **salió**: `gastos_insumo` del período.                                                                     |
+| `flujo_caja.saldo`    | `entradas.total - salidas.total`. Es el "Saldo del periodo" del dashboard.                                             |
 
-> Una venta a crédito suma en `total_ingresos` el día que se vende, pero entra a `flujo_caja` el día que se **paga**. El filtro `tipo_compra` afecta las entradas; los gastos no tienen canal y siempre se cuentan completos.
-
+> Es el mismo cálculo que la vista `vw_flujo_caja_mensual` del equipo de datos (se comprobó mes a mes con los datos de Neon). Una venta a crédito suma en `total_ingresos` el día que se vende, pero entra a `flujo_caja` el día que se **paga**. El filtro `tipo_compra` afecta las entradas; los gastos no tienen canal.
 
 ---
 
@@ -428,71 +352,53 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 `GET /api/finanzas/resumen-agrupado/`
 
-| Parámetro                                  | Obligatorio | Valores                                                         |
-| :----------------------------------------- | :---------: | :-------------------------------------------------------------- |
-| `agrupacion`                               |     No      | `diaria`, `semanal` (lunes a domingo), `semanas_mes` (1-7, 8-14, 15-21, 22-fin de mes, como el gráfico del diseño), `mensual` (por defecto), `trimestral`, `anual` |
-| `fecha_inicio`, `fecha_fin`, `tipo_compra` |     No      | Igual que el endpoint 2                                         |
+| Parámetro                    | Obligatorio | Valores                                                                                                                                                         |
+| :--------------------------- | :---------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fecha_inicio`               |     Sí      | `01/01/2022` o `2022-01-01`                                                                                                                                     |
+| `fecha_fin`                  |     No      | Por defecto, hoy                                                                                                                                                |
+| `agrupacion`                 |     No      | `diaria`, `semanal` (lunes a domingo), `semanas_mes` (1-7, 8-14, 15-21, 22-fin de mes, como el gráfico del diseño), `mensual` (por defecto), `trimestral`, `anual` |
+| `tipo_compra`                |     No      | Igual que el endpoint 2                                                                                                                                         |
 
 ```json
+// GET /api/finanzas/resumen-agrupado/?fecha_inicio=2022-01-01&fecha_fin=2022-03-31&agrupacion=mensual
 {
-  "rango_aplicado": {
-    "fecha_inicio": "01/05/2026",
-    "fecha_fin": "30/06/2026"
-  },
+  "rango_aplicado": { "fecha_inicio": "01/01/2022", "fecha_fin": "31/03/2022" },
   "agrupacion": "mensual",
   "filtro_tipo_compra": "TODOS",
   "totales": {
-    "total_transacciones": 50,
-    "total_ingresos": 100953.0,
-    "total_costos": 81926.0,
-    "utilidad": 19027.0,
-    "margen_porcentaje": 18.85,
+    "total_transacciones": 105,
+    "total_ingresos": 237080,
+    "total_costos": 161915,
+    "utilidad": 75165,
+    "margen_porcentaje": 31.7,
     "flujo_caja": {
-      "entradas": {
-        "ventas_contado": 79867.0,
-        "cobros": 0.0,
-        "total": 79867.0
-      },
-      "salidas": {
-        "compras": 333463.0,
-        "otros_gastos": 0.0,
-        "total": 333463.0
-      },
-      "saldo": -253596.0
+      "entradas": { "ventas_contado": 220448, "cobros": 67405, "total": 287853 },
+      "salidas": { "gastos_insumo": 493795, "total": 493795 },
+      "saldo": -205942
     }
   },
   "periodos": [
     {
-      "periodo": "May 2026",
-      "fecha_inicio": "01/05/2026",
-      "fecha_fin": "31/05/2026",
-      "total_transacciones": 23,
-      "total_ingresos": 32980.0,
-      "total_costos": 22909.0,
-      "utilidad": 10071.0,
-      "margen_porcentaje": 30.54,
+      "periodo": "Ene 2022",
+      "fecha_inicio": "01/01/2022",
+      "fecha_fin": "31/01/2022",
+      "rango": "01 - 31 Ene",
+      "total_transacciones": 43,
+      "total_ingresos": 94000,
+      "total_costos": 72395,
+      "utilidad": 21605,
+      "margen_porcentaje": 22.98,
       "flujo_caja": {
-        "entradas": {
-          "ventas_contado": 22596.0,
-          "cobros": 0.0,
-          "total": 22596.0
-        },
-        "salidas": {
-          "compras": 164216.0,
-          "otros_gastos": 0.0,
-          "total": 164216.0
-        },
-        "saldo": -141620.0
+        "entradas": { "ventas_contado": 83950, "cobros": 54033, "total": 137983 },
+        "salidas": { "gastos_insumo": 182637, "total": 182637 },
+        "saldo": -44654
       }
     }
   ]
 }
 ```
 
-> Cada período trae su propio `flujo_caja` (entradas, salidas y saldo), listo para el gráfico de ventas vs. gastos, y un `rango` corto para la etiqueta (ej. `"01 - 07 Oct"`).
->
 > **Gráfico semanal del dashboard:** `?agrupacion=semanas_mes&fecha_inicio=01/10/2026&fecha_fin=31/10/2026` devuelve 4 períodos: `Sem 1 Oct 2026` (`01 - 07 Oct`), `Sem 2`, `Sem 3` y `Sem 4` (`22 - 31 Oct`).
-
 
 ---
 
@@ -501,8 +407,8 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 `GET /api/finanzas/exportar-excel/`
 
 - **Parámetros:** los mismos del endpoint 2.
-- **Respuesta:** archivo binario `.xlsx` con encabezados formateados y celdas con formato contable.
-- **En el frontend:** como la API exige el token, **no sirve abrir la URL directamente** (un `<a href>` no envía el encabezado `Authorization`). Se descarga con `fetch` + token y se guarda el archivo desde el navegador (ver `descargarExcel()` en 4.3).
+- **Respuesta:** archivo `.xlsx` con el detalle de ventas (factura, producto, tipo de compra, cantidad, precio, costo, totales, utilidad y estado de pago).
+- **En el frontend:** como la API exige el token, **no sirve un `<a href>`**. Se descarga con `fetch` + token (ver `descargarExcel()` en 4.3).
 
 ---
 
@@ -510,10 +416,10 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 `GET /api/finanzas/clientes/`
 
-| Parámetro           | Valores                                |
-| :------------------ | :------------------------------------- |
-| `search`            | Texto: busca por nombre, ID o teléfono |
-| `page`, `page_size` | Paginación                             |
+| Parámetro           | Valores                                       |
+| :------------------ | :-------------------------------------------- |
+| `search`            | Texto: busca por nombre, contacto o `id_cliente` |
+| `page`, `page_size` | Paginación                                    |
 
 ```json
 {
@@ -522,17 +428,17 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
   "previous": null,
   "results": [
     {
-      "cliente_id": "1",
-      "nombre": "José Paredes Soto",
-      "contacto": "+56 9 4949 4897",
-      "total_facturas": 54,
-      "total_deuda": "125000.00"
+      "id_cliente": 564,
+      "nombre": "Ana Aguilar Martínez",
+      "contacto": "+56 9 9783 6571",
+      "total_facturas": 43,
+      "total_deuda": 0
     }
   ]
 }
 ```
 
-> ℹ️ Los montos en los listados vienen como **texto** (`"125000.00"`), no como número. El frontend debe convertirlos con `parseFloat()`.
+`total_deuda` = suma de sus cuentas **no pagadas** (pendientes y vencidas).
 
 ---
 
@@ -540,67 +446,51 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
 
 `GET /api/finanzas/productos/`
 
-| Parámetro                   | Valores                                                                                     |
-| :-------------------------- | :------------------------------------------------------------------------------------------ |
-| `search`                    | Busca por nombre o código `no_parte`                                                        |
-| `categoria`                 | Por ejemplo, `Abarrotes`, `Lácteos`                                                         |
-| `unidad_negocio`            | Por ejemplo, `Supermercado`                                                                 |
+| Parámetro                   | Valores                                                                                    |
+| :-------------------------- | :----------------------------------------------------------------------------------------- |
+| `search`                    | Busca por nombre o `id_producto`                                                           |
+| `categoria`                 | Por ejemplo, `Abarrotes`                                                                   |
+| `unidad_negocio`            | Por ejemplo, `Supermercado`                                                                |
 | `fecha_inicio`, `fecha_fin` | Período para calcular `total_vendido` y `total_ingresos` (sin fechas = todo el historial)  |
-| `tipo_compra`               | `FISICA` u `ONLINE` (para los mismos totales)                                               |
-| `ordering`                  | `producto` (por defecto), `total_vendido`, `total_ingresos`, `precio_venta`, `no_parte`. Con `-` adelante, de mayor a menor. |
-| `page`, `page_size`         | Paginación                                                                                  |
+| `tipo_compra`               | `Física` o `En Línea` (para los mismos totales)                                            |
+| `ordering`                  | `producto` (por defecto), `total_vendido`, `total_ingresos`, `id_producto`. Con `-` adelante, de mayor a menor. |
+| `page`, `page_size`         | Paginación                                                                                 |
 
 **Productos más vendidos del mes:** `?ordering=-total_vendido&fecha_inicio=01/10/2026&fecha_fin=31/10/2026&page_size=4`
 
 ```json
 {
   "count": 7488,
-  "next": "http://localhost:8000/api/finanzas/productos/?fecha_fin=31%2F10%2F2026&fecha_inicio=01%2F01%2F2026&ordering=-total_vendido&page=2&page_size=2",
+  "next": "...",
   "previous": null,
   "results": [
     {
-      "no_parte": "P860421",
-      "producto": "Sopa Ajinomen instantánea fideos pollo verd.",
-      "categoria": "Abarrotes",
-      "unidad_negocio": "Supermercado",
-      "precio_venta": "274.00",
-      "costo_venta": "137.00",
-      "total_vendido": 199,
-      "total_ingresos": "54526.00"
-    },
-    {
-      "no_parte": "P745145",
+      "id_producto": "P474155",
       "producto": "Mezcla te Suntea polvo durazno",
       "categoria": "Bebidas sin alcohol",
       "unidad_negocio": "Supermercado",
-      "precio_venta": "262.00",
-      "costo_venta": "131.00",
-      "total_vendido": 50,
-      "total_ingresos": "13100.00"
+      "total_vendido": 23807,
+      "total_ingresos": 18837301
     }
   ]
 }
 ```
 
-| Campo            | Significado                                                       |
-| :--------------- | :---------------------------------------------------------------- |
-| `total_vendido`  | Unidades vendidas en el período (sin ventas anuladas).           |
-| `total_ingresos` | Monto vendido en el período (cantidad × precio de cada venta).   |
-| `precio_venta`   | Precio de catálogo actual (el que se propone al vender).         |
+> El esquema de datos **no tiene precio de catálogo**: el precio y el costo viven en cada línea de venta (`detalle_venta`).
 
 ---
 
-### 7. Facturas (ventas)
+### 7. Facturas (tabla `venta`)
 
 `GET /api/finanzas/facturas/`
 
-| Parámetro                   | Valores             |
-| :-------------------------- | :------------------ |
-| `cliente`                   | ID del cliente      |
-| `tipo_compra`               | `FISICA` u `ONLINE` |
-| `por_cobrar`                | `true` o `false`    |
-| `fecha_inicio`, `fecha_fin` | Rango de fechas     |
-| `page`, `page_size`         | Paginación          |
+| Parámetro                   | Valores               |
+| :-------------------------- | :-------------------- |
+| `cliente`                   | `id_cliente`          |
+| `tipo_compra`               | `Física` o `En Línea` |
+| `por_cobrar`                | `true` o `false`      |
+| `fecha_inicio`, `fecha_fin` | Rango de fechas       |
+| `page`, `page_size`         | Paginación            |
 
 ```json
 {
@@ -609,43 +499,40 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
   "previous": null,
   "results": [
     {
-      "factura": "INV7778787-20220820-F",
-      "cliente": "1305",
+      "id_factura": "INV7778787-20220820-F",
+      "id_cliente": 1305,
       "cliente_nombre": "Raúl Castillo Medina",
-      "fecha": "2026-08-08T00:00:00-04:00",
-      "tipo_compra": "FISICA",
-      "tipo_compra_nombre": "Física",
+      "fecha": "2022-08-20",
+      "tipo_compra": "Física",
       "por_cobrar": true,
-      "anulada": false,
-      "estado_pago": "PAGADO",
-      "fecha_vencimiento": "2026-09-29",
-      "total_venta": "72.00",
+      "estado_pago": "PENDIENTE",
+      "fecha_vencimiento": "2022-09-09",
+      "total_venta": 72,
       "items_count": 1
     }
   ]
 }
 ```
 
-| Campo               | Significado                                                                                   |
-| :------------------ | :-------------------------------------------------------------------------------------------- |
-| `por_cobrar`        | `true` = se vendió a crédito. No cambia cuando el cliente paga.                               |
-| `anulada`           | `true` = la venta se anuló y no suma en los resúmenes.                                        |
-| `estado_pago`       | `PAGADO`, `PENDIENTE` o `ANULADO`. Se calcula con la factura y su cuenta por cobrar.          |
-| `fecha_vencimiento` | Fecha límite de pago de su cuenta por cobrar (`null` si fue al contado). Antes `fecha_cobro`. |
+| Campo               | Significado                                                                         |
+| :------------------ | :---------------------------------------------------------------------------------- |
+| `por_cobrar`        | `true` = se vendió a crédito. No cambia cuando el cliente paga.                     |
+| `estado_pago`       | `PAGADO` o `PENDIENTE`. Se calcula con la venta y su cuenta por cobrar.             |
+| `fecha_vencimiento` | Fecha límite de pago de su cuenta por cobrar (`null` si fue al contado).            |
 
 ---
 
-### 8. Líneas de venta detalladas
+### 8. Líneas de venta (tabla `detalle_venta`)
 
 `GET /api/finanzas/ventas/`
 
-| Parámetro           | Valores                                |
-| :------------------ | :------------------------------------- |
-| `factura`           | ID de factura                          |
-| `producto`          | N° de parte                            |
-| `tipo_compra`       | `FISICA` u `ONLINE`                    |
-| `estado_pago`       | `PAGADO`, `PENDIENTE` o `ANULADO`      |
-| `page`, `page_size` | Paginación                             |
+| Parámetro           | Valores                 |
+| :------------------ | :---------------------- |
+| `factura`           | `id_factura`            |
+| `producto`          | `id_producto`           |
+| `tipo_compra`       | `Física` o `En Línea`   |
+| `estado_pago`       | `PAGADO` o `PENDIENTE`  |
+| `page`, `page_size` | Paginación              |
 
 ```json
 {
@@ -654,294 +541,231 @@ Devuelve los valores para inicializar los `<select>` y los selectores de fecha. 
   "previous": null,
   "results": [
     {
-      "id": 103489,
-      "factura": "INV7777090-20221118-F",
-      "no_parte": "P982901",
+      "id_detalle": 103489,
+      "id_factura": "INV7777090-20221118-F",
+      "id_producto": "P982901",
       "producto_nombre": "Multiesponja Scotch brite cocina colors pague 2 lleve 3",
       "categoria": "Aseo del hogar",
-      "tipo_compra": "FISICA",
-      "fecha": "2026-11-06T00:00:00-03:00",
+      "tipo_compra": "Física",
+      "fecha": "2022-11-18",
       "cantidad": 2,
-      "precio_unitario": "176.00",
-      "costo_unitario": "148.00",
-      "total_venta": "352.00",
-      "total_costo": "296.00",
-      "utilidad": "56.00",
+      "precio_venta": 176,
+      "costo_venta": 148,
+      "total_venta": 352,
+      "total_costo": 296,
+      "utilidad": 56,
       "estado_pago": "PAGADO"
     }
   ]
 }
 ```
 
-> `fecha`, `tipo_compra` y `estado_pago` se leen desde la factura (ya no se guardan repetidos en cada línea). `id` ahora es un número.
+> `precio_venta` y `costo_venta` son **unitarios**. `fecha`, `tipo_compra` y `estado_pago` se leen desde la venta.
 
 ---
 
-### 9. Cuentas por cobrar
+### 9. Cuentas por cobrar (tabla `cuenta_por_cobrar`)
 
-`GET /api/finanzas/cuentas-por-cobrar/`
+`GET /api/finanzas/cuentas-por-cobrar/` (ejemplo: `?estado=VENCIDA&page_size=1` sobre los datos de Neon, consultado el 16/11/2026)
 
-| Parámetro           | Valores                                                                   |
-| :------------------ | :------------------------------------------------------------------------ |
-| `cliente`           | ID de cliente                                                             |
-| `factura`           | ID de factura                                                             |
-| `estado`            | `PENDIENTE` (aún no vence) · `VENCIDA` · `PAGADA`                          |
+| Parámetro           | Valores                                                                      |
+| :------------------ | :--------------------------------------------------------------------------- |
+| `cliente`           | `id_cliente`                                                                 |
+| `factura`           | `id_factura`                                                                 |
+| `estado`            | `PENDIENTE` (aún no vence) · `VENCIDA` · `PAGADA` (estado a la fecha de hoy) |
 | `vencidas`          | `true` = solo vencidas · `false` = todas menos las vencidas · omitir = todas |
-| `page`, `page_size` | Paginación                                                                |
+| `page`, `page_size` | Paginación                                                                   |
 
 ```json
 {
-  "count": 14928,
-  "next": "http://localhost:8000/api/finanzas/cuentas-por-cobrar/?page=2",
+  "count": 8,
+  "next": "http://localhost:8000/api/finanzas/cuentas-por-cobrar/?estado=VENCIDA&page=2&page_size=1",
   "previous": null,
   "results": [
     {
-      "id": 14928,
-      "factura": "INV7778787-20220820-F",
-      "fecha_emision": "2026-08-08T00:00:00-04:00",
-      "cliente": "1305",
-      "cliente_nombre": "Raúl Castillo Medina",
-      "cliente_contacto": "+56 9 7484 7558",
-      "monto": "72.00",
-      "fecha_vencimiento": "2026-09-29",
-      "estado": "PAGADA",
-      "estado_actual": "PAGADA",
-      "fecha_pago": "2026-11-11",
-      "vencida": false
+      "id_cuenta": 14853,
+      "id_factura": "INV7777527-20210822-L",
+      "fecha_emision": "2021-08-22",
+      "id_cliente": 653,
+      "cliente_nombre": "Patricia Molina Contreras",
+      "cliente_contacto": "+56 9 2208 9846",
+      "monto": 1662,
+      "fecha_vencimiento": "2021-10-07",
+      "estado": "VENCIDA",
+      "estado_actual": "VENCIDA",
+      "dias_atraso": 1866,
+      "fecha_pago": null
     }
   ],
   "resumen": {
-    "total_cuentas": 14928,
-    "monto_total_por_cobrar": 57339180.0,
+    "total_cuentas": 8,
+    "monto_total_por_cobrar": 10725,
     "por_estado": {
-      "PENDIENTE": { "nombre": "Pendiente", "cantidad": 0, "monto": 0.0 },
-      "VENCIDA": { "nombre": "Vencida", "cantidad": 14927, "monto": 57339180.0 },
-      "PAGADA": { "nombre": "Pagada", "cantidad": 1, "monto": 72.0 }
+      "PENDIENTE": { "nombre": "Pendiente", "cantidad": 0, "monto": 0 },
+      "VENCIDA": { "nombre": "Vencida", "cantidad": 8, "monto": 10725 },
+      "PAGADA": { "nombre": "Pagada", "cantidad": 0, "monto": 0 }
     }
   }
 }
 ```
 
-| Campo                     | Significado                                                                              |
-| :------------------------ | :--------------------------------------------------------------------------------------- |
-| `estado`                  | Lo que está guardado: `PENDIENTE` o `PAGADA`.                                            |
-| `estado_actual`           | Lo que debe mostrar la pantalla: `PENDIENTE`, `VENCIDA` (pendiente con fecha ya pasada) o `PAGADA`. |
-| `fecha_pago`              | Fecha en que se pagó (`null` mientras esté pendiente).                                   |
-| `vencida`                 | Atajo: `true` si `estado_actual` es `VENCIDA`.                                           |
-| `monto_total_por_cobrar`  | Suma de pendientes + vencidas (no incluye las pagadas).                                  |
-
-> Los CSV no informan pagos, así que al importar todas las cuentas parten `PENDIENTE`.
+| Campo                    | Significado                                                                                                    |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------- |
+| `estado`                 | Lo guardado en la base: `PENDIENTE`, `VENCIDA` o `PAGADA` (el equipo de datos guarda `VENCIDA` a su fecha de corte). |
+| `estado_actual`          | Lo que debe mostrar la pantalla **hoy**: `PAGADA`; `VENCIDA` si está guardada así o si su fecha ya pasó; si no, `PENDIENTE`. |
+| `dias_atraso`            | Días desde el vencimiento (0 si no está vencida o ya se pagó).                                                  |
+| `fecha_pago`             | Fecha en que se pagó (`null` mientras no se pague).                                                            |
+| `monto_total_por_cobrar` | Suma de pendientes + vencidas.                                                                                 |
 
 ---
 
-### 10. Gastos
+### 10. Gastos (tabla `gastos_insumo`)
 
 `GET /api/finanzas/gastos/`
 
-Incluye las **compras de productos** (`tipo = COMPRA`, siempre con producto) y los **otros gastos** del negocio (`tipo = OTRO`: arriendo, flete, servicios, etc., sin producto).
+Cada gasto es una compra de insumos ligada a un producto.
 
-| Parámetro                   | Valores                                                                          |
-| :-------------------------- | :------------------------------------------------------------------------------- |
-| `tipo`                      | `COMPRA` u `OTRO`                                                                |
-| `categoria`                 | `INSUMOS`, `TRANSPORTE`, `SERVICIOS`, `ARRIENDO`, `MANTENIMIENTO`, `LIMPIEZA`, `OTROS` |
-| `categoria_producto`        | Categoría del producto comprado (ej. `Abarrotes`). Antes se llamaba `categoria`. |
-| `producto`                  | N° de parte                                                                      |
-| `proveedor`                 | Búsqueda parcial por nombre                                                      |
-| `fecha_inicio`, `fecha_fin` | Rango de fechas                                                                  |
-| `page`, `page_size`         | Paginación                                                                       |
+| Parámetro                   | Valores                                          |
+| :-------------------------- | :----------------------------------------------- |
+| `producto`                  | `id_producto`                                    |
+| `categoria`                 | Categoría del producto comprado (ej. `Abarrotes`) |
+| `fecha_inicio`, `fecha_fin` | Rango de fechas                                  |
+| `page`, `page_size`         | Paginación                                       |
 
 ```json
 {
-  "count": 1,
-  "next": null,
+  "count": 20000,
+  "next": "http://localhost:8000/api/finanzas/gastos/?page=2",
   "previous": null,
   "results": [
     {
-      "id": 20001,
-      "tipo": "OTRO",
-      "tipo_nombre": "Otro gasto",
-      "categoria": "ARRIENDO",
-      "categoria_nombre": "Arriendo",
-      "producto": null,
-      "producto_nombre": "",
-      "categoria_producto": "",
-      "proveedor": "Inmobiliaria Sur",
-      "descripcion": "Arriendo local",
-      "fecha": "2026-11-11",
-      "monto": "350000.00"
+      "id_gasto": 20000,
+      "id_producto": "P755255",
+      "producto_nombre": "Dulces surtidos El paraguitas",
+      "categoria": "Snacks y confitería",
+      "fecha": "2022-11-18",
+      "monto": 1171
     }
   ],
-  "resumen": {
-    "total_registros_gasto": 1,
-    "monto_total_gastos": 350000.0,
-    "por_tipo": {
-      "COMPRA": { "nombre": "Compra", "cantidad": 0, "monto": 0.0 },
-      "OTRO": { "nombre": "Otro gasto", "cantidad": 1, "monto": 350000.0 }
-    }
-  }
+  "resumen": { "total_registros_gasto": 20000, "monto_total_gastos": 24484481 }
 }
 ```
-
-> Los 20.000 gastos de los CSV se importan como `COMPRA` con categoría `INSUMOS`.
-
-> `GET /api/finanzas/opciones-filtros/` ahora también entrega `estados_cuenta`, `tipos_gasto` y `categorias_gasto` para llenar los selectores.
 
 ---
 
 ### 11. Registrar datos (POST)
 
-Todos exigen login y reciben JSON (`Content-Type: application/json`).
+Todos exigen login y reciben JSON (`Content-Type: application/json`). **No hay endpoints para borrar ni anular**: el usuario de la base solo puede leer, insertar y actualizar.
 
-| Respuesta | Cuándo                                                                                          |
-| :-------: | :---------------------------------------------------------------------------------------------- |
-|   `201`   | Se creó (venta, gasto o cliente). La respuesta trae el registro completo.                      |
-|   `200`   | Se aplicó la acción (anular, pagar, revertir pago).                                             |
+| Respuesta | Cuándo                                                                                            |
+| :-------: | :------------------------------------------------------------------------------------------------ |
+|   `201`   | Se creó (venta, gasto o cliente). La respuesta trae el registro completo.                         |
+|   `200`   | Se aplicó la acción (pagar, revertir pago).                                                       |
 |   `400`   | Datos inválidos: `{"campo": ["mensaje"]}`. Regla del negocio no cumplida: `{"error": "mensaje"}`. |
-|   `404`   | No existe la factura o la cuenta indicada.                                                     |
+|   `404`   | No existe la venta o la cuenta indicada.                                                          |
 
 #### 11.1 Registrar una venta — `POST /api/finanzas/facturas/`
 
-| Campo                         | Obligatorio      | Valores                                                              |
-| :---------------------------- | :--------------: | :------------------------------------------------------------------- |
-| `items`                       |        Sí        | Lista de productos (mínimo 1)                                        |
-| `items[].producto`            |        Sí        | N° de parte (ej. `P100055`)                                          |
-| `items[].cantidad`            |        Sí        | Entero ≥ 1                                                           |
-| `items[].precio_unitario`     |        No        | Si no se envía, se usa el precio de catálogo                         |
-| `tipo_compra`                 |        No        | `FISICA` (por defecto) u `ONLINE`                                    |
-| `por_cobrar`                  |        No        | `true` = venta a crédito (por defecto `false`)                       |
-| `cliente`                     | Solo a crédito   | ID del cliente                                                       |
-| `fecha_vencimiento`           | Solo a crédito   | `AAAA-MM-DD`, no anterior a la venta                                 |
-| `fecha`                       |        No        | Por defecto, ahora                                                   |
+| Campo                   | Obligatorio    | Valores                                                                   |
+| :---------------------- | :------------: | :------------------------------------------------------------------------ |
+| `items`                 |       Sí       | Lista de productos (mínimo 1)                                             |
+| `items[].id_producto`   |       Sí       | Ej. `P100055`                                                             |
+| `items[].cantidad`      |       Sí       | Entero ≥ 1                                                                |
+| `items[].precio_venta`  |       No       | Precio unitario. Si no se envía, el de la última venta del producto       |
+| `items[].costo_venta`   |       No       | Costo unitario. Si no se envía, el de la última venta del producto        |
+| `id_cliente`            |       Sí       | En el esquema de datos toda venta tiene cliente                           |
+| `tipo_compra`           |       No       | `Física` (por defecto) o `En Línea`                                       |
+| `por_cobrar`            |       No       | `true` = venta a crédito (por defecto `false`)                            |
+| `fecha_vencimiento`     | Solo a crédito | `AAAA-MM-DD`, no anterior a la venta                                      |
+| `fecha`                 |       No       | `AAAA-MM-DD`, por defecto hoy                                             |
 
 ```json
 // Venta a crédito
 {
-  "items": [
-    { "producto": "P100055", "cantidad": 2 },
-    { "producto": "P100083", "cantidad": 1, "precio_unitario": 1500 }
-  ],
-  "tipo_compra": "FISICA",
+  "id_cliente": 179,
+  "items": [{ "id_producto": "P126966", "cantidad": 2 }],
+  "tipo_compra": "En Línea",
   "por_cobrar": true,
-  "cliente": "179",
-  "fecha_vencimiento": "2026-11-26"
+  "fecha_vencimiento": "2026-12-31"
 }
 
-// Respuesta 201: la factura con sus productos y la deuda creada
+// Respuesta 201: la venta con sus productos y la deuda creada
 {
-  "factura": "CC174E545A-20261111-F",
-  "cliente": "179",
+  "id_factura": "CC9A0EBF05-20261116-L",
+  "id_cliente": 179,
   "cliente_nombre": "José Vega Reyes",
-  "fecha": "2026-11-11T23:08:34-03:00",
-  "tipo_compra": "FISICA",
-  "tipo_compra_nombre": "Física",
+  "fecha": "2026-11-16",
+  "tipo_compra": "En Línea",
   "por_cobrar": true,
-  "anulada": false,
   "estado_pago": "PENDIENTE",
-  "fecha_vencimiento": "2026-11-26",
-  "total_venta": "1788.00",
-  "items_count": 2,
+  "fecha_vencimiento": "2026-12-31",
+  "total_venta": 818,
+  "items_count": 1,
   "detalles": [
-    { "id": 103491, "no_parte": "P100055", "producto_nombre": "Pasta Capelli D´Angelo Conzazoni",
-      "cantidad": 2, "precio_unitario": "144.00", "costo_unitario": "124.00", "total_venta": "288.00" },
-    { "id": 103492, "no_parte": "P100083", "producto_nombre": "Salchicha Rica",
-      "cantidad": 1, "precio_unitario": "1500.00", "costo_unitario": "127.00", "total_venta": "1500.00" }
+    { "id_detalle": 103490, "id_producto": "P126966", "producto_nombre": "Aguardiente Nectar club",
+      "cantidad": 2, "precio_venta": 409, "costo_venta": 352, "total_venta": 818 }
   ],
   "cuenta_por_cobrar": {
-    "id": 14930,
-    "monto": "1788.00",
-    "fecha_vencimiento": "2026-11-26",
-    "estado": "PENDIENTE",
-    "estado_actual": "PENDIENTE",
-    "fecha_pago": null,
-    "vencida": false
+    "id_cuenta": 14929, "id_factura": "CC9A0EBF05-20261116-L", "fecha_emision": "2026-11-16",
+    "id_cliente": 179, "cliente_nombre": "José Vega Reyes", "cliente_contacto": "+56 9 9821 7744",
+    "monto": 818, "fecha_vencimiento": "2026-12-31", "estado": "PENDIENTE", "estado_actual": "PENDIENTE",
+    "dias_atraso": 0, "fecha_pago": null
   }
 }
 ```
 
-- Una venta **al contado** es igual, sin `por_cobrar`, `cliente` ni `fecha_vencimiento`; su `cuenta_por_cobrar` es `null`.
-- El **costo** de cada línea se toma del catálogo del producto en ese momento.
-- El número de factura lo genera el backend (prefijo `CC`).
-- Ejemplo de error: `{"items": {"0": {"cantidad": ["Asegúrese de que este valor es mayor o igual a 1."]}}}`.
+- Una venta **al contado** es igual, sin `por_cobrar` ni `fecha_vencimiento`; su `cuenta_por_cobrar` es `null`.
+- Si un producto **nunca se ha vendido**, hay que enviar su `precio_venta` y `costo_venta` (si no, `400`).
+- El número de factura lo genera el backend (prefijo `CC`, ej. `CC9A0EBF05-20261116-L`; `F` = Física, `L` = En Línea).
 
-#### 11.2 Ver una venta — `GET /api/finanzas/facturas/{factura}/`
+#### 11.2 Ver una venta — `GET /api/finanzas/facturas/{id_factura}/`
 
-Devuelve lo mismo que la respuesta de 11.1. Sirve para la ventana de detalle de una operación.
+Devuelve lo mismo que la respuesta de 11.1.
 
-#### 11.3 Anular una venta — `POST /api/finanzas/facturas/{factura}/anular/`
-
-Sin cuerpo. La venta deja de sumar en los resúmenes y en el flujo de caja. Si era a crédito y **no se había pagado**, su deuda desaparece. Si **ya se pagó**, responde `400` (`"La venta ya fue pagada. Primero revierte el pago y luego anúlala."`).
-
-#### 11.4 Registrar un pago — `POST /api/finanzas/cuentas-por-cobrar/{id}/pagar/`
+#### 11.3 Registrar un pago — `POST /api/finanzas/cuentas-por-cobrar/{id_cuenta}/pagar/`
 
 ```json
 // Cuerpo (opcional; por defecto, hoy)
-{ "fecha_pago": "2026-11-11" }
-
-// Respuesta 200
-{
-  "id": 14930,
-  "factura": "CC174E545A-20261111-F",
-  "monto": "1788.00",
-  "fecha_vencimiento": "2026-11-26",
-  "estado": "PAGADA",
-  "estado_actual": "PAGADA",
-  "fecha_pago": "2026-11-11",
-  "vencida": false
-}
+{ "fecha_pago": "2026-11-16" }
 ```
+
+Responde la cuenta con `"estado": "PAGADA"` y su `fecha_pago`.
 
 - El pago es **completo** (no hay abonos parciales).
 - La fecha de pago no puede ser futura ni anterior a la venta.
-- Pagar dos veces responde `400`: `{"error": "La cuenta ya está pagada (el 11/11/2026)."}`.
-- Desde ese momento la venta aparece como `PAGADO` y el monto entra al `flujo_caja` en la fecha del pago.
+- Pagar dos veces responde `400`: `{"error": "La cuenta ya está pagada (el 16/11/2026)."}`.
 
-#### 11.5 Deshacer un pago — `POST /api/finanzas/cuentas-por-cobrar/{id}/revertir-pago/`
+#### 11.4 Deshacer un pago — `POST /api/finanzas/cuentas-por-cobrar/{id_cuenta}/revertir-pago/`
 
-Sin cuerpo. La cuenta vuelve a `PENDIENTE` y `fecha_pago` queda en `null`.
+Sin cuerpo. `fecha_pago` queda en `null` y la cuenta vuelve a `PENDIENTE`, o a `VENCIDA` si su fecha ya pasó.
 
-#### 11.6 Registrar un gasto — `POST /api/finanzas/gastos/`
+#### 11.5 Registrar un gasto — `POST /api/finanzas/gastos/`
 
-| Campo         | Obligatorio      | Valores                                                                                 |
-| :------------ | :--------------: | :-------------------------------------------------------------------------------------- |
-| `tipo`        |        No        | `COMPRA` (por defecto) u `OTRO`                                                         |
-| `producto`    | Solo en `COMPRA` | N° de parte del producto comprado. En `OTRO` no se envía.                               |
-| `categoria`   |        No        | `INSUMOS`, `TRANSPORTE`, `SERVICIOS`, `ARRIENDO`, `MANTENIMIENTO`, `LIMPIEZA`, `OTROS`. Por defecto `INSUMOS` en compras y `OTROS` en otros gastos. |
-| `monto`       |        Sí        | Mayor que 0                                                                             |
-| `proveedor`   |        No        | Texto libre                                                                             |
-| `descripcion` |        No        | Texto libre                                                                             |
-| `fecha`       |        No        | Por defecto, hoy                                                                        |
+| Campo         | Obligatorio | Valores                       |
+| :------------ | :---------: | :---------------------------- |
+| `id_producto` |     Sí      | Producto comprado             |
+| `monto`       |     Sí      | Entero mayor que 0            |
+| `fecha`       |     No      | `AAAA-MM-DD`, por defecto hoy |
 
 ```json
 // Cuerpo
-{ "tipo": "OTRO", "categoria": "TRANSPORTE", "monto": 18000,
-  "proveedor": "Flete Don Mario", "descripcion": "Flete de mercadería" }
+{ "id_producto": "P126966", "monto": 5000 }
 
 // Respuesta 201
-{
-  "id": 20001,
-  "tipo": "OTRO",
-  "tipo_nombre": "Otro gasto",
-  "categoria": "TRANSPORTE",
-  "categoria_nombre": "Transporte o flete",
-  "producto": null,
-  "producto_nombre": "",
-  "categoria_producto": "",
-  "proveedor": "Flete Don Mario",
-  "descripcion": "Flete de mercadería",
-  "fecha": "2026-11-11",
-  "monto": "18000.00"
-}
+{ "id_gasto": 20001, "id_producto": "P126966", "producto_nombre": "Aguardiente Nectar club",
+  "categoria": "Bebidas sin alcohol", "fecha": "2026-11-16", "monto": 5000 }
 ```
 
-#### 11.7 Registrar un cliente — `POST /api/finanzas/clientes/`
+#### 11.6 Registrar un cliente — `POST /api/finanzas/clientes/`
+
+`nombre` y `contacto` son obligatorios, y `contacto` no se puede repetir (como en el esquema de datos).
 
 ```json
 // Cuerpo
 { "nombre": "Kiosco Don Luis", "contacto": "+56 9 5587 2216" }
 
-// Respuesta 201 (el ID sigue la numeración de los clientes existentes)
-{ "cliente_id": "2001", "nombre": "Kiosco Don Luis", "contacto": "+56 9 5587 2216",
-  "total_facturas": 0, "total_deuda": "0.00" }
+// Respuesta 201 (el ID sigue la numeración)
+{ "id_cliente": 2001, "nombre": "Kiosco Don Luis", "contacto": "+56 9 5587 2216", "total_facturas": 0, "total_deuda": 0 }
 ```
 
 ---
@@ -1173,27 +997,24 @@ export const apiService = {
 
   // Endpoint 11 — Registrar datos
   registrarVenta(venta) {
-    // { items: [{ producto, cantidad, precio_unitario? }], tipo_compra, por_cobrar, cliente?, fecha_vencimiento? }
+    // { id_cliente, items: [{ id_producto, cantidad, precio_venta?, costo_venta? }], tipo_compra, por_cobrar, fecha_vencimiento? }
     return enviar(`${API_BASE}/facturas/`, venta);
   },
-  getVenta(factura) {
-    return request(`${API_BASE}/facturas/${encodeURIComponent(factura)}/`);
+  getVenta(idFactura) {
+    return request(`${API_BASE}/facturas/${encodeURIComponent(idFactura)}/`);
   },
-  anularVenta(factura) {
-    return enviar(`${API_BASE}/facturas/${encodeURIComponent(factura)}/anular/`);
+  registrarPago(idCuenta, fechaPago) {
+    return enviar(`${API_BASE}/cuentas-por-cobrar/${idCuenta}/pagar/`, fechaPago ? { fecha_pago: fechaPago } : {});
   },
-  registrarPago(cuentaId, fechaPago) {
-    return enviar(`${API_BASE}/cuentas-por-cobrar/${cuentaId}/pagar/`, fechaPago ? { fecha_pago: fechaPago } : {});
-  },
-  revertirPago(cuentaId) {
-    return enviar(`${API_BASE}/cuentas-por-cobrar/${cuentaId}/revertir-pago/`);
+  revertirPago(idCuenta) {
+    return enviar(`${API_BASE}/cuentas-por-cobrar/${idCuenta}/revertir-pago/`);
   },
   registrarGasto(gasto) {
-    // { tipo: "COMPRA" | "OTRO", monto, producto?, categoria?, proveedor?, descripcion?, fecha? }
+    // { id_producto, monto, fecha? }
     return enviar(`${API_BASE}/gastos/`, gasto);
   },
   registrarCliente(cliente) {
-    return enviar(`${API_BASE}/clientes/`, cliente); // { nombre, contacto? }
+    return enviar(`${API_BASE}/clientes/`, cliente); // { nombre, contacto }
   },
 
   // Endpoint 4 — Descarga del Excel (con token, por eso no sirve un <a href>)
@@ -1285,58 +1106,57 @@ const cargarDatosDashboard = async () => {
 
     // 3. KPIs
     kpis.value = {
-      saldoPeriodo: resumen.flujo_caja_neto,
-      ventasMes: resumen.total_ingresos, // ⚠️ P06
-      comprasGastos: resumen.total_costos,
-      pendienteCobrar: resumen.por_estado_pago?.PENDIENTE?.ingresos || 0,
+      saldoPeriodo: resumen.flujo_caja.saldo,
+      ventasMes: resumen.flujo_caja.entradas.total, // ⚠️ P06
+      comprasGastos: resumen.flujo_caja.salidas.total,
+      pendienteCobrar: cuentas.resumen?.monto_total_por_cobrar || 0,
     };
 
     // 4. Resumen de operaciones
     operationsSummary.value = {
       totalVentas: resumen.total_transacciones,
-      totalGastos: 0, // ⚠️ P05
-      unidadesVendidas: resumen.total_transacciones, // ⚠️ P04
+      totalGastos: resumen.flujo_caja.salidas.gastos_insumo,
+      unidadesVendidas: resumen.total_unidades,
       cuentasPendientes: cuentas.resumen?.total_cuentas || 0,
     };
 
     // 5. Gráfico de flujo de caja (últimos 8 periodos)
     weeklyFlow.value = (agrupado.periodos || []).slice(-8).map((p) => ({
-      semana: p.periodo,
-      ventas: p.ingresos,
-      gastos: p.costos,
+      semana: p.rango,
+      ventas: p.flujo_caja.entradas.total,
+      gastos: p.flujo_caja.salidas.total,
     }));
 
     // 6. Cobros prioritarios
     priorityCollections.value = (cuentas.results || []).map((c) => ({
-      id: c.id,
-      cliente: c.cliente_nombre || `Cliente #${c.cliente}`,
-      detalle: `Factura ${c.factura}`,
-      documento: c.factura,
-      monto: parseFloat(c.monto),
-      vencimientoTexto: c.vencida ? "Vencida" : `Vence ${c.fecha_vencimiento}`,
-      estado: c.vencida ? "VENCIDA" : "PENDIENTE",
+      id: c.id_cuenta,
+      cliente: c.cliente_nombre || `Cliente #${c.id_cliente}`,
+      detalle: `Factura ${c.id_factura}`,
+      documento: c.id_factura,
+      monto: c.monto, // ya es un número entero
+      vencimientoTexto: c.estado_actual === "VENCIDA" ? "Vencida" : `Vence ${c.fecha_vencimiento}`,
+      estado: c.estado_actual,
     }));
 
-    // 7. Movimientos recientes ⚠️ P02
+    // 7. Movimientos recientes
     recentOperations.value = (ventas.results || []).map((v) => ({
-      id: v.id,
+      id: v.id_detalle,
       tipo: "VENTA",
       concepto: v.categoria || "Venta",
       detalle: v.producto_nombre,
-      clienteProveedor:
-        v.tipo_compra === "ONLINE" ? "En Línea" : "Tienda Física",
+      clienteProveedor: v.tipo_compra === "En Línea" ? "En Línea" : "Tienda Física",
       canal: v.tipo_compra,
-      fecha: v.fecha ? v.fecha.replace("T", " ").slice(0, 16) : "",
+      fecha: v.fecha, // "AAAA-MM-DD"
       estado: v.estado_pago,
-      monto: parseFloat(v.total_venta),
+      monto: v.total_venta,
     }));
 
-    // 8. Productos ⚠️ P03
+    // 8. Productos
     topProducts.value = (productos.results || []).map((p) => ({
-      id: p.no_parte,
+      id: p.id_producto,
       nombre: p.producto,
-      unidadesVendidas: p.total_vendido || 0,
-      totalVentas: parseFloat(p.precio_venta || 0),
+      unidadesVendidas: p.total_vendido,
+      totalVentas: p.total_ingresos,
     }));
   } catch (err) {
     console.error("Error cargando el dashboard:", err);
@@ -1405,17 +1225,17 @@ Esta tabla es **el contrato entre ambos equipos** 🟨. Cada fila dice qué camp
 
 | Componente (prop)                        | Campo que lee el frontend                                                                  | Endpoint                           | Estado                 |
 | :--------------------------------------- | :----------------------------------------------------------------------------------------- | :--------------------------------- | :--------------------- |
-| StatCard · `saldoPeriodo`                | `flujo_caja.saldo` (antes `flujo_caja_neto`, que en realidad es la utilidad)               | `resumen-mensual`                  | ✅ Documentado         |
+| StatCard · `saldoPeriodo`                | `flujo_caja.saldo`                                                                         | `resumen-mensual`                  | ✅ Documentado         |
 | StatCard · `ventasMes`                   | `flujo_caja.entradas.total` ("dinero recibido por ventas")                                 | `resumen-mensual`                  | ✅ ⚠️ P06              |
-| StatCard · `comprasGastos`               | `flujo_caja.salidas.total` (compras + otros gastos)                                        | `resumen-mensual`                  | ✅ Documentado         |
-| StatCard · `pendienteCobrar`             | `por_estado_pago.PENDIENTE.ingresos`                                                       | `resumen-mensual`                  | ✅ Documentado         |
+| StatCard · `comprasGastos`               | `flujo_caja.salidas.total` (gastos en insumos)                                             | `resumen-mensual`                  | ✅ Documentado         |
+| StatCard · `pendienteCobrar`             | `resumen.monto_total_por_cobrar`                                                           | `cuentas-por-cobrar`               | ✅ Documentado         |
 | OperationsSummary · `totalVentas`        | `total_transacciones`                                                                      | `resumen-mensual`                  | ✅ Documentado         |
-| OperationsSummary · `totalGastos`        | `resumen.total_registros_gasto`                                                            | `gastos`                           | ✅ Documentado         |
+| OperationsSummary · `totalGastos`        | `flujo_caja.salidas.gastos_insumo` (monto) o `resumen.total_registros_gasto` (cantidad)   | `resumen-mensual` / `gastos`       | ✅ Documentado         |
 | OperationsSummary · `unidadesVendidas`   | `total_unidades`                                                                           | `resumen-mensual`                  | ✅ Documentado         |
 | OperationsSummary · `cuentasPendientes`  | `resumen.total_cuentas`                                                                    | `cuentas-por-cobrar`               | ✅ Documentado         |
 | CashChart · `semana`, `ventas`, `gastos` | `periodos[].rango`, `.flujo_caja.entradas.total`, `.flujo_caja.salidas.total` | `resumen-agrupado?agrupacion=semanas_mes` | ✅ Documentado |
-| PriorityCollections                      | `id`, `cliente`, `cliente_nombre`, `factura`, `monto`, `fecha_vencimiento`, `vencida`      | `cuentas-por-cobrar?vencidas=true` | ✅ Documentado         |
-| RecentOperations                         | `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                           | ✅ Documentado         |
+| PriorityCollections                      | `id_cuenta`, `id_cliente`, `cliente_nombre`, `id_factura`, `monto`, `fecha_vencimiento`, `estado_actual`, `dias_atraso` | `cuentas-por-cobrar?vencidas=true` | ✅ Documentado |
+| RecentOperations                         | `id_detalle`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                   | ✅ Documentado         |
 | TopProducts · `nombre`, `unidadesVendidas`, `totalVentas` | `producto`, `total_vendido`, `total_ingresos` | `productos?ordering=-total_vendido&page_size=4` + fechas del mes | ✅ Documentado |
 
 ---
@@ -1475,13 +1295,13 @@ Problemas detectados al revisar este documento. No bloquean la primera integraci
 | :-- | :-------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------ | :---------- | :--------------------------------------------------------------------------------------------------------------------- |
 | P01 | ✅ | Resuelto: `resumen-agrupado` acepta `agrupacion=semanal` (lunes a domingo) y `semanas_mes` (las 4 semanas del mes que usa el gráfico del diseño), con un `rango` corto para la etiqueta. | `resumen-agrupado`, `CashChart` | 🟦 Backend | — |
 
-| P02 | ✅ | Resuelto: `/ventas/` ya tiene respuesta de ejemplo documentada (Parte 3, endpoint 8) e incluye `id`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago` y `total_venta`. | `DetalleVentaSerializer`, `RecentOperations` | 🟦 Backend | — |
+| P02 | ✅ | Resuelto: `/ventas/` ya tiene respuesta de ejemplo documentada (Parte 3, endpoint 8) e incluye `id_detalle`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago` y `total_venta`. | `DetalleVentaSerializer`, `RecentOperations` | 🟦 Backend | — |
 
 | P03 | ✅ | Resuelto: `/productos/` calcula `total_vendido` y `total_ingresos` (por período y canal) y permite `?ordering=-total_vendido`. Respuesta documentada en el endpoint 6. | `ProductoSerializer`, `TopProducts` | 🟦 Backend | — |
 
 | P04 | ✅ | Resuelto: `resumen-mensual` entrega `total_unidades` (suma de cantidades vendidas). El frontend debe usarlo en `unidadesVendidas`. | `resumen-mensual`, `gastos` | 🟨 Ambos | — |
 
-| P05 | ✅ | Resuelto: los gastos ahora existen en la API (`gastos` y `flujo_caja.salidas`). Usar `flujo_caja.salidas.total` para el monto y `gastos.resumen.total_registros_gasto` para la cantidad. | `resumen-mensual`, `gastos` | 🟨 Ambos | — |
+| P05 | ✅ | Resuelto: los gastos existen en la API (`gastos` y `flujo_caja.salidas.gastos_insumo`). | `resumen-mensual`, `gastos` | 🟨 Ambos | — |
 
 | P06 | 🟠 | El endpoint se llama `resumen-mensual`, pero acepta cualquier rango. El dashboard lo llama con todo el histórico (2010–2022), así que el KPI `ventasMes` muestra 12 años de ventas, no un mes. | Nombre del endpoint, KPI `ventasMes` | 🟨 Ambos | Renombrar a `resumen-financiero` (manteniendo el alias antiguo por un tiempo) y que el dashboard pida el último mes disponible, o cambiar la etiqueta del KPI. |
 
@@ -1496,3 +1316,9 @@ Problemas detectados al revisar este documento. No bloquean la primera integraci
 | P11 | 🟢 | El proxy de Vite solo existe en desarrollo. No hay definido cómo encuentra el frontend al backend en producción. | `vite.config.js`, `api.js` | 🟨 Ambos | Usar una variable `VITE_API_URL` en `API_BASE`, o servir ambos detrás del mismo dominio. |
 
 | P12 | 🔴 | La API ahora exige login (JWT). El prototipo todavía no tiene pantalla de login ni envía el token, así que al conectarlo recibirá `401`. | Pantalla de login, `api.js` | 🟩 Frontend | Diseñar la pantalla de login y usar `authService` y `request()` de la sección 4.3. No hay registro público: los usuarios los crea un administrador. |
+
+| P13 | 🟠 | En Neon los datos tienen sus fechas originales (2010 a nov. 2022). Si el dashboard pide "el mes actual" (`periodo=mensual`), verá casi todo en cero. En local no pasa porque `importar_csv` desplaza las fechas. | Dashboard, datos de Neon | 🟨 Ambos | Que el dashboard parta en el último mes con datos (`opciones-filtros` → `rango_fechas_disponible.max`), o que el equipo de datos acuerde desplazar las fechas para la demo. |
+
+| P14 | 🟢 | En el esquema de datos los ID (`id_detalle`, `id_cuenta`, `id_gasto`, `id_cliente`) son `INTEGER PRIMARY KEY` sin secuencia. El backend asigna el siguiente número y reintenta si dos personas guardan a la vez. | `finanzas/ids.py` | 🟨 Ambos | Si el equipo de datos los cambia a `GENERATED BY DEFAULT AS IDENTITY`, el backend sigue funcionando igual. |
+
+| P15 | 🟢 | Se quitó lo que no existe en el esquema de datos: anular ventas, ventas sin cliente, precio de catálogo, y tipo/categoría/proveedor/descripción de los gastos (todo gasto es de un producto). | Modelos, endpoint 11 | 🟨 Ambos | Si alguno se necesita, el equipo de datos agrega la columna primero y luego el backend. |

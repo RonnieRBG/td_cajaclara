@@ -1,19 +1,17 @@
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
-from decimal import Decimal
+from datetime import date, datetime, timedelta
 
 import pandas as pd
-from django.conf import settings
 from django.db.models import (
     Count,
-    DecimalField,
     F,
     IntegerField,
+    Max,
+    Min,
     OuterRef,
     Q,
     Subquery,
     Sum,
-    Value,
 )
 from django.db.models.functions import Coalesce, TruncDay, TruncMonth, TruncQuarter, TruncWeek, TruncYear
 from django.http import HttpResponse
@@ -31,33 +29,27 @@ from .models import (
     Cliente,
     CuentaPorCobrar,
     DetalleVenta,
-    Factura,
     GastoInsumo,
     Producto,
-    TipoCompra,
+    Venta,
 )
 from .serializers import (
     ClienteSerializer,
     CuentaPorCobrarSerializer,
     DetalleVentaSerializer,
-    FacturaSerializer,
     GastoInsumoSerializer,
     ProductoSerializer,
-    TipoCompraSerializer,
+    VentaSerializer,
+    normalizar_tipo_compra,
 )
 
 FORMATO_FECHA = "%d/%m/%Y"
 FORMATOS_ENTRADA = ("%d/%m/%Y", "%Y-%m-%d")
 PERIODOS_VALIDOS = ("mensual", "trimestral", "anual")
-TIPOS_COMPRA_VALIDOS = [codigo for codigo, _ in TipoCompra.TIPO_CHOICES]
-NOMBRES_TIPO_COMPRA = dict(TipoCompra.TIPO_CHOICES)
+TIPOS_COMPRA_VALIDOS = [codigo for codigo, _ in Venta.TIPO_COMPRA_CHOICES]
 NOMBRES_ESTADO_PAGO = dict(ESTADO_PAGO_CHOICES)
-ESTADOS_PAGO_VALIDOS = [codigo for codigo, _ in ESTADO_PAGO_CHOICES]
-ESTADOS_CUENTA_VALIDOS = [codigo for codigo, _ in CuentaPorCobrar.ESTADO_ACTUAL_CHOICES]
-TIPOS_GASTO_VALIDOS = [codigo for codigo, _ in GastoInsumo.TIPO_CHOICES]
-CATEGORIAS_GASTO_VALIDAS = [codigo for codigo, _ in GastoInsumo.CATEGORIA_CHOICES]
+ESTADOS_CUENTA_VALIDOS = [codigo for codigo, _ in CuentaPorCobrar.ESTADO_CHOICES]
 VALORES_VERDADEROS = ("true", "1", "si", "sí")
-DOS_DECIMALES = Decimal("0.01")
 
 # Función de la base de datos con la que se agrupa cada opción. "semanas_mes" agrupa por
 # día y luego se juntan los días en las semanas del mes (1-7, 8-14, 15-21 y 22 a fin de mes).
@@ -87,30 +79,22 @@ class Filtros:
 
 
 def _hoy():
-    return timezone.localdate() if settings.USE_TZ else date.today()
+    return timezone.localdate()
 
 
-def _inicio_del_dia(dia):
-    momento = datetime.combine(dia, time.min)
-    return timezone.make_aware(momento) if settings.USE_TZ else momento
-
-
-def _a_fecha_local(momento):
-    if momento is None:
-        return None
-    if isinstance(momento, datetime):
-        if settings.USE_TZ and timezone.is_aware(momento):
-            momento = timezone.localtime(momento)
-        return momento.date()
-    return momento
+def _a_fecha(valor):
+    if isinstance(valor, datetime):
+        return valor.date()
+    return valor
 
 
 def _monto(valor):
-    return float((valor or Decimal("0")).quantize(DOS_DECIMALES))
+    """Montos en pesos chilenos: enteros."""
+    return int(valor or 0)
 
 
 def _margen(ingresos, utilidad):
-    return _monto(utilidad / ingresos * 100) if ingresos else 0.0
+    return round(utilidad / ingresos * 100, 2) if ingresos else 0.0
 
 
 def _parsear_fecha(texto, nombre_param):
@@ -122,20 +106,18 @@ def _parsear_fecha(texto, nombre_param):
     raise FiltroInvalido(f"'{nombre_param}' tiene un formato inválido. Usa DD/MM/AAAA.")
 
 
-def _q_rango(fecha_inicio, fecha_fin, campo="factura__fecha"):
-    """Rango de días completos [fecha_inicio, fecha_fin] en hora de Chile.
-    Por defecto filtra líneas de venta por la fecha de su factura."""
-    return Q(**{f"{campo}__gte": _inicio_del_dia(fecha_inicio)}) & Q(
-        **{f"{campo}__lt": _inicio_del_dia(fecha_fin + timedelta(days=1))}
-    )
+def _q_rango(fecha_inicio, fecha_fin, campo="venta__fecha"):
+    """Rango de días [fecha_inicio, fecha_fin], ambos incluidos.
+    Por defecto filtra líneas de venta por la fecha de su venta."""
+    return Q(**{f"{campo}__gte": fecha_inicio, f"{campo}__lte": fecha_fin})
 
 
 def _leer_tipo_compra(params):
     tipo_param = params.get("tipo_compra")
     if not tipo_param:
         return None
-    tipo_compra = tipo_param.strip().upper()
-    if tipo_compra not in TIPOS_COMPRA_VALIDOS:
+    tipo_compra = normalizar_tipo_compra(tipo_param)
+    if tipo_compra is None:
         raise FiltroInvalido(f"'tipo_compra' inválido. Usa: {', '.join(TIPOS_COMPRA_VALIDOS)}.")
     return tipo_compra
 
@@ -143,7 +125,7 @@ def _leer_tipo_compra(params):
 def _armar_filtros(fecha_inicio, fecha_fin, periodo, tipo_compra):
     q = _q_rango(fecha_inicio, fecha_fin)
     if tipo_compra:
-        q &= Q(factura__tipo_compra_id=tipo_compra)
+        q &= Q(venta__tipo_compra=tipo_compra)
     return Filtros(fecha_inicio, fecha_fin, periodo, tipo_compra, q)
 
 
@@ -235,8 +217,8 @@ def _rango_corto(desde, hasta):
 
 
 def _resumen(transacciones, ingresos, costos):
-    ingresos = ingresos or Decimal("0")
-    costos = costos or Decimal("0")
+    ingresos = ingresos or 0
+    costos = costos or 0
     utilidad = ingresos - costos
     return {
         "total_transacciones": transacciones,
@@ -255,19 +237,19 @@ class ResumenFinancieroView(APIView):
             return Response({"error": str(error)}, status=400)
 
         ventas = DetalleVenta.objects.filter(filtros.q).con_totales().con_estado_pago().order_by()
-        totales = ventas.exclude(estado_pago="ANULADO").aggregate(
+        totales = ventas.aggregate(
             transacciones=Count("pk"),
             unidades=Sum("cantidad"),
             ingresos=Sum("total_venta"),
             costos=Sum("total_costo"),
         )
         flujo = flujo_caja.calcular(filtros.fecha_inicio, filtros.fecha_fin, filtros.tipo_compra)
-        ingresos = totales["ingresos"] or Decimal("0")
-        costos = totales["costos"] or Decimal("0")
+        ingresos = totales["ingresos"] or 0
+        costos = totales["costos"] or 0
         utilidad = ingresos - costos
 
         por_estado = {
-            codigo: {"nombre": nombre, "transacciones": 0, "ingresos": 0.0}
+            codigo: {"nombre": nombre, "transacciones": 0, "ingresos": 0}
             for codigo, nombre in NOMBRES_ESTADO_PAGO.items()
         }
         for fila in ventas.values("estado_pago").annotate(
@@ -290,13 +272,10 @@ class ResumenFinancieroView(APIView):
             "total_ingresos": _monto(ingresos),
             "total_costos": _monto(costos),
             "utilidad_bruta": _monto(utilidad),
-            # Se mantiene por compatibilidad: es la utilidad bruta, NO el dinero en caja.
-            # Para el saldo de caja usar flujo_caja.saldo.
-            "flujo_caja_neto": _monto(utilidad),
             "margen_porcentaje": _margen(ingresos, utilidad),
             "por_estado_pago": por_estado,
             # Dinero que realmente entró y salió (ver finanzas/flujo_caja.py)
-            "flujo_caja": flujo_caja.a_json(flujo, _monto),
+            "flujo_caja": flujo_caja.a_json(flujo),
         })
 
 
@@ -334,10 +313,9 @@ class ResumenAgrupadoView(APIView):
 
         filas = (
             DetalleVenta.objects.filter(filtros.q)
-            .exclude(factura__anulada=True)
             .con_totales()
             .order_by()
-            .annotate(grupo=AGRUPACIONES[agrupacion]("factura__fecha"))
+            .annotate(grupo=AGRUPACIONES[agrupacion]("venta__fecha"))
             .values("grupo")
             .annotate(
                 transacciones=Count("pk"),
@@ -348,26 +326,26 @@ class ResumenAgrupadoView(APIView):
         # Varias filas pueden caer en el mismo período (ej.: los días de una semana del mes)
         por_grupo = {}
         for f in filas:
-            clave = _inicio_periodo(_a_fecha_local(f["grupo"]), agrupacion)
-            acumulado = por_grupo.setdefault(clave, {"transacciones": 0, "ingresos": Decimal("0"), "costos": Decimal("0")})
+            clave = _inicio_periodo(_a_fecha(f["grupo"]), agrupacion)
+            acumulado = por_grupo.setdefault(clave, {"transacciones": 0, "ingresos": 0, "costos": 0})
             acumulado["transacciones"] += f["transacciones"]
-            acumulado["ingresos"] += f["ingresos"] or Decimal("0")
-            acumulado["costos"] += f["costos"] or Decimal("0")
+            acumulado["ingresos"] += f["ingresos"] or 0
+            acumulado["costos"] += f["costos"] or 0
         flujo_por_periodo = flujo_caja.calcular(
             fecha_inicio,
             fecha_fin,
             filtros.tipo_compra,
             trunc=AGRUPACIONES[agrupacion],
-            a_clave=lambda dia: _inicio_periodo(dia, agrupacion),
+            a_clave=lambda dia: _inicio_periodo(_a_fecha(dia), agrupacion),
         )
 
         resultado = []
-        total_transacciones, total_ingresos, total_costos = 0, Decimal("0"), Decimal("0")
+        total_transacciones, total_ingresos, total_costos = 0, 0, 0
         for inicio in periodos:
             fila = por_grupo.get(inicio, {})
             transacciones = fila.get("transacciones", 0)
-            ingresos = fila.get("ingresos") or Decimal("0")
-            costos = fila.get("costos") or Decimal("0")
+            ingresos = fila.get("ingresos") or 0
+            costos = fila.get("costos") or 0
             total_transacciones += transacciones
             total_ingresos += ingresos
             total_costos += costos
@@ -381,7 +359,7 @@ class ResumenAgrupadoView(APIView):
                 # Texto corto para el gráfico, ej.: "01 - 07 Oct"
                 "rango": _rango_corto(desde, hasta),
                 **_resumen(transacciones, ingresos, costos),
-                "flujo_caja": flujo_caja.a_json(flujo_por_periodo.get(inicio, flujo_caja.vacio()), _monto),
+                "flujo_caja": flujo_caja.a_json(flujo_por_periodo.get(inicio, flujo_caja.vacio())),
             })
 
         return Response({
@@ -394,7 +372,7 @@ class ResumenAgrupadoView(APIView):
             "totales": {
                 **_resumen(total_transacciones, total_ingresos, total_costos),
                 "flujo_caja": flujo_caja.a_json(
-                    flujo_caja.calcular(fecha_inicio, fecha_fin, filtros.tipo_compra), _monto
+                    flujo_caja.calcular(fecha_inicio, fecha_fin, filtros.tipo_compra)
                 ),
             },
             "periodos": resultado,
@@ -403,7 +381,7 @@ class ResumenAgrupadoView(APIView):
 
 class ExportarExcelView(APIView):
     COLUMNAS = [
-        "ID Detalle", "Fecha", "Factura", "Producto (N° Parte)", "Nombre Producto",
+        "ID Detalle", "Fecha", "Factura", "ID Producto", "Nombre Producto",
         "Tipo Compra", "Cantidad", "Precio Venta Unitario", "Costo Venta Unitario",
         "Total Venta", "Total Costo", "Utilidad", "Estado Pago",
     ]
@@ -421,25 +399,25 @@ class ExportarExcelView(APIView):
             DetalleVenta.objects.filter(filtros.q)
             .con_totales()
             .con_estado_pago()
-            .order_by("factura__fecha", "factura_id", "id")
+            .order_by("venta__fecha", "venta_id", "id_detalle")
             .values(
-                "id", "factura__fecha", "factura_id", "no_parte_id", "no_parte__producto",
-                "factura__tipo_compra_id", "cantidad", "precio_unitario", "costo_unitario",
+                "id_detalle", "venta__fecha", "venta_id", "producto_id", "producto__producto",
+                "venta__tipo_compra", "cantidad", "precio_venta", "costo_venta",
                 "total_venta", "total_costo", "utilidad", "estado_pago",
             )
         )
 
         datos = [
             {
-                "ID Detalle": f["id"],
-                "Fecha": _a_fecha_local(f["factura__fecha"]),
-                "Factura": f["factura_id"],
-                "Producto (N° Parte)": f["no_parte_id"],
-                "Nombre Producto": f["no_parte__producto"],
-                "Tipo Compra": NOMBRES_TIPO_COMPRA.get(f["factura__tipo_compra_id"], "No asignado"),
+                "ID Detalle": f["id_detalle"],
+                "Fecha": f["venta__fecha"],
+                "Factura": f["venta_id"],
+                "ID Producto": f["producto_id"],
+                "Nombre Producto": f["producto__producto"],
+                "Tipo Compra": f["venta__tipo_compra"],
                 "Cantidad": f["cantidad"],
-                "Precio Venta Unitario": _monto(f["precio_unitario"]),
-                "Costo Venta Unitario": _monto(f["costo_unitario"]),
+                "Precio Venta Unitario": _monto(f["precio_venta"]),
+                "Costo Venta Unitario": _monto(f["costo_venta"]),
                 "Total Venta": _monto(f["total_venta"]),
                 "Total Costo": _monto(f["total_costo"]),
                 "Utilidad": _monto(f["utilidad"]),
@@ -469,7 +447,7 @@ class ExportarExcelView(APIView):
             if columna == "Fecha":
                 formato = "DD/MM/YYYY"
             elif columna in self.COLUMNAS_DINERO:
-                formato = "#,##0.00"
+                formato = "#,##0"
             if formato:
                 for (celda,) in hoja.iter_rows(min_row=2, min_col=indice, max_col=indice):
                     celda.number_format = formato
@@ -491,6 +469,25 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 500
 
 
+
+
+def _rango_opcional(params):
+    """fecha_inicio y fecha_fin opcionales (cada una por separado). Error 400 si el formato es inválido."""
+    try:
+        inicio = _parsear_fecha(params["fecha_inicio"], "fecha_inicio") if params.get("fecha_inicio") else None
+        fin = _parsear_fecha(params["fecha_fin"], "fecha_fin") if params.get("fecha_fin") else None
+    except FiltroInvalido as error:
+        raise ValidationError({"error": str(error)})
+    return inicio, fin
+
+
+def _tipo_compra_o_400(params):
+    try:
+        return _leer_tipo_compra(params)
+    except FiltroInvalido as error:
+        raise ValidationError({"error": str(error)})
+
+
 class ClienteListView(generics.ListAPIView):
     """
     GET /api/finanzas/clientes/
@@ -504,59 +501,54 @@ class ClienteListView(generics.ListAPIView):
 
     def get_queryset(self):
         # Cada total se calcula en su propia subconsulta. Si se hacen dos JOIN
-        # (facturas y cuentas) en la misma consulta, las filas se multiplican y
-        # la deuda sale inflada (deuda real × número de facturas del cliente).
-        facturas_del_cliente = (
-            Factura.objects.filter(cliente=OuterRef("pk"))
+        # (ventas y cuentas) en la misma consulta, las filas se multiplican y
+        # la deuda sale inflada (deuda real × número de ventas del cliente).
+        ventas_del_cliente = (
+            Venta.objects.filter(cliente=OuterRef("pk"))
             .order_by()
             .values("cliente")
             .annotate(total=Count("pk"))
             .values("total")
         )
         deuda_del_cliente = (
-            CuentaPorCobrar.objects.filter(cliente=OuterRef("pk"), estado=CuentaPorCobrar.PENDIENTE)
+            CuentaPorCobrar.objects.abiertas()
+            .filter(cliente=OuterRef("pk"))
             .order_by()
             .values("cliente")
             .annotate(total=Sum("monto"))
             .values("total")
         )
         qs = Cliente.objects.annotate(
-            total_facturas=Coalesce(Subquery(facturas_del_cliente, output_field=IntegerField()), 0),
-            total_deuda=Coalesce(
-                Subquery(deuda_del_cliente, output_field=DecimalField(max_digits=14, decimal_places=2)),
-                Value(Decimal("0")),
-                output_field=DecimalField(max_digits=14, decimal_places=2),
-            ),
-        ).order_by("nombre")
+            total_facturas=Coalesce(Subquery(ventas_del_cliente, output_field=IntegerField()), 0),
+            total_deuda=Coalesce(Subquery(deuda_del_cliente, output_field=IntegerField()), 0),
+        ).order_by("nombre", "id_cliente")
 
         search = self.request.query_params.get("search")
         if search:
             search = search.strip()
-            qs = qs.filter(
-                Q(nombre__icontains=search)
-                | Q(cliente_id__icontains=search)
-                | Q(contacto__icontains=search)
-            )
+            q = Q(nombre__icontains=search) | Q(contacto__icontains=search)
+            if search.isdigit():
+                q |= Q(id_cliente=int(search))
+            qs = qs.filter(q)
         return qs
 
 
-ORDEN_PRODUCTOS = ("producto", "total_vendido", "total_ingresos", "precio_venta", "no_parte")
+ORDEN_PRODUCTOS = ("producto", "total_vendido", "total_ingresos", "id_producto")
 
 
 class ProductoListView(generics.ListAPIView):
     """
     GET /api/finanzas/productos/
     Parámetros de consulta opcionales:
-      - search: Filtra por nombre o N° de parte.
+      - search: Filtra por nombre o id_producto.
       - categoria: Filtra por categoría exacta (ej: Abarrotes, Limpieza).
       - unidad_negocio: Filtra por unidad de negocio.
       - fecha_inicio, fecha_fin: período para calcular total_vendido y total_ingresos
         (sin fechas = todas las ventas).
-      - tipo_compra: FISICA u ONLINE (para los mismos totales).
-      - ordering: producto (por defecto), total_vendido, total_ingresos, precio_venta o no_parte;
+      - tipo_compra: Física o En Línea (para los mismos totales).
+      - ordering: producto (por defecto), total_vendido, total_ingresos o id_producto;
         con "-" adelante es de mayor a menor. Productos más vendidos: ?ordering=-total_vendido
       - page, page_size: Paginación.
-    Las ventas anuladas no se cuentan.
     """
     serializer_class = ProductoSerializer
     pagination_class = StandardResultsSetPagination
@@ -565,34 +557,27 @@ class ProductoListView(generics.ListAPIView):
         params = self.request.query_params
 
         # Ventas que cuentan para los totales de cada producto
-        cuenta = Q(ventas__factura__anulada=False)
-        fecha_ini, fecha_fin = params.get("fecha_inicio"), params.get("fecha_fin")
-        try:
-            if fecha_ini:
-                cuenta &= Q(ventas__factura__fecha__gte=_inicio_del_dia(_parsear_fecha(fecha_ini, "fecha_inicio")))
-            if fecha_fin:
-                dia_fin = _parsear_fecha(fecha_fin, "fecha_fin")
-                cuenta &= Q(ventas__factura__fecha__lt=_inicio_del_dia(dia_fin + timedelta(days=1)))
-            tipo_compra = _leer_tipo_compra(params)
-        except FiltroInvalido as error:
-            raise ValidationError({"error": str(error)})
+        cuenta = Q()
+        fecha_ini, fecha_fin = _rango_opcional(params)
+        if fecha_ini:
+            cuenta &= Q(ventas__venta__fecha__gte=fecha_ini)
+        if fecha_fin:
+            cuenta &= Q(ventas__venta__fecha__lte=fecha_fin)
+        tipo_compra = _tipo_compra_o_400(params)
         if tipo_compra:
-            cuenta &= Q(ventas__factura__tipo_compra_id=tipo_compra)
+            cuenta &= Q(ventas__venta__tipo_compra=tipo_compra)
 
-        monto = DecimalField(max_digits=14, decimal_places=2)
         qs = Producto.objects.annotate(
             total_vendido=Coalesce(Sum("ventas__cantidad", filter=cuenta), 0),
             total_ingresos=Coalesce(
-                Sum(F("ventas__cantidad") * F("ventas__precio_unitario"), filter=cuenta, output_field=monto),
-                Value(Decimal("0")),
-                output_field=monto,
+                Sum(F("ventas__cantidad") * F("ventas__precio_venta"), filter=cuenta), 0
             ),
         )
 
         search = params.get("search")
         if search:
             search = search.strip()
-            qs = qs.filter(Q(producto__icontains=search) | Q(no_parte__icontains=search))
+            qs = qs.filter(Q(producto__icontains=search) | Q(id_producto__icontains=search))
 
         categoria = params.get("categoria")
         if categoria:
@@ -607,62 +592,52 @@ class ProductoListView(generics.ListAPIView):
             raise ValidationError(
                 {"error": f"'ordering' inválido. Usa: {', '.join(ORDEN_PRODUCTOS)} (con '-' para mayor a menor)."}
             )
-        return qs.order_by(orden, "no_parte")
+        return qs.order_by(orden, "id_producto")
 
 
-class FacturaListView(generics.ListAPIView):
+class VentaListView(generics.ListAPIView):
     """
     GET /api/finanzas/facturas/
     Parámetros de consulta opcionales:
-      - cliente: ID del cliente.
-      - tipo_compra: FISICA o ONLINE.
+      - cliente: id_cliente.
+      - tipo_compra: Física o En Línea.
       - por_cobrar: true o false.
-      - fecha_inicio: Formato DD/MM/AAAA o AAAA-MM-DD.
-      - fecha_fin: Formato DD/MM/AAAA o AAAA-MM-DD.
+      - fecha_inicio, fecha_fin: Formato DD/MM/AAAA o AAAA-MM-DD.
       - page, page_size: Paginación.
     """
-    serializer_class = FacturaSerializer
+    serializer_class = VentaSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         qs = (
-            Factura.objects.select_related("cliente", "tipo_compra", "cuenta_por_cobrar")
+            Venta.objects.select_related("cliente", "cuenta_por_cobrar")
             .annotate(
-                total_venta=Sum(F("detalles__cantidad") * F("detalles__precio_unitario")),
+                total_venta=Sum(F("detalles__cantidad") * F("detalles__precio_venta")),
                 items_count=Count("detalles"),
             )
-            .order_by("-fecha")
+            .order_by("-fecha", "-id_factura")
         )
         params = self.request.query_params
 
         cliente = params.get("cliente")
         if cliente:
-            qs = qs.filter(cliente_id=cliente.strip())
+            if not cliente.strip().isdigit():
+                raise ValidationError({"error": "'cliente' debe ser un id_cliente numérico."})
+            qs = qs.filter(cliente_id=int(cliente))
 
-        tipo_compra = params.get("tipo_compra")
+        tipo_compra = _tipo_compra_o_400(params)
         if tipo_compra:
-            qs = qs.filter(tipo_compra_id=tipo_compra.strip().upper())
+            qs = qs.filter(tipo_compra=tipo_compra)
 
         por_cobrar = params.get("por_cobrar")
         if por_cobrar is not None and por_cobrar != "":
             qs = qs.filter(por_cobrar=por_cobrar.strip().lower() in VALORES_VERDADEROS)
 
-        fecha_ini = params.get("fecha_inicio")
+        fecha_ini, fecha_fin = _rango_opcional(params)
         if fecha_ini:
-            try:
-                dt_ini = _parsear_fecha(fecha_ini, "fecha_inicio")
-                qs = qs.filter(fecha__gte=_inicio_del_dia(dt_ini))
-            except FiltroInvalido:
-                pass
-
-        fecha_fin = params.get("fecha_fin")
+            qs = qs.filter(fecha__gte=fecha_ini)
         if fecha_fin:
-            try:
-                dt_fin = _parsear_fecha(fecha_fin, "fecha_fin")
-                qs = qs.filter(fecha__lt=_inicio_del_dia(dt_fin + timedelta(days=1)))
-            except FiltroInvalido:
-                pass
-
+            qs = qs.filter(fecha__lte=fecha_fin)
         return qs
 
 
@@ -670,35 +645,34 @@ class DetalleVentaListView(generics.ListAPIView):
     """
     GET /api/finanzas/ventas/
     Parámetros de consulta opcionales:
-      - factura: ID de la factura.
-      - producto: N° de parte del producto.
-      - tipo_compra: FISICA o ONLINE.
-      - estado_pago: PAGADO, PENDIENTE o ANULADO (se calcula desde la factura y su cuenta por cobrar).
+      - factura: id_factura.
+      - producto: id_producto.
+      - tipo_compra: Física o En Línea.
+      - estado_pago: PAGADO o PENDIENTE (se calcula desde la venta y su cuenta por cobrar).
       - page, page_size: Paginación.
     """
     serializer_class = DetalleVentaSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        qs = DetalleVenta.objects.con_estado_pago().order_by("-factura__fecha", "-id")
+        qs = DetalleVenta.objects.con_estado_pago().order_by("-venta__fecha", "-id_detalle")
         params = self.request.query_params
 
         factura = params.get("factura")
         if factura:
-            qs = qs.filter(factura_id=factura.strip())
+            qs = qs.filter(venta_id=factura.strip())
 
         producto = params.get("producto")
         if producto:
-            qs = qs.filter(no_parte_id=producto.strip())
+            qs = qs.filter(producto_id=producto.strip())
 
         estado_pago = params.get("estado_pago")
         if estado_pago:
             qs = qs.filter(estado_pago=estado_pago.strip().upper())
 
-        tipo_compra = params.get("tipo_compra")
+        tipo_compra = _tipo_compra_o_400(params)
         if tipo_compra:
-            qs = qs.filter(factura__tipo_compra_id=tipo_compra.strip().upper())
-
+            qs = qs.filter(venta__tipo_compra=tipo_compra)
         return qs
 
 
@@ -706,9 +680,9 @@ class CuentaPorCobrarListView(generics.ListAPIView):
     """
     GET /api/finanzas/cuentas-por-cobrar/
     Parámetros de consulta opcionales:
-      - cliente: ID del cliente.
-      - factura: ID de la factura.
-      - estado: PENDIENTE (aún no vence), VENCIDA o PAGADA.
+      - cliente: id_cliente.
+      - factura: id_factura.
+      - estado: PENDIENTE (aún no vence), VENCIDA o PAGADA (estado a la fecha de hoy).
       - vencidas: true para solo vencidas, false para todas menos las vencidas.
       - page, page_size: Paginación.
     El bloque "resumen" trae el total por cobrar (pendientes + vencidas) y el detalle por estado.
@@ -719,18 +693,20 @@ class CuentaPorCobrarListView(generics.ListAPIView):
     def get_queryset(self):
         qs = (
             CuentaPorCobrar.objects.con_estado_actual()
-            .select_related("cliente", "factura")
-            .order_by("fecha_vencimiento", "pk")
+            .select_related("cliente", "venta")
+            .order_by("fecha_vencimiento", "id_cuenta")
         )
         params = self.request.query_params
 
         cliente = params.get("cliente")
         if cliente:
-            qs = qs.filter(cliente_id=cliente.strip())
+            if not cliente.strip().isdigit():
+                raise ValidationError({"error": "'cliente' debe ser un id_cliente numérico."})
+            qs = qs.filter(cliente_id=int(cliente))
 
         factura = params.get("factura")
         if factura:
-            qs = qs.filter(factura_id=factura.strip())
+            qs = qs.filter(venta_id=factura.strip())
 
         estado = params.get("estado")
         if estado:
@@ -745,7 +721,6 @@ class CuentaPorCobrarListView(generics.ListAPIView):
                 qs = qs.filter(estado_actual=CuentaPorCobrar.VENCIDA)
             else:
                 qs = qs.exclude(estado_actual=CuentaPorCobrar.VENCIDA)
-
         return qs
 
     def list(self, request, *args, **kwargs):
@@ -753,8 +728,8 @@ class CuentaPorCobrarListView(generics.ListAPIView):
         # Totales para los indicadores del dashboard y de la pantalla de Cobros
         qs_filtrado = self.filter_queryset(self.get_queryset()).order_by()
         por_estado = {
-            codigo: {"nombre": nombre, "cantidad": 0, "monto": 0.0}
-            for codigo, nombre in CuentaPorCobrar.ESTADO_ACTUAL_CHOICES
+            codigo: {"nombre": nombre, "cantidad": 0, "monto": 0}
+            for codigo, nombre in CuentaPorCobrar.ESTADO_CHOICES
         }
         for fila in qs_filtrado.values("estado_actual").annotate(cantidad=Count("pk"), monto=Sum("monto")):
             por_estado[fila["estado_actual"]].update(cantidad=fila["cantidad"], monto=_monto(fila["monto"]))
@@ -771,11 +746,8 @@ class GastoInsumoListView(generics.ListAPIView):
     """
     GET /api/finanzas/gastos/
     Parámetros de consulta opcionales:
-      - tipo: COMPRA (compras de productos) u OTRO (arriendo, flete, servicios, etc.).
-      - categoria: categoría del gasto (INSUMOS, TRANSPORTE, SERVICIOS, ARRIENDO, MANTENIMIENTO, LIMPIEZA, OTROS).
-      - categoria_producto: categoría del producto comprado (ej: Abarrotes).
-      - producto: N° de parte del producto.
-      - proveedor: búsqueda parcial por nombre del proveedor.
+      - producto: id_producto.
+      - categoria: categoría del producto comprado (ej: Abarrotes).
       - fecha_inicio, fecha_fin: Rango de fechas.
       - page, page_size: Paginación.
     """
@@ -783,69 +755,31 @@ class GastoInsumoListView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        qs = GastoInsumo.objects.select_related("producto").order_by("-fecha", "-pk")
+        qs = GastoInsumo.objects.select_related("producto").order_by("-fecha", "-id_gasto")
         params = self.request.query_params
-
-        tipo = params.get("tipo")
-        if tipo:
-            tipo = tipo.strip().upper()
-            if tipo not in TIPOS_GASTO_VALIDOS:
-                raise ValidationError({"error": f"'tipo' inválido. Usa: {', '.join(TIPOS_GASTO_VALIDOS)}."})
-            qs = qs.filter(tipo=tipo)
 
         categoria = params.get("categoria")
         if categoria:
-            categoria = categoria.strip().upper()
-            if categoria not in CATEGORIAS_GASTO_VALIDAS:
-                raise ValidationError(
-                    {"error": f"'categoria' inválida. Usa: {', '.join(CATEGORIAS_GASTO_VALIDAS)}."}
-                )
-            qs = qs.filter(categoria=categoria)
-
-        categoria_producto = params.get("categoria_producto")
-        if categoria_producto:
-            qs = qs.filter(producto__categoria__iexact=categoria_producto.strip())
+            qs = qs.filter(producto__categoria__iexact=categoria.strip())
 
         producto = params.get("producto")
         if producto:
             qs = qs.filter(producto_id=producto.strip())
 
-        proveedor = params.get("proveedor")
-        if proveedor:
-            qs = qs.filter(proveedor__icontains=proveedor.strip())
-
-        fecha_ini = params.get("fecha_inicio")
+        fecha_ini, fecha_fin = _rango_opcional(params)
         if fecha_ini:
-            try:
-                dt_ini = _parsear_fecha(fecha_ini, "fecha_inicio")
-                qs = qs.filter(fecha__gte=dt_ini)
-            except FiltroInvalido:
-                pass
-
-        fecha_fin = params.get("fecha_fin")
+            qs = qs.filter(fecha__gte=fecha_ini)
         if fecha_fin:
-            try:
-                dt_fin = _parsear_fecha(fecha_fin, "fecha_fin")
-                qs = qs.filter(fecha__lte=dt_fin)
-            except FiltroInvalido:
-                pass
-
+            qs = qs.filter(fecha__lte=fecha_fin)
         return qs
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
         qs_filtrado = self.filter_queryset(self.get_queryset()).order_by()
-        total_gastos = qs_filtrado.aggregate(total=Sum("monto"))["total"] or Decimal("0")
-        por_tipo = {
-            codigo: {"nombre": nombre, "cantidad": 0, "monto": 0.0}
-            for codigo, nombre in GastoInsumo.TIPO_CHOICES
-        }
-        for fila in qs_filtrado.values("tipo").annotate(cantidad=Count("pk"), monto=Sum("monto")):
-            por_tipo[fila["tipo"]].update(cantidad=fila["cantidad"], monto=_monto(fila["monto"]))
+        totales = qs_filtrado.aggregate(cantidad=Count("pk"), monto=Sum("monto"))
         response.data["resumen"] = {
-            "total_registros_gasto": qs_filtrado.count(),
-            "monto_total_gastos": float(total_gastos),
-            "por_tipo": por_tipo,
+            "total_registros_gasto": totales["cantidad"],
+            "monto_total_gastos": _monto(totales["monto"]),
         }
         return response
 
@@ -853,48 +787,28 @@ class GastoInsumoListView(generics.ListAPIView):
 class OpcionesFiltrosView(APIView):
     """
     GET /api/finanzas/opciones-filtros/
-    Devuelve listas precomputadas de categorías, unidades de negocio,
-    tipos de compra y rango de fechas disponibles en la base de datos para
-    que el equipo de Frontend inicialice selects, filtros y calendarios.
+    Devuelve listas de categorías, unidades de negocio, tipos de compra, estados y
+    rango de fechas disponibles en la base de datos para que el Frontend inicialice
+    selects, filtros y calendarios.
     """
     def get(self, request):
-        from django.db.models import Max, Min
-
-        categorias = list(
-            Producto.objects.values_list("categoria", flat=True)
-            .distinct()
-            .order_by("categoria")
-        )
+        categorias = list(Producto.objects.values_list("categoria", flat=True).distinct().order_by("categoria"))
         unidades = list(
-            Producto.objects.values_list("unidad_negocio", flat=True)
-            .distinct()
-            .order_by("unidad_negocio")
+            Producto.objects.values_list("unidad_negocio", flat=True).distinct().order_by("unidad_negocio")
         )
-        tipos_compra = [
-            {"codigo": codigo, "nombre": nombre}
-            for codigo, nombre in TipoCompra.TIPO_CHOICES
-        ]
+
         def _opciones(choices):
             return [{"codigo": codigo, "nombre": nombre} for codigo, nombre in choices]
 
-        estados_pago = _opciones(ESTADO_PAGO_CHOICES)
-
-        rango_fechas = Factura.objects.aggregate(
-            min_fecha=Min("fecha"),
-            max_fecha=Max("fecha"),
-        )
-
-        min_f = _a_fecha_local(rango_fechas.get("min_fecha"))
-        max_f = _a_fecha_local(rango_fechas.get("max_fecha"))
+        rango = Venta.objects.aggregate(min_fecha=Min("fecha"), max_fecha=Max("fecha"))
+        min_f, max_f = rango["min_fecha"], rango["max_fecha"]
 
         return Response({
             "categorias": [c for c in categorias if c],
             "unidades_negocio": [u for u in unidades if u],
-            "tipos_compra": tipos_compra,
-            "estados_pago": estados_pago,
-            "estados_cuenta": _opciones(CuentaPorCobrar.ESTADO_ACTUAL_CHOICES),
-            "tipos_gasto": _opciones(GastoInsumo.TIPO_CHOICES),
-            "categorias_gasto": _opciones(GastoInsumo.CATEGORIA_CHOICES),
+            "tipos_compra": _opciones(Venta.TIPO_COMPRA_CHOICES),
+            "estados_pago": _opciones(ESTADO_PAGO_CHOICES),
+            "estados_cuenta": _opciones(CuentaPorCobrar.ESTADO_CHOICES),
             "rango_fechas_disponible": {
                 "min": min_f.strftime("%Y-%m-%d") if min_f else None,
                 "max": max_f.strftime("%Y-%m-%d") if max_f else None,
@@ -907,7 +821,7 @@ class OpcionesFiltrosView(APIView):
 class ApiCatalogView(APIView):
     """
     GET /api/
-    Índice interactivo de la API para los equipos de Frontend y Base de Datos.
+    Índice de la API para los equipos de Frontend y Base de Datos.
     Es público: no requiere iniciar sesión.
     """
     permission_classes = [AllowAny]
@@ -916,8 +830,9 @@ class ApiCatalogView(APIView):
         host = request.build_absolute_uri("/").rstrip("/")
         return Response({
             "nombre": "API Caja Clara - Módulo Finanzas Supermercado",
-            "version": "1.3",
-            "descripcion": "Endpoints REST listos para consumo del Frontend y agnósticos al motor de base de datos.",
+            "version": "2.0",
+            "descripcion": "Endpoints REST sobre el esquema del equipo de datos (cliente, producto, venta, "
+            "detalle_venta, cuenta_por_cobrar, gastos_insumo). Montos enteros en CLP.",
             "autenticacion": {
                 "tipo": "JWT (Bearer)",
                 "como_usar": "Inicia sesión en /api/auth/login/ y envía el token en cada consulta: "
@@ -939,7 +854,7 @@ class ApiCatalogView(APIView):
                     "url": f"{host}/api/finanzas/resumen-mensual/",
                     "metodo": "GET",
                     "descripcion": "Resumen financiero: ventas, costos, utilidad, margen %, pagos pendientes y flujo de caja (entradas, salidas, saldo).",
-                    "parametros": ["fecha_inicio", "fecha_fin", "tipo_compra"],
+                    "parametros": ["periodo", "fecha_inicio", "fecha_fin", "tipo_compra"],
                 },
                 "serie_temporal": {
                     "url": f"{host}/api/finanzas/resumen-agrupado/",
@@ -950,13 +865,13 @@ class ApiCatalogView(APIView):
                 "exportar_excel": {
                     "url": f"{host}/api/finanzas/exportar-excel/",
                     "metodo": "GET",
-                    "descripcion": "Descarga de archivo XLSX con formato contable.",
-                    "parametros": ["fecha_inicio", "fecha_fin", "tipo_compra"],
+                    "descripcion": "Descarga de archivo XLSX con el detalle de ventas.",
+                    "parametros": ["periodo", "fecha_inicio", "fecha_fin", "tipo_compra"],
                 },
                 "clientes": {
                     "url": f"{host}/api/finanzas/clientes/",
                     "metodo": "GET",
-                    "descripcion": "Listado paginado de clientes con conteo de facturas y saldo deudor.",
+                    "descripcion": "Listado paginado de clientes con conteo de facturas y deuda abierta.",
                     "parametros": ["search", "page", "page_size"],
                 },
                 "productos": {
@@ -968,13 +883,13 @@ class ApiCatalogView(APIView):
                 "facturas": {
                     "url": f"{host}/api/finanzas/facturas/",
                     "metodo": "GET",
-                    "descripcion": "Listado paginado de facturas/ventas con montos calculados y estado de pago.",
+                    "descripcion": "Listado paginado de ventas (tabla venta) con total y estado de pago.",
                     "parametros": ["cliente", "tipo_compra", "por_cobrar", "fecha_inicio", "fecha_fin", "page", "page_size"],
                 },
                 "ventas_detalles": {
                     "url": f"{host}/api/finanzas/ventas/",
                     "metodo": "GET",
-                    "descripcion": "Listado paginado de líneas de venta individuales.",
+                    "descripcion": "Listado paginado de líneas de venta (tabla detalle_venta).",
                     "parametros": ["factura", "producto", "tipo_compra", "estado_pago", "page", "page_size"],
                 },
                 "cuentas_por_cobrar": {
@@ -986,51 +901,43 @@ class ApiCatalogView(APIView):
                 "gastos": {
                     "url": f"{host}/api/finanzas/gastos/",
                     "metodo": "GET",
-                    "descripcion": "Listado paginado de gastos: compras de productos y otros gastos del negocio.",
-                    "parametros": [
-                        "tipo", "categoria", "categoria_producto", "producto", "proveedor",
-                        "fecha_inicio", "fecha_fin", "page", "page_size",
-                    ],
+                    "descripcion": "Listado paginado de gastos en insumos (tabla gastos_insumo).",
+                    "parametros": ["producto", "categoria", "fecha_inicio", "fecha_fin", "page", "page_size"],
                 },
                 "registrar_venta": {
                     "url": f"{host}/api/finanzas/facturas/",
                     "metodo": "POST",
                     "descripcion": "Registra una venta al contado o a crédito (crea su cuenta por cobrar).",
-                    "cuerpo": ["items[producto, cantidad, precio_unitario?]", "tipo_compra", "por_cobrar",
-                               "cliente", "fecha_vencimiento", "fecha"],
+                    "cuerpo": ["items[id_producto, cantidad, precio_venta?, costo_venta?]", "id_cliente",
+                               "tipo_compra", "por_cobrar", "fecha_vencimiento", "fecha"],
                 },
                 "detalle_venta": {
-                    "url": f"{host}/api/finanzas/facturas/<factura>/",
+                    "url": f"{host}/api/finanzas/facturas/<id_factura>/",
                     "metodo": "GET",
                     "descripcion": "Una venta con sus productos y su cuenta por cobrar.",
                 },
-                "anular_venta": {
-                    "url": f"{host}/api/finanzas/facturas/<factura>/anular/",
-                    "metodo": "POST",
-                    "descripcion": "Anula una venta (si estaba pagada, primero hay que revertir el pago).",
-                },
                 "pagar_cuenta": {
-                    "url": f"{host}/api/finanzas/cuentas-por-cobrar/<id>/pagar/",
+                    "url": f"{host}/api/finanzas/cuentas-por-cobrar/<id_cuenta>/pagar/",
                     "metodo": "POST",
                     "descripcion": "Registra el pago completo de una deuda.",
                     "cuerpo": ["fecha_pago?"],
                 },
                 "revertir_pago": {
-                    "url": f"{host}/api/finanzas/cuentas-por-cobrar/<id>/revertir-pago/",
+                    "url": f"{host}/api/finanzas/cuentas-por-cobrar/<id_cuenta>/revertir-pago/",
                     "metodo": "POST",
                     "descripcion": "Deshace un pago registrado por error.",
                 },
                 "registrar_gasto": {
                     "url": f"{host}/api/finanzas/gastos/",
                     "metodo": "POST",
-                    "descripcion": "Registra una compra de productos o un otro gasto (arriendo, flete, servicios…).",
-                    "cuerpo": ["tipo", "monto", "producto?", "categoria?", "proveedor?", "descripcion?", "fecha?"],
+                    "descripcion": "Registra un gasto en insumos (compra de un producto).",
+                    "cuerpo": ["id_producto", "monto", "fecha?"],
                 },
                 "registrar_cliente": {
                     "url": f"{host}/api/finanzas/clientes/",
                     "metodo": "POST",
                     "descripcion": "Registra un cliente.",
-                    "cuerpo": ["nombre", "contacto?"],
+                    "cuerpo": ["nombre", "contacto"],
                 },
             },
         })

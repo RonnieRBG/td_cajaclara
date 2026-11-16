@@ -3,39 +3,44 @@ Endpoints que REGISTRAN datos (POST). Los listados de solo lectura están en vie
 
 Errores de validación: 400 con {"campo": ["mensaje"]}.
 Reglas del negocio no cumplidas (ej.: pagar dos veces): 400 con {"error": "mensaje"}.
+
+No hay endpoints para borrar: el usuario de la API en la base del equipo de datos
+(cajaclara_app_rw) solo puede leer, insertar y actualizar.
 """
 
-from django.db.models import Count, F, Sum
+from django.db.models import Count, F, Prefetch, Sum
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import servicios
-from .models import CuentaPorCobrar, Factura
+from .models import CuentaPorCobrar, DetalleVenta, Venta
 from .serializers import (
     ClienteEntradaSerializer,
     ClienteSerializer,
     CuentaPorCobrarSerializer,
-    FacturaDetalleSerializer,
     GastoEntradaSerializer,
     GastoInsumoSerializer,
     PagoEntradaSerializer,
+    VentaDetalleSerializer,
     VentaEntradaSerializer,
 )
-from .views import ClienteListView, FacturaListView, GastoInsumoListView
+from .views import ClienteListView, GastoInsumoListView, VentaListView
 
 
 def _error(regla):
     return Response({"error": str(regla)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-def _factura_con_detalle(pk):
+def _venta_con_detalle(pk):
     return get_object_or_404(
-        Factura.objects.select_related("cliente", "tipo_compra", "cuenta_por_cobrar__cliente")
-        .prefetch_related("detalles__no_parte")
+        Venta.objects.select_related("cliente", "cuenta_por_cobrar__cliente")
+        .prefetch_related(
+            Prefetch("detalles", queryset=DetalleVenta.objects.order_by("id_detalle"))
+        )
         .annotate(
-            total_venta=Sum(F("detalles__cantidad") * F("detalles__precio_unitario")),
+            total_venta=Sum(F("detalles__cantidad") * F("detalles__precio_venta")),
             items_count=Count("detalles"),
         ),
         pk=pk,
@@ -46,21 +51,21 @@ def _factura_con_detalle(pk):
 # Ventas
 # ------------------------------------------------------------------------------
 
-class FacturaListCreateView(FacturaListView):
+class VentaListCreateView(VentaListView):
     """
-    GET  /api/finanzas/facturas/  → listado (ver FacturaListView)
+    GET  /api/finanzas/facturas/  → listado (ver VentaListView)
     POST /api/finanzas/facturas/  → registrar una venta
 
     Cuerpo:
     {
-      "items": [{"producto": "P100055", "cantidad": 2, "precio_unitario": 1500}],
-      "tipo_compra": "FISICA",          // o "ONLINE" (por defecto FISICA)
-      "cliente": "179",                 // obligatorio si es a crédito
+      "items": [{"id_producto": "P100055", "cantidad": 2, "precio_venta": 1500, "costo_venta": 1100}],
+      "id_cliente": 179,                // obligatorio (en el esquema de datos toda venta tiene cliente)
+      "tipo_compra": "Física",          // o "En Línea" (por defecto Física)
       "por_cobrar": false,              // true = venta a crédito
       "fecha_vencimiento": "2026-12-15",// obligatorio si es a crédito
-      "fecha": "2026-11-11T10:30:00"    // opcional, por defecto ahora
+      "fecha": "2026-11-11"             // opcional, por defecto hoy
     }
-    Si "precio_unitario" no se envía, se usa el precio de catálogo del producto.
+    Si "precio_venta" o "costo_venta" no se envían, se usan los de la última venta del producto.
     Si es a crédito, se crea su cuenta por cobrar por el total de la venta.
     """
 
@@ -68,34 +73,18 @@ class FacturaListCreateView(FacturaListView):
         entrada = VentaEntradaSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
         try:
-            factura = servicios.registrar_venta(**entrada.validated_data)
+            venta = servicios.registrar_venta(**entrada.validated_data)
         except servicios.ReglaDeNegocio as regla:
             return _error(regla)
-        datos = FacturaDetalleSerializer(_factura_con_detalle(factura.pk)).data
+        datos = VentaDetalleSerializer(_venta_con_detalle(venta.pk)).data
         return Response(datos, status=status.HTTP_201_CREATED)
 
 
-class FacturaDetalleView(APIView):
-    """GET /api/finanzas/facturas/{factura}/ → la venta con sus productos y su cuenta por cobrar."""
+class VentaDetalleView(APIView):
+    """GET /api/finanzas/facturas/{id_factura}/ → la venta con sus productos y su cuenta por cobrar."""
 
     def get(self, request, pk):
-        return Response(FacturaDetalleSerializer(_factura_con_detalle(pk)).data)
-
-
-class AnularFacturaView(APIView):
-    """
-    POST /api/finanzas/facturas/{factura}/anular/
-    Anula la venta completa: deja de sumar en los resúmenes. Si era a crédito y no se
-    había pagado, su deuda desaparece. Si ya se pagó, primero hay que revertir el pago.
-    """
-
-    def post(self, request, pk):
-        factura = get_object_or_404(Factura, pk=pk)
-        try:
-            servicios.anular_factura(factura)
-        except servicios.ReglaDeNegocio as regla:
-            return _error(regla)
-        return Response(FacturaDetalleSerializer(_factura_con_detalle(pk)).data)
+        return Response(VentaDetalleSerializer(_venta_con_detalle(pk)).data)
 
 
 # ------------------------------------------------------------------------------
@@ -104,7 +93,7 @@ class AnularFacturaView(APIView):
 
 class PagarCuentaView(APIView):
     """
-    POST /api/finanzas/cuentas-por-cobrar/{id}/pagar/
+    POST /api/finanzas/cuentas-por-cobrar/{id_cuenta}/pagar/
     Cuerpo (opcional): {"fecha_pago": "2026-11-11"}  → por defecto, hoy.
     Registra el pago completo de la deuda.
     """
@@ -122,8 +111,8 @@ class PagarCuentaView(APIView):
 
 class RevertirPagoView(APIView):
     """
-    POST /api/finanzas/cuentas-por-cobrar/{id}/revertir-pago/
-    Deshace un pago registrado por error: la cuenta vuelve a quedar pendiente.
+    POST /api/finanzas/cuentas-por-cobrar/{id_cuenta}/revertir-pago/
+    Deshace un pago registrado por error: la cuenta vuelve a quedar abierta.
     """
 
     def post(self, request, pk):
@@ -142,17 +131,17 @@ class RevertirPagoView(APIView):
 class GastoListCreateView(GastoInsumoListView):
     """
     GET  /api/finanzas/gastos/  → listado (ver GastoInsumoListView)
-    POST /api/finanzas/gastos/  → registrar un gasto
-
-    Compra de productos:  {"tipo": "COMPRA", "producto": "P100055", "monto": 24000, "proveedor": "Distribuidora Central"}
-    Otro gasto:           {"tipo": "OTRO", "categoria": "ARRIENDO", "monto": 350000, "descripcion": "Arriendo noviembre"}
-    "fecha" es opcional (por defecto, hoy).
+    POST /api/finanzas/gastos/  → registrar un gasto en insumos:
+         {"id_producto": "P100055", "monto": 24000, "fecha": "2026-11-11"}   ("fecha" opcional, por defecto hoy)
     """
 
     def post(self, request):
         entrada = GastoEntradaSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
-        gasto = entrada.save()
+        try:
+            gasto = servicios.registrar_gasto(**entrada.validated_data)
+        except servicios.ReglaDeNegocio as regla:
+            return _error(regla)
         return Response(GastoInsumoSerializer(gasto).data, status=status.HTTP_201_CREATED)
 
 
@@ -160,6 +149,7 @@ class ClienteListCreateView(ClienteListView):
     """
     GET  /api/finanzas/clientes/  → listado (ver ClienteListView)
     POST /api/finanzas/clientes/  → registrar un cliente: {"nombre": "...", "contacto": "+56 9 ..."}
+         (contacto es obligatorio y único, como en el esquema de datos)
     """
 
     def post(self, request):

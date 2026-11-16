@@ -1,4 +1,4 @@
-﻿id_gasto,id_producto,Fecha,Monto
+id_gasto,id_producto,fecha,monto
 1,P161900,2010-01-05,88
 2,P209965,2010-01-05,149
 3,P840906,2010-01-05,176

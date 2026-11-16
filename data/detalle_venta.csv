@@ -1,4 +1,4 @@
-﻿id_detalle,id_factura,id_producto,cantidad,precio_venta,costo_venta
+id_detalle,id_factura,id_producto,cantidad,precio_venta,costo_venta
 1,INV7811414-20100105-F,P126966,1,777,665
 2,INV7810919-20100107-F,P874751,1,525,452
 3,INV7811412-20100107-L,P489329,1,3288,2827

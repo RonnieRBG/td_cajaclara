@@ -1,214 +1,249 @@
 """
-Pruebas de registro de ventas, pagos y gastos, y del flujo de caja.
+Pruebas de registro de ventas, pagos y gastos, del flujo de caja y del importador.
 Ejecutar con: python manage.py test finanzas
 """
 
-from datetime import datetime, time, timedelta
-from decimal import Decimal
+import csv
+import tempfile
+from datetime import date, timedelta
+from io import StringIO
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.db import connection
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from .models import Cliente, CuentaPorCobrar, Factura, GastoInsumo, Producto, TipoCompra
+from .models import Cliente, CuentaPorCobrar, DetalleVenta, GastoInsumo, Producto, Venta
 
 
 class BaseAPITest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.client.force_authenticate(get_user_model().objects.create_user("cajera", password="x"))
-        TipoCompra.objects.create(tipo_compra="FISICA")
-        TipoCompra.objects.create(tipo_compra="ONLINE")
-        self.p1 = Producto.objects.create(no_parte="P1", producto="Aceite 1L", precio_venta=1000, costo_venta=600)
-        self.p2 = Producto.objects.create(no_parte="P2", producto="Arroz 1kg", precio_venta=500, costo_venta=300)
-        self.cliente = Cliente.objects.create(cliente_id="1", nombre="Almacén San Pedro")
+        self.p1 = Producto.objects.create(id_producto="P1", producto="Aceite 1L", categoria="Abarrotes", unidad_negocio="Supermercado")
+        self.p2 = Producto.objects.create(id_producto="P2", producto="Arroz 1kg", categoria="Abarrotes", unidad_negocio="Supermercado")
+        self.cliente = Cliente.objects.create(id_cliente=1, nombre="Almacén San Pedro", contacto="+56 9 1234 5678")
         self.hoy = timezone.localdate()
 
     # Atajos
     def vender(self, **datos):
-        datos.setdefault("items", [{"producto": "P1", "cantidad": 2}])
+        datos.setdefault("items", [{"id_producto": "P1", "cantidad": 2, "precio_venta": 1000, "costo_venta": 600}])
+        datos.setdefault("id_cliente", 1)
         return self.client.post("/api/finanzas/facturas/", datos, format="json")
 
     def vender_a_credito(self, dias=10, **datos):
-        datos.update(por_cobrar=True, cliente="1", fecha_vencimiento=str(self.hoy + timedelta(days=dias)))
+        datos.update(por_cobrar=True, fecha_vencimiento=str(self.hoy + timedelta(days=dias)))
         return self.vender(**datos)
 
     def cuenta_de(self, respuesta):
-        return respuesta.json()["cuenta_por_cobrar"]["id"]
+        return respuesta.json()["cuenta_por_cobrar"]["id_cuenta"]
 
-    def pagar(self, cuenta_id, **datos):
-        return self.client.post(f"/api/finanzas/cuentas-por-cobrar/{cuenta_id}/pagar/", datos, format="json")
-
-    def momento(self, dia, hora=12):
-        return timezone.make_aware(datetime.combine(dia, time(hora))).isoformat()
+    def pagar(self, id_cuenta, **datos):
+        return self.client.post(f"/api/finanzas/cuentas-por-cobrar/{id_cuenta}/pagar/", datos, format="json")
 
 
 class RegistrarVentaTests(BaseAPITest):
     def test_venta_al_contado(self):
         r = self.vender(items=[
-            {"producto": "P1", "cantidad": 2},
-            {"producto": "P2", "cantidad": 1, "precio_unitario": "450"},
+            {"id_producto": "P1", "cantidad": 2, "precio_venta": 1000, "costo_venta": 600},
+            {"id_producto": "P2", "cantidad": 1, "precio_venta": 450, "costo_venta": 300},
         ])
         self.assertEqual(r.status_code, 201, r.content)
         datos = r.json()
-        self.assertTrue(datos["factura"].startswith("CC"))
-        self.assertEqual(Decimal(datos["total_venta"]), Decimal("2450"))  # 2×1000 + 1×450
+        self.assertTrue(datos["id_factura"].startswith("CC"))
+        self.assertLessEqual(len(datos["id_factura"]), 30)
+        self.assertEqual(datos["total_venta"], 2450)  # 2×1000 + 1×450, entero
+        self.assertEqual(datos["tipo_compra"], "Física")
         self.assertEqual(datos["estado_pago"], "PAGADO")
         self.assertIsNone(datos["cuenta_por_cobrar"])
-        self.assertEqual(len(datos["detalles"]), 2)
-        # El costo se toma del catálogo; el precio, del catálogo o del enviado
-        linea_p2 = next(d for d in datos["detalles"] if d["no_parte"] == "P2")
-        self.assertEqual(Decimal(linea_p2["precio_unitario"]), Decimal("450"))
-        self.assertEqual(Decimal(linea_p2["costo_unitario"]), Decimal("300"))
-        # Aparece en el listado de líneas de venta y en el detalle
-        self.assertEqual(self.client.get(f"/api/finanzas/ventas/?factura={datos['factura']}").json()["count"], 2)
-        self.assertEqual(self.client.get(f"/api/finanzas/facturas/{datos['factura']}/").status_code, 200)
+        self.assertEqual([d["id_detalle"] for d in datos["detalles"]], [1, 2])  # ID asignados por el backend
+        self.assertEqual(self.client.get(f"/api/finanzas/ventas/?factura={datos['id_factura']}").json()["count"], 2)
+        self.assertEqual(self.client.get(f"/api/finanzas/facturas/{datos['id_factura']}/").status_code, 200)
+
+    def test_precio_y_costo_de_la_ultima_venta(self):
+        self.vender(fecha=str(self.hoy - timedelta(days=5)), items=[
+            {"id_producto": "P1", "cantidad": 1, "precio_venta": 900, "costo_venta": 500}])
+        self.vender(fecha=str(self.hoy - timedelta(days=1)), items=[
+            {"id_producto": "P1", "cantidad": 1, "precio_venta": 1100, "costo_venta": 650}])
+        r = self.vender(items=[{"id_producto": "P1", "cantidad": 3}])
+        self.assertEqual(r.status_code, 201, r.content)
+        linea = r.json()["detalles"][0]
+        self.assertEqual((linea["precio_venta"], linea["costo_venta"]), (1100, 650))
+        # Un producto que nunca se vendió necesita precio y costo
+        r = self.vender(items=[{"id_producto": "P2", "cantidad": 1}])
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("nunca se ha vendido", r.json()["error"])
+
+    def test_tipo_compra_acepta_varias_formas(self):
+        for valor in ("En Línea", "en linea", "ONLINE"):
+            with self.subTest(valor):
+                r = self.vender(tipo_compra=valor)
+                self.assertEqual(r.status_code, 201, r.content)
+                self.assertEqual(r.json()["tipo_compra"], "En Línea")
+        self.assertEqual(self.client.get("/api/finanzas/facturas/?tipo_compra=online").json()["count"], 3)
 
     def test_venta_a_credito_crea_su_cuenta(self):
         r = self.vender_a_credito()
         self.assertEqual(r.status_code, 201, r.content)
         datos = r.json()
         self.assertEqual(datos["estado_pago"], "PENDIENTE")
-        self.assertEqual(Decimal(datos["cuenta_por_cobrar"]["monto"]), Decimal("2000"))
-        self.assertEqual(datos["cuenta_por_cobrar"]["estado_actual"], "PENDIENTE")
+        self.assertEqual(datos["cuenta_por_cobrar"]["monto"], 2000)
+        self.assertEqual(datos["cuenta_por_cobrar"]["estado"], "PENDIENTE")
+        self.assertEqual(datos["cuenta_por_cobrar"]["id_cliente"], 1)
         cliente = self.client.get("/api/finanzas/clientes/?search=San Pedro").json()["results"][0]
-        self.assertEqual(Decimal(cliente["total_deuda"]), Decimal("2000"))
+        self.assertEqual(cliente["total_deuda"], 2000)
         self.assertEqual(cliente["total_facturas"], 1)
 
     def test_validaciones_de_venta(self):
         casos = {
             "sin productos": {"items": []},
-            "producto inexistente": {"items": [{"producto": "NO-EXISTE", "cantidad": 1}]},
-            "cantidad cero": {"items": [{"producto": "P1", "cantidad": 0}]},
-            "precio negativo": {"items": [{"producto": "P1", "cantidad": 1, "precio_unitario": "-5"}]},
-            "crédito sin cliente": {"por_cobrar": True, "fecha_vencimiento": str(self.hoy)},
-            "crédito sin vencimiento": {"por_cobrar": True, "cliente": "1"},
+            "sin cliente": {"id_cliente": None},
+            "cliente inexistente": {"id_cliente": 999},
+            "producto inexistente": {"items": [{"id_producto": "NO-EXISTE", "cantidad": 1}]},
+            "cantidad cero": {"items": [{"id_producto": "P1", "cantidad": 0, "precio_venta": 1, "costo_venta": 1}]},
+            "precio cero": {"items": [{"id_producto": "P1", "cantidad": 1, "precio_venta": 0, "costo_venta": 1}]},
+            "crédito sin vencimiento": {"por_cobrar": True},
             "contado con vencimiento": {"fecha_vencimiento": str(self.hoy)},
             "canal inválido": {"tipo_compra": "TELEFONO"},
         }
         for nombre, datos in casos.items():
             with self.subTest(nombre):
                 self.assertEqual(self.vender(**datos).status_code, 400)
-        r = self.vender(por_cobrar=True, cliente="1", fecha_vencimiento=str(self.hoy - timedelta(days=1)))
+        r = self.vender(por_cobrar=True, fecha_vencimiento=str(self.hoy - timedelta(days=1)))
         self.assertEqual(r.status_code, 400)
         self.assertIn("anterior", r.json()["error"])
-        self.assertEqual(Factura.objects.count(), 0)  # nada quedó a medio guardar
+        self.assertEqual(Venta.objects.count(), 0)  # nada quedó a medio guardar
 
     def test_registrar_requiere_login(self):
         self.client.force_authenticate(None)
         self.assertEqual(self.vender().status_code, 401)
 
+    def test_ids_siguen_la_numeracion_existente(self):
+        venta = Venta.objects.create(id_factura="INV1", cliente=self.cliente, fecha=self.hoy, tipo_compra="Física")
+        DetalleVenta.objects.create(id_detalle=500, venta=venta, producto=self.p1, cantidad=1, precio_venta=10, costo_venta=5)
+        CuentaPorCobrar.objects.create(
+            id_cuenta=70, venta=Venta.objects.create(id_factura="INV2", cliente=self.cliente, fecha=self.hoy,
+                                                     tipo_compra="Física", por_cobrar=True),
+            cliente=self.cliente, monto=10, fecha_vencimiento=self.hoy, estado="PENDIENTE",
+        )
+        r = self.vender_a_credito()
+        self.assertEqual(r.json()["detalles"][0]["id_detalle"], 501)
+        self.assertEqual(r.json()["cuenta_por_cobrar"]["id_cuenta"], 71)
+
 
 class PagosTests(BaseAPITest):
     def test_pagar_y_revertir(self):
         r = self.vender_a_credito()
-        cuenta_id, factura = self.cuenta_de(r), r.json()["factura"]
+        id_cuenta, factura = self.cuenta_de(r), r.json()["id_factura"]
 
-        pago = self.pagar(cuenta_id)
+        pago = self.pagar(id_cuenta)
         self.assertEqual(pago.status_code, 200, pago.content)
         self.assertEqual(pago.json()["estado"], "PAGADA")
         self.assertEqual(pago.json()["fecha_pago"], str(self.hoy))
         self.assertEqual(self.client.get(f"/api/finanzas/facturas/{factura}/").json()["estado_pago"], "PAGADO")
         cliente = self.client.get("/api/finanzas/clientes/?search=San Pedro").json()["results"][0]
-        self.assertEqual(Decimal(cliente["total_deuda"]), 0)
+        self.assertEqual(cliente["total_deuda"], 0)
 
-        self.assertEqual(self.pagar(cuenta_id).status_code, 400)  # no se paga dos veces
+        self.assertEqual(self.pagar(id_cuenta).status_code, 400)  # no se paga dos veces
 
-        revertir = self.client.post(f"/api/finanzas/cuentas-por-cobrar/{cuenta_id}/revertir-pago/")
+        revertir = self.client.post(f"/api/finanzas/cuentas-por-cobrar/{id_cuenta}/revertir-pago/")
         self.assertEqual(revertir.status_code, 200)
         self.assertEqual(revertir.json()["estado"], "PENDIENTE")
         self.assertIsNone(revertir.json()["fecha_pago"])
         self.assertEqual(
-            self.client.post(f"/api/finanzas/cuentas-por-cobrar/{cuenta_id}/revertir-pago/").status_code, 400
+            self.client.post(f"/api/finanzas/cuentas-por-cobrar/{id_cuenta}/revertir-pago/").status_code, 400
         )
 
+    def test_revertir_una_cuenta_ya_vencida_la_deja_vencida(self):
+        r = self.vender_a_credito(fecha=str(self.hoy - timedelta(days=20)), dias=-10)
+        id_cuenta = self.cuenta_de(r)
+        self.pagar(id_cuenta, fecha_pago=str(self.hoy - timedelta(days=15)))
+        revertir = self.client.post(f"/api/finanzas/cuentas-por-cobrar/{id_cuenta}/revertir-pago/")
+        self.assertEqual(revertir.json()["estado"], "VENCIDA")
+
     def test_fechas_de_pago_invalidas(self):
-        cuenta_id = self.cuenta_de(self.vender_a_credito())
-        self.assertEqual(self.pagar(cuenta_id, fecha_pago=str(self.hoy + timedelta(days=1))).status_code, 400)
-        self.assertEqual(self.pagar(cuenta_id, fecha_pago=str(self.hoy - timedelta(days=30))).status_code, 400)
+        id_cuenta = self.cuenta_de(self.vender_a_credito())
+        self.assertEqual(self.pagar(id_cuenta, fecha_pago=str(self.hoy + timedelta(days=1))).status_code, 400)
+        self.assertEqual(self.pagar(id_cuenta, fecha_pago=str(self.hoy - timedelta(days=30))).status_code, 400)
         self.assertEqual(self.client.post("/api/finanzas/cuentas-por-cobrar/9999/pagar/").status_code, 404)
 
+    def test_estados_de_cuentas(self):
+        """VENCIDA puede venir guardada (como la deja el equipo de datos) o calcularse
+        desde una PENDIENTE cuya fecha ya pasó."""
+        def cuenta(id_cuenta, estado, vence, fecha_pago=None):
+            venta = Venta.objects.create(id_factura=f"INV{id_cuenta}", cliente=self.cliente,
+                                         fecha=self.hoy - timedelta(days=60), tipo_compra="Física", por_cobrar=True)
+            CuentaPorCobrar.objects.create(id_cuenta=id_cuenta, venta=venta, cliente=self.cliente, monto=100,
+                                           fecha_vencimiento=vence, estado=estado, fecha_pago=fecha_pago)
 
-class AnularTests(BaseAPITest):
-    def test_anular_venta_al_contado(self):
-        factura = self.vender().json()["factura"]
-        r = self.client.post(f"/api/finanzas/facturas/{factura}/anular/")
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()["estado_pago"], "ANULADO")
-        resumen = self.client.get("/api/finanzas/resumen-mensual/").json()
-        self.assertEqual(resumen["total_ingresos"], 0)
-        self.assertEqual(resumen["flujo_caja"]["entradas"]["total"], 0)
-        self.assertEqual(self.client.post(f"/api/finanzas/facturas/{factura}/anular/").status_code, 400)
-
-    def test_anular_venta_a_credito(self):
-        factura = self.vender_a_credito().json()["factura"]
-        self.assertEqual(self.client.post(f"/api/finanzas/facturas/{factura}/anular/").status_code, 200)
-        self.assertFalse(CuentaPorCobrar.objects.filter(factura_id=factura).exists())  # la deuda desaparece
-
-    def test_no_se_anula_una_venta_pagada(self):
-        r = self.vender_a_credito()
-        self.pagar(self.cuenta_de(r))
-        anular = self.client.post(f"/api/finanzas/facturas/{r.json()['factura']}/anular/")
-        self.assertEqual(anular.status_code, 400)
-        self.assertIn("revierte el pago", anular.json()["error"])
+        cuenta(1, "VENCIDA", self.hoy - timedelta(days=5))
+        cuenta(2, "PENDIENTE", self.hoy - timedelta(days=1))  # vencida por fecha
+        cuenta(3, "PENDIENTE", self.hoy + timedelta(days=5))
+        cuenta(4, "PAGADA", self.hoy - timedelta(days=30), fecha_pago=self.hoy - timedelta(days=40))
+        r = self.client.get("/api/finanzas/cuentas-por-cobrar/").json()
+        self.assertEqual({c["id_cuenta"]: c["estado_actual"] for c in r["results"]},
+                         {1: "VENCIDA", 2: "VENCIDA", 3: "PENDIENTE", 4: "PAGADA"})
+        self.assertEqual(r["resumen"]["monto_total_por_cobrar"], 300)
+        self.assertEqual(r["resumen"]["por_estado"]["VENCIDA"]["cantidad"], 2)
+        self.assertEqual(self.client.get("/api/finanzas/cuentas-por-cobrar/?estado=vencida").json()["count"], 2)
+        self.assertEqual(next(c for c in r["results"] if c["id_cuenta"] == 1)["dias_atraso"], 5)
 
 
 class GastosYClientesTests(BaseAPITest):
     def test_registrar_gastos(self):
-        compra = self.client.post(
-            "/api/finanzas/gastos/", {"tipo": "COMPRA", "producto": "P1", "monto": 24000, "proveedor": "Distribuidora"},
-            format="json",
-        )
-        self.assertEqual(compra.status_code, 201, compra.content)
-        self.assertEqual(compra.json()["categoria"], "INSUMOS")
-        self.assertEqual(compra.json()["fecha"], str(self.hoy))
-
-        otro = self.client.post("/api/finanzas/gastos/", {"tipo": "OTRO", "monto": 350000}, format="json")
-        self.assertEqual(otro.status_code, 201, otro.content)
-        self.assertEqual(otro.json()["categoria"], "OTROS")
-        self.assertIsNone(otro.json()["producto"])
-
+        r = self.client.post("/api/finanzas/gastos/", {"id_producto": "P1", "monto": 24000}, format="json")
+        self.assertEqual(r.status_code, 201, r.content)
+        self.assertEqual(r.json(), {
+            "id_gasto": 1, "id_producto": "P1", "producto_nombre": "Aceite 1L", "categoria": "Abarrotes",
+            "fecha": str(self.hoy), "monto": 24000,
+        })
         for datos in (
-            {"tipo": "COMPRA", "monto": 100},  # compra sin producto
-            {"tipo": "OTRO", "producto": "P1", "monto": 100},  # otro gasto con producto
-            {"tipo": "OTRO", "monto": 0},  # monto cero
-            {"tipo": "OTRO", "categoria": "VIAJES", "monto": 100},  # categoría inexistente
+            {"monto": 100},  # sin producto (en el esquema de datos todo gasto es de un producto)
+            {"id_producto": "NO", "monto": 100},
+            {"id_producto": "P1", "monto": 0},
         ):
             with self.subTest(datos):
                 self.assertEqual(self.client.post("/api/finanzas/gastos/", datos, format="json").status_code, 400)
-        self.assertEqual(GastoInsumo.objects.count(), 2)
+        self.assertEqual(GastoInsumo.objects.count(), 1)
+        resumen = self.client.get("/api/finanzas/gastos/?categoria=abarrotes").json()["resumen"]
+        self.assertEqual(resumen, {"total_registros_gasto": 1, "monto_total_gastos": 24000})
 
     def test_registrar_cliente(self):
         r = self.client.post("/api/finanzas/clientes/", {"nombre": "Kiosco Don Luis", "contacto": "+56 9 1111"}, format="json")
         self.assertEqual(r.status_code, 201, r.content)
-        self.assertEqual(r.json()["cliente_id"], "2")  # sigue la numeración
-        self.assertEqual(self.client.post("/api/finanzas/clientes/", {}, format="json").status_code, 400)
+        self.assertEqual(r.json()["id_cliente"], 2)  # sigue la numeración
+        self.assertEqual(self.client.post("/api/finanzas/clientes/", {"nombre": "Otro"}, format="json").status_code, 400)
+        repetido = self.client.post("/api/finanzas/clientes/", {"nombre": "Otro", "contacto": "+56 9 1111"}, format="json")
+        self.assertEqual(repetido.status_code, 400)  # contacto es único
 
 
 class FlujoDeCajaTests(BaseAPITest):
     """Caso controlado, con montos que se pueden revisar a mano:
 
     Día D:   venta al contado (física)  2×1000 + 1×450 = 2.450
-             venta a crédito (online)   1×1000         = 1.000  (no entra a caja ese día)
-             compra de mercadería                         700
+             venta a crédito (en línea) 1×1000         = 1.000  (no entra a caja ese día)
+             gasto en insumos                             700
     Día D+3: el cliente paga la venta a crédito         1.000  (entra a caja)
-             arriendo                                     300
+             gasto en insumos                             300
     """
 
     def setUp(self):
         super().setUp()
         self.d = self.hoy - timedelta(days=10)
-        self.vender(fecha=self.momento(self.d), items=[
-            {"producto": "P1", "cantidad": 2}, {"producto": "P2", "cantidad": 1, "precio_unitario": "450"},
+        self.vender(fecha=str(self.d), items=[
+            {"id_producto": "P1", "cantidad": 2, "precio_venta": 1000, "costo_venta": 600},
+            {"id_producto": "P2", "cantidad": 1, "precio_venta": 450, "costo_venta": 300},
         ])
         credito = self.vender(
-            fecha=self.momento(self.d), tipo_compra="ONLINE", items=[{"producto": "P1", "cantidad": 1}],
-            por_cobrar=True, cliente="1", fecha_vencimiento=str(self.d + timedelta(days=30)),
+            fecha=str(self.d), tipo_compra="En Línea", items=[{"id_producto": "P1", "cantidad": 1}],
+            por_cobrar=True, fecha_vencimiento=str(self.d + timedelta(days=30)),
         )
         self.pagar(self.cuenta_de(credito), fecha_pago=str(self.d + timedelta(days=3)))
-        GastoInsumo.objects.create(tipo="COMPRA", producto=self.p1, fecha=self.d, monto=700)
-        GastoInsumo.objects.create(tipo="OTRO", categoria="ARRIENDO", fecha=self.d + timedelta(days=3), monto=300)
+        GastoInsumo.objects.create(id_gasto=1, producto=self.p1, fecha=self.d, monto=700)
+        GastoInsumo.objects.create(id_gasto=2, producto=self.p2, fecha=self.d + timedelta(days=3), monto=300)
 
     def resumen(self, desde, hasta, extra=""):
         return self.client.get(f"/api/finanzas/resumen-mensual/?fecha_inicio={desde}&fecha_fin={hasta}{extra}").json()
@@ -216,34 +251,40 @@ class FlujoDeCajaTests(BaseAPITest):
     def test_flujo_de_los_cuatro_dias(self):
         r = self.resumen(self.d, self.d + timedelta(days=3))
         self.assertEqual(r["flujo_caja"], {
-            "entradas": {"ventas_contado": 2450.0, "cobros": 1000.0, "total": 3450.0},
-            "salidas": {"compras": 700.0, "otros_gastos": 300.0, "total": 1000.0},
-            "saldo": 2450.0,
+            "entradas": {"ventas_contado": 2450, "cobros": 1000, "total": 3450},
+            "salidas": {"gastos_insumo": 1000, "total": 1000},
+            "saldo": 2450,
         })
         # Las ventas del período incluyen la de crédito; la utilidad usa el costo de lo vendido
-        self.assertEqual(r["total_ingresos"], 3450.0)
-        self.assertEqual(r["total_costos"], 2100.0)  # 3×600 + 1×300
-        self.assertEqual(r["utilidad_bruta"], 1350.0)
+        self.assertEqual(r["total_ingresos"], 3450)
+        self.assertEqual(r["total_costos"], 2100)  # 3×600 + 1×300
+        self.assertEqual(r["utilidad_bruta"], 1350)
         self.assertEqual(r["total_unidades"], 4)
 
     def test_la_venta_a_credito_entra_a_caja_el_dia_del_pago(self):
         r = self.resumen(self.d, self.d)
-        self.assertEqual(r["flujo_caja"]["entradas"], {"ventas_contado": 2450.0, "cobros": 0.0, "total": 2450.0})
-        self.assertEqual(r["flujo_caja"]["saldo"], 1750.0)  # 2450 - 700
+        self.assertEqual(r["flujo_caja"]["entradas"], {"ventas_contado": 2450, "cobros": 0, "total": 2450})
+        self.assertEqual(r["flujo_caja"]["saldo"], 1750)  # 2450 - 700
 
     def test_filtro_de_canal(self):
-        r = self.resumen(self.d, self.d + timedelta(days=3), "&tipo_compra=ONLINE")
-        self.assertEqual(r["flujo_caja"]["entradas"]["total"], 1000.0)  # solo el cobro online
-        self.assertEqual(r["flujo_caja"]["salidas"]["total"], 1000.0)  # los gastos no tienen canal
+        r = self.resumen(self.d, self.d + timedelta(days=3), "&tipo_compra=En Línea")
+        self.assertEqual(r["filtro_tipo_compra"], "En Línea")
+        self.assertEqual(r["flujo_caja"]["entradas"]["total"], 1000)  # solo el cobro en línea
+        self.assertEqual(r["flujo_caja"]["salidas"]["total"], 1000)  # los gastos no tienen canal
 
     def test_agrupado_por_dia(self):
         r = self.client.get(
             f"/api/finanzas/resumen-agrupado/?fecha_inicio={self.d}&fecha_fin={self.d + timedelta(days=3)}&agrupacion=diaria"
         ).json()
         dias = [p["flujo_caja"] for p in r["periodos"]]
-        self.assertEqual([d["entradas"]["total"] for d in dias], [2450.0, 0.0, 0.0, 1000.0])
-        self.assertEqual([d["salidas"]["total"] for d in dias], [700.0, 0.0, 0.0, 300.0])
-        self.assertEqual(r["totales"]["flujo_caja"]["saldo"], 2450.0)
+        self.assertEqual([d["entradas"]["total"] for d in dias], [2450, 0, 0, 1000])
+        self.assertEqual([d["salidas"]["total"] for d in dias], [700, 0, 0, 300])
+        self.assertEqual(r["totales"]["flujo_caja"]["saldo"], 2450)
+
+    def test_exportar_excel(self):
+        r = self.client.get(f"/api/finanzas/exportar-excel/?fecha_inicio={self.d}&fecha_fin={self.d}")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("spreadsheetml", r["Content-Type"])
 
 
 class AgrupacionSemanalTests(BaseAPITest):
@@ -251,11 +292,10 @@ class AgrupacionSemanalTests(BaseAPITest):
 
     def setUp(self):
         super().setUp()
-        from datetime import date
-        self.dias = [date(2026, 10, d) for d in (1, 7, 8, 22, 31)]
-        for dia in self.dias:
-            self.vender(fecha=self.momento(dia), items=[{"producto": "P1", "cantidad": 1}])  # 1.000 c/u
-        GastoInsumo.objects.create(tipo="OTRO", categoria="ARRIENDO", fecha=date(2026, 10, 5), monto=300)
+        for dia in (1, 7, 8, 22, 31):
+            self.vender(fecha=f"2026-10-{dia:02d}", items=[
+                {"id_producto": "P1", "cantidad": 1, "precio_venta": 1000, "costo_venta": 600}])
+        GastoInsumo.objects.create(id_gasto=1, producto=self.p1, fecha=date(2026, 10, 5), monto=300)
 
     def agrupado(self, agrupacion):
         r = self.client.get(
@@ -267,14 +307,13 @@ class AgrupacionSemanalTests(BaseAPITest):
     def test_semanas_del_mes_como_el_diseno(self):
         r = self.agrupado("semanas_mes")
         self.assertEqual([p["rango"] for p in r["periodos"]], ["01 - 07 Oct", "08 - 14 Oct", "15 - 21 Oct", "22 - 31 Oct"])
-        self.assertEqual([p["periodo"] for p in r["periodos"]][0], "Sem 1 Oct 2026")
+        self.assertEqual(r["periodos"][0]["periodo"], "Sem 1 Oct 2026")
         self.assertEqual([p["total_transacciones"] for p in r["periodos"]], [2, 1, 0, 2])
-        self.assertEqual([p["flujo_caja"]["entradas"]["total"] for p in r["periodos"]], [2000.0, 1000.0, 0.0, 2000.0])
-        self.assertEqual([p["flujo_caja"]["salidas"]["total"] for p in r["periodos"]], [300.0, 0.0, 0.0, 0.0])
+        self.assertEqual([p["flujo_caja"]["entradas"]["total"] for p in r["periodos"]], [2000, 1000, 0, 2000])
+        self.assertEqual([p["flujo_caja"]["salidas"]["total"] for p in r["periodos"]], [300, 0, 0, 0])
 
     def test_semanal_de_lunes_a_domingo(self):
         r = self.agrupado("semanal")
-        # 1 oct 2026 es jueves: la primera semana va del 1 al 4 (domingo)
         self.assertEqual(r["periodos"][0]["fecha_inicio"], "01/10/2026")
         self.assertEqual(r["periodos"][0]["fecha_fin"], "04/10/2026")
         self.assertEqual(r["periodos"][1]["fecha_inicio"], "05/10/2026")  # lunes
@@ -283,7 +322,7 @@ class AgrupacionSemanalTests(BaseAPITest):
 
     def test_las_semanas_suman_lo_mismo_que_el_mes(self):
         mes = self.agrupado("mensual")["totales"]
-        for agrupacion in ("semanal", "semanas_mes", "diaria"):
+        for agrupacion in ("semanal", "semanas_mes", "diaria", "trimestral", "anual"):
             with self.subTest(agrupacion):
                 r = self.agrupado(agrupacion)
                 self.assertEqual(sum(p["total_ingresos"] for p in r["periodos"]), mes["total_ingresos"])
@@ -298,22 +337,22 @@ class ProductosMasVendidosTests(BaseAPITest):
     def setUp(self):
         super().setUp()
         self.d = self.hoy - timedelta(days=5)
-        self.vender(fecha=self.momento(self.d), items=[{"producto": "P2", "cantidad": 5}])  # 5 × 500
-        self.vender(fecha=self.momento(self.d), tipo_compra="ONLINE", items=[{"producto": "P1", "cantidad": 3}])  # 3 × 1000
-        antigua = self.vender(fecha=self.momento(self.d - timedelta(days=60)), items=[{"producto": "P1", "cantidad": 4}])
-        anulada = self.vender(fecha=self.momento(self.d), items=[{"producto": "P1", "cantidad": 100}])
-        self.client.post(f"/api/finanzas/facturas/{anulada.json()['factura']}/anular/")
-        self.antigua = antigua
+        precio = {"precio_venta": 500, "costo_venta": 300}
+        self.vender(fecha=str(self.d), items=[{"id_producto": "P2", "cantidad": 5, **precio}])  # 5 × 500
+        self.vender(fecha=str(self.d), tipo_compra="En Línea", items=[
+            {"id_producto": "P1", "cantidad": 3, "precio_venta": 1000, "costo_venta": 600}])  # 3 × 1000
+        self.vender(fecha=str(self.d - timedelta(days=60)), items=[
+            {"id_producto": "P1", "cantidad": 4, "precio_venta": 1000, "costo_venta": 600}])
 
     def productos(self, extra=""):
         r = self.client.get(f"/api/finanzas/productos/?{extra}")
         self.assertEqual(r.status_code, 200, r.content)
-        return {p["no_parte"]: p for p in r.json()["results"]}, [p["no_parte"] for p in r.json()["results"]]
+        return {p["id_producto"]: p for p in r.json()["results"]}, [p["id_producto"] for p in r.json()["results"]]
 
     def test_totales_de_todo_el_historial(self):
         datos, _ = self.productos()
-        self.assertEqual(datos["P1"]["total_vendido"], 7)  # 3 + 4; la anulada no cuenta
-        self.assertEqual(Decimal(datos["P1"]["total_ingresos"]), Decimal("7000"))
+        self.assertEqual(datos["P1"]["total_vendido"], 7)
+        self.assertEqual(datos["P1"]["total_ingresos"], 7000)
         self.assertEqual(datos["P2"]["total_vendido"], 5)
 
     def test_orden_por_mas_vendidos(self):
@@ -323,7 +362,7 @@ class ProductosMasVendidosTests(BaseAPITest):
         self.assertEqual(orden, ["P2", "P1"])  # en el período: P2 = 5, P1 = 3
 
     def test_filtro_por_canal_y_orden_por_ingresos(self):
-        datos, orden = self.productos(f"ordering=-total_ingresos&tipo_compra=ONLINE&fecha_inicio={self.d}")
+        datos, orden = self.productos(f"ordering=-total_ingresos&tipo_compra=En Línea&fecha_inicio={self.d}")
         self.assertEqual(orden[0], "P1")
         self.assertEqual(datos["P1"]["total_vendido"], 3)
         self.assertEqual(datos["P2"]["total_vendido"], 0)
@@ -331,3 +370,80 @@ class ProductosMasVendidosTests(BaseAPITest):
     def test_parametros_invalidos(self):
         self.assertEqual(self.client.get("/api/finanzas/productos/?ordering=-ventas").status_code, 400)
         self.assertEqual(self.client.get("/api/finanzas/productos/?fecha_inicio=ayer").status_code, 400)
+        self.assertEqual(self.client.get("/api/finanzas/productos/?tipo_compra=telefono").status_code, 400)
+
+
+class EsquemaDelEquipoDeDatosTests(TestCase):
+    """Las tablas y columnas deben llamarse igual que en schema_postgresql.sql de la rama datos."""
+
+    ESQUEMA = {
+        "cliente": {"id_cliente", "nombre", "contacto"},
+        "producto": {"id_producto", "categoria", "producto", "unidad_negocio"},
+        "venta": {"id_factura", "id_cliente", "fecha", "tipo_compra", "por_cobrar"},
+        "detalle_venta": {"id_detalle", "id_factura", "id_producto", "cantidad", "precio_venta", "costo_venta"},
+        "cuenta_por_cobrar": {"id_cuenta", "id_factura", "id_cliente", "monto", "fecha_vencimiento", "estado", "fecha_pago"},
+        "gastos_insumo": {"id_gasto", "id_producto", "fecha", "monto"},
+    }
+
+    def test_tablas_y_columnas(self):
+        with connection.cursor() as cursor:
+            for tabla, columnas in self.ESQUEMA.items():
+                with self.subTest(tabla):
+                    en_base = {c.name for c in connection.introspection.get_table_description(cursor, tabla)}
+                    self.assertEqual(en_base, columnas)
+
+    def test_verificar_esquema(self):
+        salida = StringIO()
+        call_command("verificar_esquema", stdout=salida)
+        self.assertIn("coincide", salida.getvalue())
+
+
+class ImportarCsvTests(TestCase):
+    def escribir(self, carpeta, nombre, filas):
+        with open(Path(carpeta) / f"{nombre}.csv", "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerows(filas)
+
+    def preparar(self, carpeta, etapa4=True):
+        self.escribir(carpeta, "cliente", [["id_cliente", "nombre", "contacto"], [1, "Ana", "+56 9 1"]])
+        self.escribir(carpeta, "producto", [["id_producto", "categoria", "producto", "unidad_negocio"],
+                                            ["P1", "Abarrotes", "Arroz", "Supermercado"]])
+        self.escribir(carpeta, "venta", [["id_factura", "id_cliente", "fecha", "tipo_compra", "por_cobrar"],
+                                         ["F1", 1, "2022-08-01", "Física", "False"],
+                                         ["F2", 1, "2022-08-02", "En Línea", "True"],
+                                         ["F3", 1, "2022-08-03", "Física", "True"]])
+        self.escribir(carpeta, "detalle_venta", [["id_detalle", "id_factura", "id_producto", "cantidad", "precio_venta", "costo_venta"],
+                                                 [1, "F1", "P1", 2, 100, 60], [2, "F2", "P1", 1, 100, 60], [3, "F3", "P1", 1, 100, 60]])
+        if etapa4:
+            self.escribir(carpeta, "cuenta_por_cobrar", [
+                ["id_cuenta", "id_factura", "id_cliente", "monto", "fecha_vencimiento", "estado", "fecha_pago"],
+                [1, "F2", 1, 100, "2022-08-20", "PAGADA", "2022-08-10"],
+                [2, "F3", 1, 100, "2022-08-25", "VENCIDA", ""]])
+            self.escribir(carpeta, "gastos_insumo", [["id_gasto", "id_producto", "fecha", "monto"], [1, "P1", "2022-08-01", 50]])
+        else:
+            self.escribir(carpeta, "cuenta_por_cobrar", [
+                ["id_cuenta", "id_factura", "id_cliente", "monto", "fecha_vencimiento"],
+                [1, "F2", 1, 100, "2022-08-02"], [2, "F3", 1, 100, "2022-09-30"]])
+            self.escribir(carpeta, "gastos_insumo", [["id_gasto", "id_producto", "Fecha", "Monto"], [1, "P1", "2022-08-01", 50]])
+
+    def test_formato_etapa_4(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            self.preparar(carpeta)
+            call_command("importar_csv", carpeta=carpeta, fechas_originales=True, stdout=StringIO())
+            call_command("importar_csv", carpeta=carpeta, fechas_originales=True, stdout=StringIO())  # sin duplicar
+        self.assertEqual(Venta.objects.count(), 3)
+        self.assertEqual(Venta.objects.get(pk="F2").tipo_compra, "En Línea")
+        pagada = CuentaPorCobrar.objects.get(pk=1)
+        self.assertEqual((pagada.estado, pagada.fecha_pago), ("PAGADA", date(2022, 8, 10)))
+        self.assertEqual(CuentaPorCobrar.objects.get(pk=2).estado, "VENCIDA")
+        self.assertEqual(GastoInsumo.objects.get().monto, 50)
+
+    def test_formato_etapa_3_y_desfase_de_fechas(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            self.preparar(carpeta, etapa4=False)
+            call_command("importar_csv", carpeta=carpeta, stdout=StringIO())
+        ultima = Venta.objects.order_by("-fecha").first().fecha
+        self.assertLess((timezone.localdate() - ultima).days, 8)  # la última venta queda en la última semana
+        self.assertEqual(GastoInsumo.objects.get().fecha.weekday(), date(2022, 8, 1).weekday())
+        self.assertEqual(CuentaPorCobrar.objects.get(pk=1).estado, "VENCIDA")
+        self.assertEqual(CuentaPorCobrar.objects.get(pk=2).estado, "PENDIENTE")
+        self.assertIsNone(CuentaPorCobrar.objects.get(pk=1).fecha_pago)

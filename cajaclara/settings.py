@@ -107,6 +107,9 @@ if DB_ENGINE:
             'PORT': os.environ.get('DB_PORT', ''),
         }
     }
+    # Neon (la base del equipo de datos) exige SSL: DB_SSLMODE=require
+    if os.environ.get('DB_SSLMODE'):
+        DATABASES['default']['OPTIONS'] = {'sslmode': os.environ['DB_SSLMODE']}
 else:
     DATABASES = {
         'default': {

@@ -4,111 +4,118 @@ Operaciones del negocio que modifican datos (registrar una venta, pagar una deud
 Están aquí y no en las vistas para que cada regla viva en un solo lugar: la API,
 el admin o un comando pueden usarlas y siempre se cumplen igual.
 Cada operación es atómica: o se guarda todo, o no se guarda nada.
+
+Ninguna operación BORRA filas: el usuario de la API en la base del equipo de datos
+(cajaclara_app_rw) solo tiene permisos SELECT, INSERT y UPDATE.
 """
 
-import uuid
-from decimal import Decimal
-
-from django.db import IntegrityError, transaction
-from django.db.models import IntegerField, Max
-from django.db.models.functions import Cast
+from django.db import transaction
 from django.utils import timezone
 
-from .models import CERO, Cliente, CuentaPorCobrar, DetalleVenta, Factura
+from . import ids
+from .models import Cliente, CuentaPorCobrar, DetalleVenta, GastoInsumo, Venta
 
 
 class ReglaDeNegocio(Exception):
     """Error que se muestra tal cual al usuario (ej.: 'La cuenta ya está pagada')."""
 
 
-def _nuevo_id_factura(fecha, tipo_compra):
-    # Mismo estilo que las del CSV (INV7811414-20100105-F), con prefijo propio "CC"
-    # para distinguir las ventas registradas desde la app.
-    canal = "L" if tipo_compra == "ONLINE" else "F"
-    return f"CC{uuid.uuid4().hex[:8].upper()}-{timezone.localtime(fecha):%Y%m%d}-{canal}"
+def ultimo_precio_y_costo(producto):
+    """Precio y costo unitarios de la venta más reciente del producto, o (None, None)
+    si nunca se ha vendido. El esquema de datos no tiene precio de catálogo."""
+    ultima = (
+        DetalleVenta.objects.filter(producto=producto)
+        .order_by("-venta__fecha", "-id_detalle")
+        .values("precio_venta", "costo_venta")
+        .first()
+    )
+    if ultima is None:
+        return None, None
+    return ultima["precio_venta"], ultima["costo_venta"]
 
 
 @transaction.atomic
-def registrar_venta(*, items, tipo_compra="FISICA", cliente=None, fecha=None, por_cobrar=False,
+def registrar_venta(*, items, cliente, tipo_compra=Venta.FISICA, fecha=None, por_cobrar=False,
                     fecha_vencimiento=None):
-    """Crea la factura con sus líneas. Si es a crédito, crea también su cuenta por cobrar.
+    """Crea la venta con sus líneas. Si es a crédito, crea también su cuenta por cobrar.
 
-    items: lista de dicts con "producto" (Producto), "cantidad" y opcionalmente "precio_unitario".
-    El costo de cada línea se toma del catálogo del producto en ese momento.
+    items: lista de dicts con "producto" (Producto), "cantidad" y opcionalmente
+    "precio_venta" y "costo_venta" (unitarios). Si no vienen, se usan los de la última
+    venta del producto.
     """
     if not items:
         raise ReglaDeNegocio("La venta debe tener al menos un producto.")
-    fecha = fecha or timezone.now()
+    if cliente is None:
+        raise ReglaDeNegocio("La venta necesita un cliente.")
+    fecha = fecha or timezone.localdate()
     if por_cobrar:
-        if cliente is None:
-            raise ReglaDeNegocio("Una venta a crédito necesita un cliente.")
         if fecha_vencimiento is None:
             raise ReglaDeNegocio("Una venta a crédito necesita la fecha de vencimiento.")
-        if fecha_vencimiento < timezone.localtime(fecha).date():
+        if fecha_vencimiento < fecha:
             raise ReglaDeNegocio("La fecha de vencimiento no puede ser anterior a la fecha de la venta.")
 
-    factura = Factura.objects.create(
-        factura=_nuevo_id_factura(fecha, tipo_compra),
-        cliente=cliente,
-        fecha=fecha,
-        tipo_compra_id=tipo_compra,
-        por_cobrar=por_cobrar,
-    )
     lineas = []
     for item in items:
         producto = item["producto"]
-        precio = item.get("precio_unitario")
-        lineas.append(
-            DetalleVenta(
-                factura=factura,
-                no_parte=producto,
-                cantidad=item["cantidad"],
-                precio_unitario=producto.precio_venta if precio is None else precio,
-                costo_unitario=producto.costo_venta,
+        precio, costo = item.get("precio_venta"), item.get("costo_venta")
+        if precio is None or costo is None:
+            ultimo_precio, ultimo_costo = ultimo_precio_y_costo(producto)
+            precio = ultimo_precio if precio is None else precio
+            costo = ultimo_costo if costo is None else costo
+        if precio is None or costo is None:
+            raise ReglaDeNegocio(
+                f"El producto {producto.id_producto} nunca se ha vendido: indica su precio_venta y costo_venta."
             )
-        )
-    DetalleVenta.objects.bulk_create(lineas)
+        lineas.append((producto, item["cantidad"], precio, costo))
 
-    if por_cobrar:
-        total = sum((linea.total_linea_venta for linea in lineas), CERO)
-        CuentaPorCobrar.objects.create(
-            factura=factura,
+    def guardar():
+        venta = Venta.objects.create(
+            id_factura=ids.nuevo_id_factura(fecha, tipo_compra),
             cliente=cliente,
-            monto=total,
-            fecha_vencimiento=fecha_vencimiento,
+            fecha=fecha,
+            tipo_compra=tipo_compra,
+            por_cobrar=por_cobrar,
         )
-    return factura
+        primer_id = ids.siguiente_id(DetalleVenta)
+        detalles = DetalleVenta.objects.bulk_create([
+            DetalleVenta(
+                id_detalle=primer_id + i,
+                venta=venta,
+                producto=producto,
+                cantidad=cantidad,
+                precio_venta=precio,
+                costo_venta=costo,
+            )
+            for i, (producto, cantidad, precio, costo) in enumerate(lineas)
+        ])
+        if por_cobrar:
+            CuentaPorCobrar.objects.create(
+                id_cuenta=ids.siguiente_id(CuentaPorCobrar),
+                venta=venta,
+                cliente=cliente,
+                monto=sum(d.total_linea_venta for d in detalles),
+                fecha_vencimiento=fecha_vencimiento,
+                estado=CuentaPorCobrar.PENDIENTE,
+            )
+        return venta
 
-
-@transaction.atomic
-def anular_factura(factura):
-    """Anula una venta completa. Si era a crédito y aún no se pagaba, su deuda desaparece."""
-    factura = Factura.objects.select_for_update().get(pk=factura.pk)
-    if factura.anulada:
-        raise ReglaDeNegocio("La venta ya estaba anulada.")
-    cuenta = CuentaPorCobrar.objects.filter(factura=factura).first()
-    if cuenta and cuenta.estado == CuentaPorCobrar.PAGADA:
-        raise ReglaDeNegocio("La venta ya fue pagada. Primero revierte el pago y luego anúlala.")
-    if cuenta:
-        cuenta.delete()  # la deuda deja de existir junto con la venta
-    factura.anulada = True
-    factura.save(update_fields=["anulada"])
-    return factura
+    try:
+        return ids.con_reintentos(guardar)
+    except ids.SinIdDisponible as error:
+        raise ReglaDeNegocio(str(error))
 
 
 @transaction.atomic
 def pagar_cuenta(cuenta, fecha_pago=None):
     """Marca una cuenta por cobrar como pagada (pago completo)."""
-    cuenta = CuentaPorCobrar.objects.select_for_update().select_related("factura").get(pk=cuenta.pk)
+    cuenta = CuentaPorCobrar.objects.select_for_update().select_related("venta").get(pk=cuenta.pk)
     if cuenta.estado == CuentaPorCobrar.PAGADA:
         raise ReglaDeNegocio(f"La cuenta ya está pagada (el {cuenta.fecha_pago:%d/%m/%Y}).")
-    if cuenta.factura.anulada:
-        raise ReglaDeNegocio("La venta de esta cuenta está anulada.")
     hoy = timezone.localdate()
     fecha_pago = fecha_pago or hoy
     if fecha_pago > hoy:
         raise ReglaDeNegocio("La fecha de pago no puede ser futura.")
-    if cuenta.factura.fecha and fecha_pago < timezone.localtime(cuenta.factura.fecha).date():
+    if fecha_pago < cuenta.venta.fecha:
         raise ReglaDeNegocio("La fecha de pago no puede ser anterior a la venta.")
     cuenta.estado = CuentaPorCobrar.PAGADA
     cuenta.fecha_pago = fecha_pago
@@ -118,31 +125,43 @@ def pagar_cuenta(cuenta, fecha_pago=None):
 
 @transaction.atomic
 def revertir_pago(cuenta):
-    """Deshace un pago registrado por error: la cuenta vuelve a quedar pendiente."""
+    """Deshace un pago registrado por error: la cuenta vuelve a quedar abierta
+    (VENCIDA si su fecha ya pasó, PENDIENTE si no)."""
     cuenta = CuentaPorCobrar.objects.select_for_update().get(pk=cuenta.pk)
     if cuenta.estado != CuentaPorCobrar.PAGADA:
         raise ReglaDeNegocio("La cuenta no está pagada.")
-    cuenta.estado = CuentaPorCobrar.PENDIENTE
+    vencida = cuenta.fecha_vencimiento < timezone.localdate()
+    cuenta.estado = CuentaPorCobrar.VENCIDA if vencida else CuentaPorCobrar.PENDIENTE
     cuenta.fecha_pago = None
     cuenta.save(update_fields=["estado", "fecha_pago"])
     return cuenta
 
 
-def crear_cliente(*, nombre, contacto=""):
-    """Los clientes del CSV tienen IDs numéricos ("1" a "2000"); los nuevos siguen la numeración.
-    Si dos personas crean un cliente al mismo tiempo y chocan, se reintenta con el siguiente número."""
-    for _ in range(5):
-        ultimo = (
-            Cliente.objects.filter(cliente_id__regex=r"^\d+$")
-            .aggregate(maximo=Max(Cast("cliente_id", IntegerField())))["maximo"]
-        ) or 0
-        try:
-            with transaction.atomic():
-                return Cliente.objects.create(cliente_id=str(ultimo + 1), nombre=nombre, contacto=contacto)
-        except IntegrityError:
-            continue
-    raise ReglaDeNegocio("No se pudo asignar un número al cliente. Intenta de nuevo.")
+def registrar_gasto(*, producto, monto, fecha=None):
+    """Registra una compra de insumos (siempre ligada a un producto)."""
+    def guardar():
+        return GastoInsumo.objects.create(
+            id_gasto=ids.siguiente_id(GastoInsumo),
+            producto=producto,
+            fecha=fecha or timezone.localdate(),
+            monto=monto,
+        )
+
+    try:
+        return ids.con_reintentos(guardar)
+    except ids.SinIdDisponible as error:
+        raise ReglaDeNegocio(str(error))
 
 
-def total_factura(factura):
-    return sum((d.total_linea_venta for d in factura.detalles.all()), Decimal("0"))
+def crear_cliente(*, nombre, contacto):
+    """Los clientes siguen la numeración de id_cliente (1, 2, 3...)."""
+    if Cliente.objects.filter(contacto=contacto).exists():
+        raise ReglaDeNegocio("Ya existe un cliente con ese contacto.")
+
+    def guardar():
+        return Cliente.objects.create(id_cliente=ids.siguiente_id(Cliente), nombre=nombre, contacto=contacto)
+
+    try:
+        return ids.con_reintentos(guardar)
+    except ids.SinIdDisponible as error:
+        raise ReglaDeNegocio(str(error))

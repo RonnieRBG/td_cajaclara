@@ -27,13 +27,12 @@ from finanzas.views import (
     ResumenFinancieroView,
 )
 from finanzas.views_escritura import (
-    AnularFacturaView,
     ClienteListCreateView,
-    FacturaDetalleView,
-    FacturaListCreateView,
     GastoListCreateView,
     PagarCuentaView,
     RevertirPagoView,
+    VentaDetalleView,
+    VentaListCreateView,
 )
 
 urlpatterns = [
@@ -59,9 +58,8 @@ urlpatterns = [
     # GET lista y POST registra (clientes, facturas y gastos)
     path('api/finanzas/clientes/', ClienteListCreateView.as_view(), name='cliente-list'),
     path('api/finanzas/productos/', ProductoListView.as_view(), name='producto-list'),
-    path('api/finanzas/facturas/', FacturaListCreateView.as_view(), name='factura-list'),
-    path('api/finanzas/facturas/<str:pk>/', FacturaDetalleView.as_view(), name='factura-detalle'),
-    path('api/finanzas/facturas/<str:pk>/anular/', AnularFacturaView.as_view(), name='factura-anular'),
+    path('api/finanzas/facturas/', VentaListCreateView.as_view(), name='factura-list'),
+    path('api/finanzas/facturas/<str:pk>/', VentaDetalleView.as_view(), name='factura-detalle'),
     path('api/finanzas/ventas/', DetalleVentaListView.as_view(), name='detalleventa-list'),
     path('api/finanzas/cuentas-por-cobrar/', CuentaPorCobrarListView.as_view(), name='cuentaporcobrar-list'),
     path('api/finanzas/cuentas-por-cobrar/<int:pk>/pagar/', PagarCuentaView.as_view(), name='cuenta-pagar'),
