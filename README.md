@@ -3,6 +3,8 @@
 **Una herramienta para que las pymes sepan, de un vistazo, cuánta plata entra, cuánta sale y cuánto les deben.**
 
 > Proyecto del Bootcamp **Talento Digital**. Este repositorio contiene el **backend** (el "motor" que guarda los datos y hace los cálculos). La documentación técnica de cada endpoint está en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
+>
+> 🔗 **¿Cómo se juntan datos, backend y frontend?** Los pasos de cada equipo están en [`ACOPLAMIENTO.md`](./ACOPLAMIENTO.md).
 
 ---
 
