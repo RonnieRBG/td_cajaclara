@@ -10,6 +10,7 @@ tengan las columnas que usa el backend. No modifica nada: solo lee.
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
 
+from finanzas.metricas import VISTAS, vistas_existentes
 from finanzas.models import Cliente, CuentaPorCobrar, DetalleVenta, GastoInsumo, Producto, Venta
 
 MODELOS = (Cliente, Producto, Venta, DetalleVenta, CuentaPorCobrar, GastoInsumo)
@@ -39,6 +40,14 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f"✓ {tabla}: {', '.join(sorted(esperadas))}"))
                 if sobran:
                     self.stdout.write(self.style.WARNING(f"  {tabla}: columnas que el backend no usa: {', '.join(sobran)}"))
+        faltan_vistas = sorted({v.nombre for v in VISTAS.values()} - vistas_existentes())
+        if faltan_vistas:
+            self.stdout.write(self.style.WARNING(
+                f"⚠ Faltan vistas de métricas: {', '.join(faltan_vistas)}. /api/finanzas/metricas/ no funcionará "
+                "hasta crearlas (local: crear_vistas_metricas; Neon: las crea el equipo de datos)."
+            ))
+        else:
+            self.stdout.write(self.style.SUCCESS("✓ Vistas de métricas del equipo de datos presentes."))
         if problemas:
             raise CommandError(f"{problemas} problema(s) entre la base y los modelos.")
         self.stdout.write(self.style.SUCCESS("El esquema de la base coincide con el backend."))

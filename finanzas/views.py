@@ -830,7 +830,7 @@ class ApiCatalogView(APIView):
         host = request.build_absolute_uri("/").rstrip("/")
         return Response({
             "nombre": "API Caja Clara - Módulo Finanzas Supermercado",
-            "version": "2.0",
+            "version": "2.1",
             "descripcion": "Endpoints REST sobre el esquema del equipo de datos (cliente, producto, venta, "
             "detalle_venta, cuenta_por_cobrar, gastos_insumo). Montos enteros en CLP.",
             "autenticacion": {
@@ -903,6 +903,20 @@ class ApiCatalogView(APIView):
                     "metodo": "GET",
                     "descripcion": "Listado paginado de gastos en insumos (tabla gastos_insumo).",
                     "parametros": ["producto", "categoria", "fecha_inicio", "fecha_fin", "page", "page_size"],
+                },
+                "alertas_cobro": {
+                    "url": f"{host}/api/finanzas/alertas-cobro/",
+                    "metodo": "GET",
+                    "descripcion": "Cuentas vencidas o por vencer, con prioridad y mensaje sugerido "
+                    "(misma lógica que vw_alertas_cobro, a la fecha de hoy).",
+                    "parametros": ["dias_aviso", "prioridad", "cliente", "todas", "fecha_corte", "page", "page_size"],
+                },
+                "metricas": {
+                    "url": f"{host}/api/finanzas/metricas/",
+                    "metodo": "GET",
+                    "descripcion": "Vistas de análisis del equipo de datos (las mismas de Power BI): "
+                    "margen-productos, ventas-categoria-mes, flujo-caja-mensual, cuentas-por-cobrar-cliente, "
+                    "morosidad, ranking-productos y sustentabilidad.",
                 },
                 "registrar_venta": {
                     "url": f"{host}/api/finanzas/facturas/",

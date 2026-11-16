@@ -18,6 +18,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from django.conf import settings
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
@@ -78,6 +79,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("\n✅ Importación completada."))
         self._mostrar_resumen()
+        # Vistas de métricas del equipo de datos (las que lee /api/finanzas/metricas/)
+        call_command("crear_vistas_metricas", stdout=self.stdout)
 
     # ------------------------------------------------------------------
     # Utilidades

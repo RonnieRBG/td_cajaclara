@@ -123,6 +123,7 @@ python manage.py importar_csv
 - `--limpiar` vacía las tablas antes de importar.
 - `--fechas-originales` mantiene las fechas de los CSV (2010-2022). Por defecto se desplazan un número exacto de semanas para que la última venta quede en la semana actual (cada venta conserva su día de la semana y los plazos de cobro no cambian).
 - `--carpeta "ruta"` usa otra carpeta. El comando acepta tanto el formato de la Etapa 4 (con `estado` y `fecha_pago`) como el de la Etapa 3.
+- Al terminar crea también las **vistas de métricas** del equipo de datos (`crear_vistas_metricas`), con sus mismos scripts (copiados en `finanzas/sql/`). En Neon ese comando no toca nada: las vistas ya existen.
 
 > Si tenías un `db.sqlite3` anterior a este cambio, **bórralo** y vuelve a correr `migrate` e `importar_csv`: las tablas cambiaron de nombre y de columnas.
 
@@ -238,6 +239,8 @@ En cada consulta se envía el encabezado `Authorization: Bearer <access>`. El `a
 | 8   | `GET /ventas/`             | Líneas de venta                        | `detalle_venta`      |    Sí    |         ✅          |
 | 9   | `GET /cuentas-por-cobrar/` | Deudas de clientes + resumen global    | `cuenta_por_cobrar`  |    Sí    |         ✅          |
 | 10  | `GET /gastos/`             | Gastos en insumos + resumen            | `gastos_insumo`      |    Sí    |          —          |
+| 12  | `GET /alertas-cobro/`      | Cobros vencidos o por vencer, por prioridad | `cuenta_por_cobrar` |  Sí    |         ✅          |
+| 13  | `GET /metricas/{nombre}/`  | Métricas del equipo de datos (las de Power BI) | vistas `vw_*`  | Según la vista | (análisis)   |
 
 **Registrar datos** (detalle en el endpoint 11):
 
@@ -261,7 +264,7 @@ En cada consulta se envía el encabezado `Authorization: Bearer <access>`. El `a
 }
 ```
 
-Los endpoints 9 y 10 agregan una clave `resumen` con totales que **no dependen de la página**.
+Los endpoints 9, 10 y 12 agregan una clave `resumen` con totales que **no dependen de la página**.
 
 ---
 
@@ -770,6 +773,145 @@ Sin cuerpo. `fecha_pago` queda en `null` y la cuenta vuelve a `PENDIENTE`, o a `
 
 ---
 
+### 12. Alertas de cobro
+
+`GET /api/finanzas/alertas-cobro/`
+
+Cuentas **vencidas o que vencen pronto**, ordenadas por urgencia. Es la Tarea 29 del equipo de datos: usa la **misma lógica, los mismos campos y el mismo mensaje** que su vista `vw_alertas_cobro`. La diferencia es la fecha: la vista (y Power BI) calculan a una fecha fija (`2022-09-01`); la API calcula **a la fecha de hoy**, como indica la "Sección B" de su script para la operación en vivo.
+
+| Parámetro           | Valores                                                                                         |
+| :------------------ | :---------------------------------------------------------------------------------------------- |
+| `dias_aviso`        | Cuántos días hacia adelante avisar. Por defecto `15`.                                           |
+| `prioridad`         | `CRITICA`, `ALTA`, `MEDIA` o `BAJA`                                                             |
+| `cliente`           | `id_cliente`                                                                                    |
+| `todas`             | `true` = incluye también las vigentes que vencen después de la ventana                          |
+| `fecha_corte`       | Calcula a esa fecha en vez de hoy. Con `2022-09-01` entrega **lo mismo que `vw_alertas_cobro`** |
+| `page`, `page_size` | Paginación                                                                                      |
+
+| `prioridad_alerta`    | `ventana_alerta`     | Cuándo                                              |
+| :-------------------- | :------------------- | :-------------------------------------------------- |
+| `1_CRITICA_VENCIDA`   | Vencida              | Guardada como `VENCIDA` o con fecha ya pasada       |
+| `2_ALTA_PROXIMA_7D`   | Vence en <= 7 días   | Vence dentro de 7 días                              |
+| `3_MEDIA_PROXIMA_15D` | Vence en 8-15 días   | Vence entre 8 y 15 días                             |
+| `4_BAJA_VIGENTE`      | Vigente > 15 días    | Solo aparece con `todas=true` o un `dias_aviso` mayor |
+
+```json
+// GET /api/finanzas/alertas-cobro/?fecha_corte=2022-09-01
+{
+  "count": 8,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id_cuenta": 14853,
+      "id_factura": "INV7777527-20210822-L",
+      "id_cliente": 653,
+      "cliente_nombre": "Patricia Molina Contreras",
+      "cliente_contacto": "+56 9 2208 9846",
+      "fecha_emision": "2021-08-22",
+      "fecha_vencimiento": "2021-10-07",
+      "estado": "VENCIDA",
+      "monto": 1662,
+      "dias_para_vencer": -329,
+      "dias_atraso": 329,
+      "tipo_alerta": "VENCIDA",
+      "prioridad_alerta": "1_CRITICA_VENCIDA",
+      "ventana_alerta": "Vencida",
+      "requiere_notificacion": true,
+      "mensaje_sugerido": "Recordatorio urgente: cliente Patricia Molina Contreras mantiene factura INV7777527-20210822-L vencida hace 329 días por $1662."
+    }
+  ],
+  "resumen": {
+    "fecha_corte": "2022-09-01",
+    "dias_aviso": 15,
+    "total_alertas": 8,
+    "monto_total": 10725,
+    "por_prioridad": {
+      "1_CRITICA_VENCIDA": { "nombre": "Vencida", "cantidad": 6, "monto": 7570 },
+      "2_ALTA_PROXIMA_7D": { "nombre": "Vence en <= 7 días", "cantidad": 1, "monto": 3083 },
+      "3_MEDIA_PROXIMA_15D": { "nombre": "Vence en 8-15 días", "cantidad": 1, "monto": 72 },
+      "4_BAJA_VIGENTE": { "nombre": "Vigente > 15 días", "cantidad": 0, "monto": 0 }
+    }
+  }
+}
+```
+
+> Se comparó campo por campo con `vw_alertas_cobro` sobre los datos del equipo de datos: las 8 alertas coinciden (6 críticas por $7.570, 1 alta por $3.083 y 1 media por $72, igual que en su instructivo de la Etapa 6). **Sin `fecha_corte`** (hoy), esas mismas 8 cuentas salen todas como críticas, porque ya pasó su fecha.
+>
+> Al pagar una cuenta (11.3), deja de aparecer en las alertas.
+
+---
+
+### 13. Métricas del equipo de datos (las mismas de Power BI)
+
+`GET /api/finanzas/metricas/` → lista las métricas con sus filtros y columnas.
+`GET /api/finanzas/metricas/{nombre}/` → filas de la vista.
+
+Es la Tarea 30: la API **lee las vistas SQL del equipo de datos, sin recalcular**. Las columnas del JSON son las de la vista. Así la app y el tablero de Power BI muestran exactamente los mismos números.
+
+| `{nombre}`                   | Vista                           | Qué responde                                                        | Filtros (`?columna=valor`)                                          | Paginada |
+| :--------------------------- | :------------------------------ | :------------------------------------------------------------------ | :------------------------------------------------------------------ | :------: |
+| `margen-productos`           | `vw_margen_producto_categoria`  | Margen por producto, categoría y mes                                | `anio`, `mes`, `periodo`, `cobertura`, `id_producto`, `categoria`, `search` | Sí |
+| `ventas-categoria-mes`       | `vw_ventas_categoria_mes`       | Ventas y margen por categoría y mes                                 | `anio`, `mes`, `periodo`, `cobertura`, `categoria`                  |    Sí    |
+| `flujo-caja-mensual`         | `vw_flujo_caja_mensual`         | Lo facturado, lo cobrado, los gastos y el flujo neto de cada mes    | `anio`, `mes`, `periodo`, `cobertura`                               |    Sí    |
+| `cuentas-por-cobrar-cliente` | `vw_cuentas_por_cobrar_cliente` | Cuánto debe cada cliente y su historial de atrasos                  | `id_cliente`, `con_deuda=true`, `search`                            |    Sí    |
+| `morosidad`                  | `vw_indicador_morosidad`        | Indicador de morosidad en 3 escenarios                              | —                                                                   |    No    |
+| `ranking-productos`          | `vw_ranking_productos`          | Productos estrella, de nicho, de alto volumen y de baja venta       | `categoria`, `clasificacion_desempeno`, `id_producto`, `sin_alerta_escala=true`, `search` | Sí |
+| `sustentabilidad`            | `vw_sustentabilidad_negocio`    | Por año: margen contra gastos y contra lo vendido al fiado          | `anio`, `cobertura`                                                 |    No    |
+
+- **`ordering`**: cualquier columna de la vista; con `-` adelante, de mayor a menor. Varias separadas por coma (`?ordering=-anio,-ventas`).
+- **`periodo`** tiene la forma `AAAA-MM` (ej. `2019-05`). **`cobertura`** es `completa` (2010–2020) o `parcial` (2021–2022), como la definió el equipo de datos.
+- Las paginadas responden `count`, `next`, `previous` y `results`; las otras, `{"vista": "...", "results": [...]}`.
+
+```json
+// GET /api/finanzas/metricas/ranking-productos/?page_size=1
+{
+  "count": 7408,
+  "next": "http://localhost:8000/api/finanzas/metricas/ranking-productos/?page=2&page_size=1",
+  "previous": null,
+  "results": [
+    {
+      "id_producto": "P474155", "producto": "Mezcla te Suntea polvo durazno", "categoria": "Bebidas sin alcohol",
+      "num_facturas": 25, "unidades_vendidas": 23108, "ventas": 18441667, "costo": 16351867, "margen": 2089800,
+      "margen_pct": 11.33, "alerta_escala_etapa2": false, "rank_ventas": 1, "rank_margen": 4,
+      "clasificacion_desempeno": "Estrella"
+    }
+  ]
+}
+
+// GET /api/finanzas/metricas/morosidad/
+{
+  "vista": "vw_indicador_morosidad",
+  "results": [
+    { "escenario": "Corte Final Dataset (2022-09-01)", "cuentas_por_cobrar_abiertas": 8, "cuentas_vencidas": 6,
+      "monto_por_cobrar": 10725, "monto_vencido": 7570, "morosidad_monto_pct": 70.58, "morosidad_cuentas_pct": 75 },
+    { "escenario": "Cierre Cobertura Completa (2020-12-31)", "cuentas_por_cobrar_abiertas": 167, "cuentas_vencidas": 26,
+      "monto_por_cobrar": 469968, "monto_vencido": 63914, "morosidad_monto_pct": 13.6, "morosidad_cuentas_pct": 15.57 },
+    { "escenario": "Histórico Pagos con Atraso (2010-2022)", "cuentas_por_cobrar_abiertas": 14928, "cuentas_vencidas": 3917,
+      "monto_por_cobrar": 57339252, "monto_vencido": 15457664, "morosidad_monto_pct": 26.96, "morosidad_cuentas_pct": 26.24 }
+  ]
+}
+
+// GET /api/finanzas/metricas/sustentabilidad/?anio=2019
+{
+  "vista": "vw_sustentabilidad_negocio",
+  "results": [
+    { "anio": 2019, "cobertura": "completa", "ventas": 57385826, "costo": 44054353, "margen_bruto": 13331473,
+      "gastos_insumo": 1954429, "utilidad_neta_operativa": 11377044, "monto_fiado": 8748289,
+      "ratio_margen_sobre_gastos": 6.82, "pct_ventas_fiadas": 15.24, "fiado_sobre_margen_pct": 65.62 }
+  ]
+}
+```
+
+**Cosas que hay que saber:**
+
+- ⚠️ **Son vistas de análisis histórico con fechas de corte fijas** que definió el equipo de datos (`2022-09-01` para la cartera y la morosidad; `2020-12-31` para la "cobertura completa" y el ranking). Para lo operativo de **hoy** se usan `cuentas-por-cobrar/` (endpoint 9) y `alertas-cobro/` (endpoint 12). Por eso `morosidad` dice 6 cuentas vencidas y el endpoint 9 dice 8: no es un error, son dos fechas distintas (ver P16).
+- **Si las vistas no existen**, responde `503` con el mensaje de qué hacer. En Neon las crea el equipo de datos; en local, `python manage.py crear_vistas_metricas` (lo hace solo `importar_csv`).
+- **En local con fechas desplazadas** (el modo por defecto de `importar_csv`), estas vistas dan números distintos a los de Neon, porque sus fechas de corte son fijas. Para compararlas con Power BI en local: `python manage.py importar_csv --limpiar --fechas-originales`.
+- Si el equipo de datos cambia una vista, se vuelven a copiar sus scripts en `finanzas/sql/` y se ajusta la lista de columnas en `finanzas/metricas.py`.
+
+---
+
 ## Parte 4 — Equipo de Frontend
 
 Todos los cambios se hacen dentro de la aplicación Vue ubicada en la rama `ux`:
@@ -991,6 +1133,16 @@ export const apiService = {
   },
 
   // Endpoint 6 — Productos más vendidos (filtros: fecha_inicio, fecha_fin, tipo_compra)
+  // Endpoint 12 — Cobros prioritarios (vencidos y por vencer)
+  getAlertasCobro(filtros = {}) {
+    return request(`${API_BASE}/alertas-cobro/`, { page_size: 5, ...filtros });
+  },
+
+  // Endpoint 13 — Métricas del equipo de datos: getMetrica("ranking-productos", { categoria: "Abarrotes" })
+  getMetrica(nombre, filtros = {}) {
+    return request(`${API_BASE}/metricas/${nombre}/`, filtros);
+  },
+
   getProductos(filtros = {}) {
     return request(`${API_BASE}/productos/`, { page_size: 4, ordering: "-total_vendido", ...filtros });
   },
@@ -1234,7 +1386,7 @@ Esta tabla es **el contrato entre ambos equipos** 🟨. Cada fila dice qué camp
 | OperationsSummary · `unidadesVendidas`   | `total_unidades`                                                                           | `resumen-mensual`                  | ✅ Documentado         |
 | OperationsSummary · `cuentasPendientes`  | `resumen.total_cuentas`                                                                    | `cuentas-por-cobrar`               | ✅ Documentado         |
 | CashChart · `semana`, `ventas`, `gastos` | `periodos[].rango`, `.flujo_caja.entradas.total`, `.flujo_caja.salidas.total` | `resumen-agrupado?agrupacion=semanas_mes` | ✅ Documentado |
-| PriorityCollections                      | `id_cuenta`, `id_cliente`, `cliente_nombre`, `id_factura`, `monto`, `fecha_vencimiento`, `estado_actual`, `dias_atraso` | `cuentas-por-cobrar?vencidas=true` | ✅ Documentado |
+| PriorityCollections                      | `id_cuenta`, `id_cliente`, `cliente_nombre`, `id_factura`, `monto`, `fecha_vencimiento`, `prioridad_alerta`, `ventana_alerta`, `dias_atraso`, `dias_para_vencer`, `mensaje_sugerido` | `alertas-cobro?page_size=5` | ✅ Documentado |
 | RecentOperations                         | `id_detalle`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                   | ✅ Documentado         |
 | TopProducts · `nombre`, `unidadesVendidas`, `totalVentas` | `producto`, `total_vendido`, `total_ingresos` | `productos?ordering=-total_vendido&page_size=4` + fechas del mes | ✅ Documentado |
 
@@ -1322,3 +1474,5 @@ Problemas detectados al revisar este documento. No bloquean la primera integraci
 | P14 | 🟢 | En el esquema de datos los ID (`id_detalle`, `id_cuenta`, `id_gasto`, `id_cliente`) son `INTEGER PRIMARY KEY` sin secuencia. El backend asigna el siguiente número y reintenta si dos personas guardan a la vez. | `finanzas/ids.py` | 🟨 Ambos | Si el equipo de datos los cambia a `GENERATED BY DEFAULT AS IDENTITY`, el backend sigue funcionando igual. |
 
 | P15 | 🟢 | Se quitó lo que no existe en el esquema de datos: anular ventas, ventas sin cliente, precio de catálogo, y tipo/categoría/proveedor/descripción de los gastos (todo gasto es de un producto). | Modelos, endpoint 11 | 🟨 Ambos | Si alguno se necesita, el equipo de datos agrega la columna primero y luego el backend. |
+
+| P16 | 🟠 | Dos fechas de corte: las vistas de análisis del equipo de datos (`morosidad`, `cuentas-por-cobrar-cliente`, `vw_alertas_cobro`) calculan al `2022-09-01`; la API operativa (`cuentas-por-cobrar`, `alertas-cobro`) calcula a hoy. Con los datos actuales: 6 vencidas según la vista, 8 según la API. | Endpoints 9, 12 y 13; Power BI | 🟨 Datos + Backend | Acordar la regla: lo histórico usa las vistas tal cual; lo operativo usa la fecha de hoy. Mostrar en pantalla a qué fecha corresponde cada número. `alertas-cobro?fecha_corte=2022-09-01` reproduce la vista. |

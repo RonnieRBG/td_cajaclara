@@ -113,13 +113,15 @@ python manage.py verificar_esquema         # debe terminar en "El esquema de la 
 >
 > Al terminar, **borrar ese `.env`** (tiene la clave del administrador).
 
+> `verificar_esquema` también avisa si faltan las **vistas de métricas** de la Etapa 5 (`vw_margen_producto_categoria`, `vw_ranking_productos`, etc.). La API las lee en `/api/finanzas/metricas/`, así que deben existir en Neon y `cajaclara_app_rw` debe tener `SELECT` sobre ellas (el `GRANT` ya viene al final de `vistas_metricas_postgresql.sql`).
+
 ### Paso 1.5 — Respaldo antes de conectar la app
 
 En Neon: **Dashboard → Branches → Create branch** (por ejemplo `antes-de-la-api`). Si algo sale mal en la prueba, se vuelve a ese punto.
 
 ### Paso 1.6 — Regla para cambios futuros
 
-Si el equipo de datos necesita **cambiar una tabla o columna** (agregar, renombrar, cambiar tipo):
+Si el equipo de datos necesita **cambiar una tabla, una columna o una vista de métricas** (agregar, renombrar, cambiar tipo):
 
 1. Avisar al equipo backend **antes** de aplicarlo en Neon.
 2. El backend ajusta el modelo en `finanzas/models.py` el mismo día.
@@ -156,7 +158,7 @@ python manage.py verificar_esquema    # con el .env de Neon: solo lee, no modifi
 python manage.py test                 # usa una base temporal en SQLite (ver nota)
 ```
 
-> Para correr las pruebas, comentar temporalmente `DB_ENGINE` en el `.env`: `cajaclara_app_rw` no puede crear la base de pruebas en Neon. Hoy son 40 pruebas, y una de ellas (`EsquemaDelEquipoDeDatosTests`) falla si una tabla o columna deja de coincidir con el esquema de datos.
+> Para correr las pruebas, comentar temporalmente `DB_ENGINE` en el `.env`: `cajaclara_app_rw` no puede crear la base de pruebas en Neon. Hoy son 47 pruebas, y una de ellas (`EsquemaDelEquipoDeDatosTests`) falla si una tabla o columna deja de coincidir con el esquema de datos.
 
 ### Paso 2.3 — Levantar la API y probarla contra Neon
 
@@ -167,7 +169,8 @@ python manage.py runserver
 1. Abrir `http://127.0.0.1:8000/api/`: catálogo público de endpoints.
 2. Entrar a `http://127.0.0.1:8000/admin/` con el usuario del paso 1.4.
 3. Abrir `http://127.0.0.1:8000/api/finanzas/opciones-filtros/`: debe mostrar `rango_fechas_disponible` de `2010-01-05` a `2022-11-18`.
-4. Comparar un mes con la vista de datos. Por ejemplo, agosto de 2022:
+4. Abrir `http://127.0.0.1:8000/api/finanzas/metricas/`: las 7 métricas deben decir `"disponible": true` (son las vistas de la Etapa 5).
+5. Comparar un mes con la vista de datos. Por ejemplo, agosto de 2022:
    - API: `/api/finanzas/resumen-mensual/?fecha_inicio=2022-08-01&fecha_fin=2022-08-31` → `flujo_caja.saldo`
    - Neon: `SELECT flujo_caja_neto FROM vw_flujo_caja_mensual WHERE periodo = '2022-08';`
    - Los dos deben dar **-164348**.
@@ -270,9 +273,9 @@ Reemplazar los mocks por llamadas a la API. Usar los **nombres de campo de la AP
 
 | Pantalla (ruta)                | Mock actual              | Endpoint(s) de la API                                                                                                                                   |
 | :----------------------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Dashboard (`/`)                | `dashboardMock.js`       | `resumen-mensual`, `resumen-agrupado?agrupacion=semanas_mes`, `cuentas-por-cobrar?vencidas=true&page_size=5`, `ventas?page_size=5`, `productos?ordering=-total_vendido&page_size=4` |
+| Dashboard (`/`)                | `dashboardMock.js`       | `resumen-mensual`, `resumen-agrupado?agrupacion=semanas_mes`, `alertas-cobro?page_size=5` (cobros prioritarios), `ventas?page_size=5`, `productos?ordering=-total_vendido&page_size=4` |
 | Compras y ventas (`/operaciones`) | `operationsMock.js`   | `facturas/` (ventas), `facturas/{id_factura}/` (detalle), `gastos/` (compras de insumos), `clientes/` y `productos/` (para los selectores)              |
-| Cuentas por cobrar (`/cobros`) | `receivablesMock.js`     | `cuentas-por-cobrar/` (lista + `resumen`), `cuentas-por-cobrar/{id_cuenta}/pagar/`                                                                       |
+| Cuentas por cobrar (`/cobros`) | `receivablesMock.js`     | `cuentas-por-cobrar/` (lista + `resumen`), `alertas-cobro/` (prioridad y mensaje de recordatorio), `cuentas-por-cobrar/{id_cuenta}/pagar/`               |
 | Resumen mensual (`/resumen`)   | `monthlySummaryMock.js`  | `resumen-mensual?fecha_inicio=…&fecha_fin=…`, `resumen-agrupado?agrupacion=semanas_mes`, `productos?ordering=-total_vendido`, `gastos/?fecha_inicio=…` |
 
 Cambios de nombre más importantes respecto de los mocks:
@@ -356,6 +359,8 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 | 1  | Entrar con el usuario de prueba                         | Llega al dashboard. Con clave mala: mensaje de error.                                                  | Frontend     |
 | 2  | Ver el dashboard de agosto 2022                         | Saldo del período = **-$164.348** (igual que `vw_flujo_caja_mensual`)                                  | Datos        |
 | 3  | Ir a Cuentas por cobrar → filtro *Vencidas*             | **8** cuentas, total **$10.725**                                                                       | Datos        |
+| 3b | Abrir `/api/finanzas/alertas-cobro/?fecha_corte=2022-09-01` | Igual que `SELECT prioridad_alerta, COUNT(*), SUM(monto) FROM vw_alertas_cobro GROUP BY 1`: 6 críticas ($7.570), 1 alta ($3.083), 1 media ($72) | Datos |
+| 3c | Abrir `/api/finanzas/metricas/morosidad/` y `/metricas/ranking-productos/` | Los mismos números que las páginas 3 y 4 del tablero de Power BI                   | Datos        |
 | 4  | Registrar un cliente nuevo                              | Aparece en la lista. En Neon: `SELECT * FROM cliente ORDER BY id_cliente DESC LIMIT 1;`               | Datos        |
 | 5  | Registrar una venta **al fiado** para ese cliente       | En Neon aparece en `venta`, `detalle_venta` y `cuenta_por_cobrar` (estado `PENDIENTE`)                 | Datos        |
 | 6  | Pagar esa cuenta                                        | Pasa a *Pagada*. En Neon: `estado = 'PAGADA'` y `fecha_pago` = hoy. El saldo del mes actual sube.      | Backend      |
@@ -385,6 +390,7 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 
 ## 📌 Decisiones pendientes (para conversar entre los tres equipos)
 
+- [ ] **Una regla para la fecha de corte:** las vistas de análisis de datos calculan al `2022-09-01` y la API operativa a la fecha de hoy (hoy: 6 vencidas según la vista, 8 según la API). Propuesta: lo histórico (`/metricas/`, Power BI) usa las vistas tal cual; lo operativo (`/cuentas-por-cobrar/`, `/alertas-cobro/`) usa hoy; y cada pantalla dice a qué fecha corresponde su número.
 - [ ] **Fechas en Neon para la demo:** ¿se deja el período 2010–2022 (y el dashboard parte en nov. 2022) o datos desplaza las fechas al presente?
 - [ ] **Gastos que no son insumos** (arriendo, flete, servicios): hoy la base no los permite. Si se quieren, datos tiene que agregar una tabla o columnas y avisar al backend.
 - [ ] **Anular ventas:** la base no lo permite. Si se necesita, acordar cómo marcarlo (por ejemplo, una columna `anulada` en `venta`).

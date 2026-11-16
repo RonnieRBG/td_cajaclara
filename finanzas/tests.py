@@ -447,3 +447,153 @@ class ImportarCsvTests(TestCase):
         self.assertEqual(CuentaPorCobrar.objects.get(pk=1).estado, "VENCIDA")
         self.assertEqual(CuentaPorCobrar.objects.get(pk=2).estado, "PENDIENTE")
         self.assertIsNone(CuentaPorCobrar.objects.get(pk=1).fecha_pago)
+
+
+class AlertasCobroTests(BaseAPITest):
+    """Misma lógica que vw_alertas_cobro del equipo de datos, a la fecha de hoy."""
+
+    def setUp(self):
+        super().setUp()
+
+        def cuenta(id_cuenta, estado, dias, monto, fecha_pago=None):
+            venta = Venta.objects.create(id_factura=f"INV{id_cuenta}", cliente=self.cliente,
+                                         fecha=self.hoy - timedelta(days=90), tipo_compra="Física", por_cobrar=True)
+            CuentaPorCobrar.objects.create(id_cuenta=id_cuenta, venta=venta, cliente=self.cliente, monto=monto,
+                                           fecha_vencimiento=self.hoy + timedelta(days=dias), estado=estado,
+                                           fecha_pago=fecha_pago)
+
+        cuenta(1, "VENCIDA", -20, 500)
+        cuenta(2, "PENDIENTE", -3, 300)   # pendiente con fecha pasada: también es crítica
+        cuenta(3, "PENDIENTE", 0, 100)    # vence hoy
+        cuenta(4, "PENDIENTE", 7, 200)
+        cuenta(5, "PENDIENTE", 12, 50)
+        cuenta(6, "PENDIENTE", 40, 900)   # vigente: fuera de la ventana de 15 días
+        cuenta(7, "PAGADA", -50, 999, fecha_pago=self.hoy - timedelta(days=60))
+
+    def alertas(self, extra=""):
+        r = self.client.get(f"/api/finanzas/alertas-cobro/?{extra}")
+        self.assertEqual(r.status_code, 200, r.content)
+        return r.json()
+
+    def test_prioridades_y_orden(self):
+        r = self.alertas()
+        self.assertEqual([a["id_cuenta"] for a in r["results"]], [1, 2, 3, 4, 5])  # vencidas primero, por fecha
+        self.assertEqual(
+            [a["prioridad_alerta"] for a in r["results"]],
+            ["1_CRITICA_VENCIDA", "1_CRITICA_VENCIDA", "2_ALTA_PROXIMA_7D", "2_ALTA_PROXIMA_7D", "3_MEDIA_PROXIMA_15D"],
+        )
+        self.assertEqual(r["resumen"]["por_prioridad"]["1_CRITICA_VENCIDA"], {"nombre": "Vencida", "cantidad": 2, "monto": 800})
+        self.assertEqual(r["resumen"]["total_alertas"], 5)
+        self.assertEqual(r["resumen"]["monto_total"], 1150)
+
+    def test_campos_como_la_vista_de_datos(self):
+        vencida, _, hoy, *_ = self.alertas()["results"]
+        self.assertEqual((vencida["tipo_alerta"], vencida["dias_atraso"], vencida["dias_para_vencer"]), ("VENCIDA", 20, -20))
+        self.assertEqual(
+            vencida["mensaje_sugerido"],
+            "Recordatorio urgente: cliente Almacén San Pedro mantiene factura INV1 vencida hace 20 días por $500.",
+        )
+        self.assertEqual((hoy["tipo_alerta"], hoy["dias_atraso"], hoy["ventana_alerta"]), ("POR_VENCER", 0, "Vence en <= 7 días"))
+        self.assertEqual(
+            hoy["mensaje_sugerido"],
+            f"Aviso preventivo: factura INV3 de Almacén San Pedro vence el {self.hoy} (en 0 días) por $100.",
+        )
+        self.assertTrue(hoy["requiere_notificacion"])
+
+    def test_filtros(self):
+        self.assertEqual([a["id_cuenta"] for a in self.alertas("prioridad=alta")["results"]], [3, 4])
+        self.assertEqual([a["id_cuenta"] for a in self.alertas("dias_aviso=5")["results"]], [1, 2, 3])
+        todas = self.alertas("todas=true")
+        self.assertEqual(todas["count"], 6)  # incluye la vigente; la pagada nunca
+        self.assertFalse(todas["results"][-1]["requiere_notificacion"])
+        self.assertEqual(self.alertas("cliente=999")["count"], 0)
+        # A otra fecha de corte (así se compara con Power BI, que usa una fecha fija)
+        antes = self.alertas(f"fecha_corte={self.hoy - timedelta(days=10)}")
+        self.assertEqual(antes["resumen"]["por_prioridad"]["1_CRITICA_VENCIDA"]["cantidad"], 1)  # a esa fecha solo la cuenta 1 estaba vencida
+        for malo in ("prioridad=urgente", "dias_aviso=x", "fecha_corte=ayer", "cliente=abc"):
+            with self.subTest(malo):
+                self.assertEqual(self.client.get(f"/api/finanzas/alertas-cobro/?{malo}").status_code, 400)
+
+    def test_pagar_quita_la_alerta(self):
+        self.pagar(2)
+        self.assertNotIn(2, [a["id_cuenta"] for a in self.alertas()["results"]])
+
+
+class MetricasTests(BaseAPITest):
+    """La API lee las vistas SQL del equipo de datos (finanzas/sql/)."""
+
+    def setUp(self):
+        super().setUp()
+        p3 = Producto.objects.create(id_producto="P3", producto="Jabón", categoria="Aseo del hogar", unidad_negocio="Supermercado")
+
+        def venta(id_factura, fecha, por_cobrar, lineas):
+            v = Venta.objects.create(id_factura=id_factura, cliente=self.cliente, fecha=fecha,
+                                     tipo_compra="Física", por_cobrar=por_cobrar)
+            for producto, cantidad, precio, costo in lineas:
+                DetalleVenta.objects.create(id_detalle=DetalleVenta.objects.count() + 1, venta=v, producto=producto,
+                                            cantidad=cantidad, precio_venta=precio, costo_venta=costo)
+            return v
+
+        venta("A", date(2019, 5, 10), False, [(self.p1, 2, 1000, 600), (p3, 1, 500, 400)])   # 2.500 / margen 900
+        fiada = venta("B", date(2019, 5, 20), True, [(self.p2, 4, 500, 300)])                  # 2.000 / margen 800
+        venta("C", date(2022, 3, 1), False, [(self.p1, 1, 1000, 600)])                         # período "parcial"
+        CuentaPorCobrar.objects.create(id_cuenta=1, venta=fiada, cliente=self.cliente, monto=2000,
+                                       fecha_vencimiento=date(2019, 6, 20), estado="PAGADA", fecha_pago=date(2019, 6, 25))
+        GastoInsumo.objects.create(id_gasto=1, producto=self.p1, fecha=date(2019, 5, 15), monto=700)
+
+    def metrica(self, nombre, extra="", estado=200):
+        r = self.client.get(f"/api/finanzas/metricas/{nombre}/?{extra}")
+        self.assertEqual(r.status_code, estado, r.content)
+        return r.json()
+
+    def test_sin_vistas_responde_503(self):
+        self.assertIn("crear_vistas_metricas", self.metrica("morosidad", estado=503)["error"])
+        self.assertFalse(self.client.get("/api/finanzas/metricas/").json()["metricas"]["morosidad"]["disponible"])
+
+    def test_metricas_leen_las_vistas(self):
+        call_command("crear_vistas_metricas", stdout=StringIO())
+        call_command("crear_vistas_metricas", stdout=StringIO())  # si ya existen, no las toca
+
+        flujo = self.metrica("flujo-caja-mensual", "periodo=2019-05")["results"][0]
+        self.assertEqual(
+            (flujo["ventas_facturadas"], flujo["ingresos_contado"], flujo["ventas_fiadas"], flujo["gastos_insumo"], flujo["flujo_caja_neto"]),
+            (4500, 2500, 2000, 700, 1800),
+        )
+        # El flujo de caja de la API da lo mismo que la vista del equipo de datos
+        resumen = self.client.get("/api/finanzas/resumen-mensual/?fecha_inicio=2019-05-01&fecha_fin=2019-05-31").json()
+        self.assertEqual(resumen["flujo_caja"]["saldo"], flujo["flujo_caja_neto"])
+        junio = self.metrica("flujo-caja-mensual", "periodo=2019-06")["results"][0]
+        self.assertEqual(junio["cobros_fiado_recibidos"], 2000)
+
+        categorias = self.metrica("ventas-categoria-mes", "anio=2019&ordering=-ventas")
+        self.assertEqual([(c["categoria"], c["ventas"], c["margen"]) for c in categorias["results"]],
+                         [("Abarrotes", 4000, 1600), ("Aseo del hogar", 500, 100)])
+
+        margen = self.metrica("margen-productos", "id_producto=P1&cobertura=completa")["results"]
+        self.assertEqual((margen[0]["ventas"], margen[0]["margen"], margen[0]["margen_pct"]), (2000, 800, 40))
+        self.assertEqual(self.metrica("margen-productos", "search=jab")["count"], 1)
+
+        ranking = self.metrica("ranking-productos")
+        self.assertEqual([p["id_producto"] for p in ranking["results"]], ["P1", "P2", "P3"])  # sin la venta de 2022
+        self.assertIs(ranking["results"][0]["alerta_escala_etapa2"], False)
+        self.assertEqual(self.metrica("ranking-productos", "clasificacion_desempeno=Baja venta&sin_alerta_escala=true")["count"], 1)
+
+        cliente = self.metrica("cuentas-por-cobrar-cliente", "id_cliente=1")["results"][0]
+        self.assertEqual((cliente["monto_total_fiado"], cliente["monto_pagado"], cliente["promedio_dias_atraso_historico"]), (2000, 2000, 5))
+        self.assertEqual(self.metrica("cuentas-por-cobrar-cliente", "con_deuda=true")["count"], 0)
+
+        self.assertEqual(len(self.metrica("morosidad")["results"]), 3)
+        anual = {a["anio"]: a for a in self.metrica("sustentabilidad")["results"]}
+        self.assertEqual((anual[2019]["margen_bruto"], anual[2019]["gastos_insumo"], anual[2019]["utilidad_neta_operativa"]), (1700, 700, 1000))
+        self.assertEqual(anual[2022]["cobertura"], "parcial")
+
+        catalogo = self.client.get("/api/finanzas/metricas/").json()["metricas"]
+        self.assertTrue(all(m["disponible"] for m in catalogo.values()))
+
+    def test_parametros_invalidos(self):
+        call_command("crear_vistas_metricas", stdout=StringIO())
+        self.metrica("no-existe", estado=404)
+        self.metrica("ranking-productos", "ordering=ventas;drop", estado=400)
+        self.metrica("ventas-categoria-mes", "anio=dosmil", estado=400)
+        # Los valores van como parámetros: una comilla no rompe la consulta
+        self.assertEqual(self.metrica("ventas-categoria-mes", "categoria=x' OR '1'='1")["count"], 0)
