@@ -158,7 +158,7 @@ python manage.py verificar_esquema    # con el .env de Neon: solo lee, no modifi
 python manage.py test                 # usa una base temporal en SQLite (ver nota)
 ```
 
-> Para correr las pruebas, comentar temporalmente `DB_ENGINE` en el `.env`: `cajaclara_app_rw` no puede crear la base de pruebas en Neon. Hoy son 47 pruebas, y una de ellas (`EsquemaDelEquipoDeDatosTests`) falla si una tabla o columna deja de coincidir con el esquema de datos.
+> Para correr las pruebas, comentar temporalmente `DB_ENGINE` en el `.env`: `cajaclara_app_rw` no puede crear la base de pruebas en Neon. Hoy son 51 pruebas, y una de ellas (`EsquemaDelEquipoDeDatosTests`) falla si una tabla o columna deja de coincidir con el esquema de datos.
 
 ### Paso 2.3 — Levantar la API y probarla contra Neon
 
@@ -273,10 +273,10 @@ Reemplazar los mocks por llamadas a la API. Usar los **nombres de campo de la AP
 
 | Pantalla (ruta)                | Mock actual              | Endpoint(s) de la API                                                                                                                                   |
 | :----------------------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Dashboard (`/`)                | `dashboardMock.js`       | `resumen-mensual`, `resumen-agrupado?agrupacion=semanas_mes`, `alertas-cobro?page_size=5` (cobros prioritarios), `ventas?page_size=5`, `productos?ordering=-total_vendido&page_size=4` |
-| Compras y ventas (`/operaciones`) | `operationsMock.js`   | `facturas/` (ventas), `facturas/{id_factura}/` (detalle), `gastos/` (compras de insumos), `clientes/` y `productos/` (para los selectores)              |
+| Dashboard (`/`)                | `dashboardMock.js`       | `resumen-mensual`, `resumen-agrupado?agrupacion=semanas_mes`, `alertas-cobro?page_size=5` (cobros prioritarios), `operaciones?page_size=5` (operaciones recientes), `productos?ordering=-total_vendido&page_size=4` |
+| Compras y ventas (`/operaciones`) | `operationsMock.js`   | `operaciones/?mes=AAAA-MM` (ventas y gastos juntos, con filtros `tipo`, `estado`, `search` y su `resumen`), `facturas/{id_factura}/` (detalle), `opciones/clientes/` y `opciones/productos/` (selectores de los formularios) |
 | Cuentas por cobrar (`/cobros`) | `receivablesMock.js`     | `cuentas-por-cobrar/` (lista + `resumen`), `alertas-cobro/` (prioridad y mensaje de recordatorio), `cuentas-por-cobrar/{id_cuenta}/pagar/`               |
-| Resumen mensual (`/resumen`)   | `monthlySummaryMock.js`  | `resumen-mensual?fecha_inicio=…&fecha_fin=…`, `resumen-agrupado?agrupacion=semanas_mes`, `productos?ordering=-total_vendido`, `gastos/?fecha_inicio=…` |
+| Resumen mensual (`/resumen`)   | `monthlySummaryMock.js`  | `resumen-mensual?fecha_inicio=…&fecha_fin=…` (incluye `por_tipo_compra`), `resumen-agrupado?agrupacion=semanas_mes`, `productos?ordering=-total_vendido`, `facturas?ordering=-total_venta&page_size=1` (venta más grande), `clientes?ordering=-total_deuda&page_size=1` (quién debe más) |
 
 Cambios de nombre más importantes respecto de los mocks:
 
@@ -300,6 +300,8 @@ Cambios de nombre más importantes respecto de los mocks:
 > La tabla completa campo por campo está en la **Parte 5 de `API_DOCUMENTACION.md`**.
 
 ### Paso 3.6 — Ajustar los formularios a lo que la base permite
+
+> El detalle de cada formulario (campos, obligatorios, formato y de dónde sale cada lista desplegable) está en el **endpoint 16 de `API_DOCUMENTACION.md`**. El precio sugerido de un producto sale de `opciones/productos/` (`ultimo_precio_venta`).
 
 La base del equipo de datos **no tiene** algunas cosas que el prototipo muestra. Hay que ajustar los formularios así:
 

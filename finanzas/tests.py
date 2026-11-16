@@ -597,3 +597,96 @@ class MetricasTests(BaseAPITest):
         self.metrica("ventas-categoria-mes", "anio=dosmil", estado=400)
         # Los valores van como parámetros: una comilla no rompe la consulta
         self.assertEqual(self.metrica("ventas-categoria-mes", "categoria=x' OR '1'='1")["count"], 0)
+
+
+class OperacionesTests(BaseAPITest):
+    """Ventas y gastos en una sola lista, para la pantalla 'Compras y ventas'."""
+
+    def setUp(self):
+        super().setUp()
+        Cliente.objects.create(id_cliente=2, nombre="Kiosco Don Luis", contacto="+56 9 2")
+        self.vender(fecha="2026-10-05", items=[{"id_producto": "P1", "cantidad": 2, "precio_venta": 1000, "costo_venta": 600}])
+        self.fiada = self.vender(
+            fecha="2026-10-10", id_cliente=2, tipo_compra="En Línea", por_cobrar=True, fecha_vencimiento="2026-10-30",
+            items=[{"id_producto": "P2", "cantidad": 3, "precio_venta": 500, "costo_venta": 300},
+                   {"id_producto": "P1", "cantidad": 1, "precio_venta": 1000, "costo_venta": 600}],
+        ).json()
+        self.vender(fecha="2026-09-20", items=[{"id_producto": "P2", "cantidad": 1, "precio_venta": 500, "costo_venta": 300}])
+        GastoInsumo.objects.create(id_gasto=1, producto=self.p1, fecha=date(2026, 10, 10), monto=700)
+        GastoInsumo.objects.create(id_gasto=2, producto=self.p2, fecha=date(2026, 10, 20), monto=300)
+
+    def operaciones(self, extra=""):
+        r = self.client.get(f"/api/finanzas/operaciones/?{extra}")
+        self.assertEqual(r.status_code, 200, r.content)
+        return r.json()
+
+    def test_lista_unificada_del_mes(self):
+        r = self.operaciones("mes=2026-10")
+        self.assertEqual([(o["tipo"], o["fecha"], o["monto"]) for o in r["results"]], [
+            ("GASTO", "2026-10-20", 300),
+            ("VENTA", "2026-10-10", 2500),  # a igual fecha, primero la venta
+            ("GASTO", "2026-10-10", 700),
+            ("VENTA", "2026-10-05", 2000),
+        ])
+        self.assertEqual(r["resumen"], {
+            "ventas": {"cantidad": 2, "monto": 4500},
+            "gastos": {"cantidad": 2, "monto": 1000},
+            "ventas_pendientes": {"cantidad": 1, "monto": 2500},
+        })
+        venta = r["results"][1]
+        self.assertEqual(venta, {
+            "tipo": "VENTA", "id": self.fiada["id_factura"], "fecha": "2026-10-10", "detalle": "Kiosco Don Luis",
+            "monto": 2500, "items_count": 2, "tipo_compra": "En Línea", "por_cobrar": True,
+            "estado_pago": "PENDIENTE", "fecha_vencimiento": "2026-10-30", "id_cliente": 2, "id_producto": None,
+        })
+        gasto = r["results"][0]
+        self.assertEqual((gasto["id"], gasto["detalle"], gasto["id_producto"], gasto["estado_pago"], gasto["tipo_compra"]),
+                         ("2", "Arroz 1kg", "P2", "PAGADO", None))
+
+    def test_filtros(self):
+        self.assertEqual(self.operaciones()["count"], 5)
+        self.assertEqual(self.operaciones("tipo=ventas")["count"], 3)
+        self.assertEqual(self.operaciones("tipo=gasto&mes=2026-10")["resumen"]["ventas"]["cantidad"], 0)
+        pendientes = self.operaciones("estado=pendiente")
+        self.assertEqual([o["id"] for o in pendientes["results"]], [self.fiada["id_factura"]])
+        self.pagar(self.fiada["cuenta_por_cobrar"]["id_cuenta"], fecha_pago="2026-10-15")
+        self.assertEqual(self.operaciones("estado=pendiente")["count"], 0)
+        self.assertEqual(self.operaciones("tipo_compra=En Línea")["count"], 1)  # los gastos no tienen canal
+        self.assertEqual(self.operaciones("search=don luis")["count"], 1)
+        self.assertEqual(self.operaciones("search=aceite")["count"], 3)  # 2 ventas con aceite + 1 gasto
+        self.assertEqual(self.operaciones("fecha_inicio=2026-10-06&fecha_fin=2026-10-10")["count"], 2)
+        self.assertEqual([o["monto"] for o in self.operaciones("ordering=-monto&page_size=2")["results"]], [2500, 2000])
+        self.assertEqual(self.operaciones("mes=2026-12")["count"], 0)
+        for malo in ("tipo=otro", "mes=octubre", "estado=x", "ordering=cliente", "tipo_compra=fax"):
+            with self.subTest(malo):
+                self.assertEqual(self.client.get(f"/api/finanzas/operaciones/?{malo}").status_code, 400)
+
+    def test_resumen_por_canal_y_ordenes_nuevos(self):
+        r = self.client.get("/api/finanzas/resumen-mensual/?fecha_inicio=2026-10-01&fecha_fin=2026-10-31").json()
+        self.assertEqual(r["por_tipo_compra"], {
+            "Física": {"nombre": "Física", "facturas": 1, "transacciones": 1, "ingresos": 2000},
+            "En Línea": {"nombre": "En Línea", "facturas": 1, "transacciones": 2, "ingresos": 2500},
+        })
+        self.assertEqual(r["total_facturas"], 2)
+        mayor = self.client.get("/api/finanzas/facturas/?ordering=-total_venta&page_size=1").json()["results"][0]
+        self.assertEqual(mayor["total_venta"], 2500)
+        deudores = self.client.get("/api/finanzas/clientes/?ordering=-total_deuda").json()["results"]
+        self.assertEqual([(c["id_cliente"], c["total_deuda"]) for c in deudores], [(2, 2500), (1, 0)])
+        self.assertEqual(self.client.get("/api/finanzas/clientes/?ordering=contacto").status_code, 400)
+        self.assertEqual(self.client.get("/api/finanzas/facturas/?ordering=cliente").status_code, 400)
+
+    def test_listas_livianas_para_formularios(self):
+        clientes = self.client.get("/api/finanzas/opciones/clientes/?search=kiosco").json()["results"]
+        self.assertEqual(clientes, [{"id_cliente": 2, "nombre": "Kiosco Don Luis", "contacto": "+56 9 2"}])
+        Producto.objects.create(id_producto="P9", producto="Azúcar", categoria="Abarrotes", unidad_negocio="Supermercado")
+        productos = self.client.get("/api/finanzas/opciones/productos/").json()["results"]
+        self.assertEqual(productos, [
+            {"id_producto": "P1", "producto": "Aceite 1L", "categoria": "Abarrotes",
+             "ultimo_precio_venta": 1000, "ultimo_costo_venta": 600},
+            {"id_producto": "P2", "producto": "Arroz 1kg", "categoria": "Abarrotes",
+             "ultimo_precio_venta": 500, "ultimo_costo_venta": 300},
+            {"id_producto": "P9", "producto": "Azúcar", "categoria": "Abarrotes",
+             "ultimo_precio_venta": None, "ultimo_costo_venta": None},  # nunca se ha vendido
+        ])
+        self.assertEqual(len(self.client.get("/api/finanzas/opciones/productos/?limit=1").json()["results"]), 1)
+        self.assertEqual(self.client.get("/api/finanzas/opciones/productos/?limit=500").status_code, 400)

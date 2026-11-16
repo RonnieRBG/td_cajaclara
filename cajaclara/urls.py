@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from finanzas.alertas import AlertasCobroView
+from finanzas.operaciones import OperacionesView, OpcionesClientesView, OpcionesProductosView
 from finanzas.metricas import MetricasCatalogoView, MetricaView
 from finanzas.views import (
     ApiCatalogView,
@@ -67,6 +68,11 @@ urlpatterns = [
     path('api/finanzas/cuentas-por-cobrar/<int:pk>/pagar/', PagarCuentaView.as_view(), name='cuenta-pagar'),
     path('api/finanzas/cuentas-por-cobrar/<int:pk>/revertir-pago/', RevertirPagoView.as_view(), name='cuenta-revertir-pago'),
     path('api/finanzas/gastos/', GastoListCreateView.as_view(), name='gastoinsumo-list'),
+
+    # Para las pantallas del frontend: ventas y gastos en una lista, y selectores livianos
+    path('api/finanzas/operaciones/', OperacionesView.as_view(), name='operaciones'),
+    path('api/finanzas/opciones/clientes/', OpcionesClientesView.as_view(), name='opciones-clientes'),
+    path('api/finanzas/opciones/productos/', OpcionesProductosView.as_view(), name='opciones-productos'),
 
     # Alertas de cobro (misma lógica que vw_alertas_cobro del equipo de datos, a la fecha de hoy)
     path('api/finanzas/alertas-cobro/', AlertasCobroView.as_view(), name='alertas-cobro'),

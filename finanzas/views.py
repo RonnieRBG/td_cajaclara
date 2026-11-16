@@ -259,6 +259,19 @@ class ResumenFinancieroView(APIView):
                 transacciones=fila["transacciones"], ingresos=_monto(fila["ingresos"])
             )
 
+        por_canal = {
+            codigo: {"nombre": nombre, "facturas": 0, "transacciones": 0, "ingresos": 0}
+            for codigo, nombre in Venta.TIPO_COMPRA_CHOICES
+        }
+        for fila in ventas.values("venta__tipo_compra").annotate(
+            facturas=Count("venta_id", distinct=True), transacciones=Count("pk"), ingresos=Sum("total_venta")
+        ):
+            if fila["venta__tipo_compra"] in por_canal:
+                por_canal[fila["venta__tipo_compra"]].update(
+                    facturas=fila["facturas"], transacciones=fila["transacciones"], ingresos=_monto(fila["ingresos"])
+                )
+        total_facturas = ventas.aggregate(n=Count("venta_id", distinct=True))["n"]
+
         return Response({
             "rango_aplicado": {
                 "fecha_inicio": filtros.fecha_inicio.strftime(FORMATO_FECHA),
@@ -266,6 +279,7 @@ class ResumenFinancieroView(APIView):
                 "periodo_tipo": filtros.periodo,
             },
             "filtro_tipo_compra": filtros.tipo_compra or "TODOS",
+            "total_facturas": total_facturas,
             "total_transacciones": totales["transacciones"],
             "total_unidades": totales["unidades"] or 0,
             # Ventas del período (al contado y a crédito) y su costo de mercadería
@@ -274,6 +288,8 @@ class ResumenFinancieroView(APIView):
             "utilidad_bruta": _monto(utilidad),
             "margen_porcentaje": _margen(ingresos, utilidad),
             "por_estado_pago": por_estado,
+            # Ventas por canal (Física / En Línea)
+            "por_tipo_compra": por_canal,
             # Dinero que realmente entró y salió (ver finanzas/flujo_caja.py)
             "flujo_caja": flujo_caja.a_json(flujo),
         })
@@ -488,11 +504,27 @@ def _tipo_compra_o_400(params):
         raise ValidationError({"error": str(error)})
 
 
+def _ordenar(qs, params, permitidos, por_defecto, desempate):
+    """Aplica ?ordering=campo o -campo (solo campos permitidos). Error 400 si no es válido."""
+    orden = (params.get("ordering") or por_defecto).strip()
+    if orden.lstrip("-") not in permitidos:
+        raise ValidationError(
+            {"error": f"'ordering' inválido. Usa: {', '.join(permitidos)} (con '-' para mayor a menor)."}
+        )
+    return qs.order_by(orden, desempate)
+
+
+ORDEN_CLIENTES = ("nombre", "total_deuda", "total_facturas", "id_cliente")
+ORDEN_VENTAS = ("fecha", "total_venta", "id_factura")
+
+
 class ClienteListView(generics.ListAPIView):
     """
     GET /api/finanzas/clientes/
     Parámetros de consulta opcionales:
       - search: Filtra por nombre, ID o teléfono de contacto.
+      - ordering: nombre (por defecto), total_deuda, total_facturas o id_cliente; con "-" adelante,
+        de mayor a menor. Clientes que más deben: ?ordering=-total_deuda
       - page: Número de página (default: 1).
       - page_size: Registros por página (default: 50, máx: 500).
     """
@@ -521,7 +553,7 @@ class ClienteListView(generics.ListAPIView):
         qs = Cliente.objects.annotate(
             total_facturas=Coalesce(Subquery(ventas_del_cliente, output_field=IntegerField()), 0),
             total_deuda=Coalesce(Subquery(deuda_del_cliente, output_field=IntegerField()), 0),
-        ).order_by("nombre", "id_cliente")
+        )
 
         search = self.request.query_params.get("search")
         if search:
@@ -530,7 +562,7 @@ class ClienteListView(generics.ListAPIView):
             if search.isdigit():
                 q |= Q(id_cliente=int(search))
             qs = qs.filter(q)
-        return qs
+        return _ordenar(qs, self.request.query_params, ORDEN_CLIENTES, "nombre", "id_cliente")
 
 
 ORDEN_PRODUCTOS = ("producto", "total_vendido", "total_ingresos", "id_producto")
@@ -603,6 +635,8 @@ class VentaListView(generics.ListAPIView):
       - tipo_compra: Física o En Línea.
       - por_cobrar: true o false.
       - fecha_inicio, fecha_fin: Formato DD/MM/AAAA o AAAA-MM-DD.
+      - ordering: -fecha (por defecto), fecha, total_venta, -total_venta, id_factura.
+        Venta más grande del período: ?ordering=-total_venta&page_size=1
       - page, page_size: Paginación.
     """
     serializer_class = VentaSerializer
@@ -615,7 +649,6 @@ class VentaListView(generics.ListAPIView):
                 total_venta=Sum(F("detalles__cantidad") * F("detalles__precio_venta")),
                 items_count=Count("detalles"),
             )
-            .order_by("-fecha", "-id_factura")
         )
         params = self.request.query_params
 
@@ -638,7 +671,7 @@ class VentaListView(generics.ListAPIView):
             qs = qs.filter(fecha__gte=fecha_ini)
         if fecha_fin:
             qs = qs.filter(fecha__lte=fecha_fin)
-        return qs
+        return _ordenar(qs, params, ORDEN_VENTAS, "-fecha", "-id_factura")
 
 
 class DetalleVentaListView(generics.ListAPIView):
@@ -830,7 +863,7 @@ class ApiCatalogView(APIView):
         host = request.build_absolute_uri("/").rstrip("/")
         return Response({
             "nombre": "API Caja Clara - Módulo Finanzas Supermercado",
-            "version": "2.1",
+            "version": "2.2",
             "descripcion": "Endpoints REST sobre el esquema del equipo de datos (cliente, producto, venta, "
             "detalle_venta, cuenta_por_cobrar, gastos_insumo). Montos enteros en CLP.",
             "autenticacion": {
@@ -903,6 +936,25 @@ class ApiCatalogView(APIView):
                     "metodo": "GET",
                     "descripcion": "Listado paginado de gastos en insumos (tabla gastos_insumo).",
                     "parametros": ["producto", "categoria", "fecha_inicio", "fecha_fin", "page", "page_size"],
+                },
+                "operaciones": {
+                    "url": f"{host}/api/finanzas/operaciones/",
+                    "metodo": "GET",
+                    "descripcion": "Ventas y gastos en una sola lista ordenada por fecha, con totales.",
+                    "parametros": ["tipo", "mes", "fecha_inicio", "fecha_fin", "estado", "tipo_compra", "search",
+                                   "ordering", "page", "page_size"],
+                },
+                "opciones_clientes": {
+                    "url": f"{host}/api/finanzas/opciones/clientes/",
+                    "metodo": "GET",
+                    "descripcion": "Lista liviana para el selector de cliente.",
+                    "parametros": ["search", "limit"],
+                },
+                "opciones_productos": {
+                    "url": f"{host}/api/finanzas/opciones/productos/",
+                    "metodo": "GET",
+                    "descripcion": "Lista liviana para el selector de producto, con último precio y costo.",
+                    "parametros": ["search", "categoria", "limit"],
                 },
                 "alertas_cobro": {
                     "url": f"{host}/api/finanzas/alertas-cobro/",

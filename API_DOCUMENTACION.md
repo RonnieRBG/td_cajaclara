@@ -241,6 +241,8 @@ En cada consulta se envía el encabezado `Authorization: Bearer <access>`. El `a
 | 10  | `GET /gastos/`             | Gastos en insumos + resumen            | `gastos_insumo`      |    Sí    |          —          |
 | 12  | `GET /alertas-cobro/`      | Cobros vencidos o por vencer, por prioridad | `cuenta_por_cobrar` |  Sí    |         ✅          |
 | 13  | `GET /metricas/{nombre}/`  | Métricas del equipo de datos (las de Power BI) | vistas `vw_*`  | Según la vista | (análisis)   |
+| 14  | `GET /operaciones/`        | Ventas y gastos en una sola lista + resumen | `venta` + `gastos_insumo` | Sí |      ✅          |
+| 15  | `GET /opciones/clientes/` y `/opciones/productos/` | Listas livianas para los selectores | `cliente`, `producto` | No | (formularios) |
 
 **Registrar datos** (detalle en el endpoint 11):
 
@@ -264,7 +266,7 @@ En cada consulta se envía el encabezado `Authorization: Bearer <access>`. El `a
 }
 ```
 
-Los endpoints 9, 10 y 12 agregan una clave `resumen` con totales que **no dependen de la página**.
+Los endpoints 9, 10, 12 y 14 agregan una clave `resumen` con totales que **no dependen de la página**.
 
 ---
 
@@ -318,6 +320,7 @@ Los endpoints 9, 10 y 12 agregan una clave `resumen` con totales que **no depend
 {
   "rango_aplicado": { "fecha_inicio": "01/08/2022", "fecha_fin": "31/08/2022", "periodo_tipo": "personalizado" },
   "filtro_tipo_compra": "TODOS",
+  "total_facturas": 19,
   "total_transacciones": 19,
   "total_unidades": 38,
   "total_ingresos": 16057,
@@ -327,6 +330,10 @@ Los endpoints 9, 10 y 12 agregan una clave `resumen` con totales que **no depend
   "por_estado_pago": {
     "PAGADO": { "nombre": "Pagado", "transacciones": 17, "ingresos": 12902 },
     "PENDIENTE": { "nombre": "Pendiente", "transacciones": 2, "ingresos": 3155 }
+  },
+  "por_tipo_compra": {
+    "Física": { "nombre": "Física", "facturas": 6, "transacciones": 6, "ingresos": 6623 },
+    "En Línea": { "nombre": "En Línea", "facturas": 13, "transacciones": 13, "ingresos": 9434 }
   },
   "flujo_caja": {
     "entradas": { "ventas_contado": 12902, "cobros": 11613, "total": 24515 },
@@ -338,7 +345,9 @@ Los endpoints 9, 10 y 12 agregan una clave `resumen` con totales que **no depend
 
 | Campo                 | Significado                                                                                                            |
 | :-------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| `total_facturas`      | Ventas del período (filas de `venta`).                                                                                 |
 | `total_transacciones` | Líneas de venta del período (filas de `detalle_venta`).                                                                |
+| `por_tipo_compra`     | Ventas por canal: facturas, líneas e ingresos de `Física` y de `En Línea`.                                             |
 | `total_ingresos`      | Todo lo **vendido** en el período (al contado y a crédito).                                                            |
 | `total_costos`        | Costo de la mercadería vendida (`cantidad × costo_venta`).                                                             |
 | `utilidad_bruta`      | `total_ingresos - total_costos`.                                                                                       |
@@ -422,6 +431,7 @@ Los endpoints 9, 10 y 12 agregan una clave `resumen` con totales que **no depend
 | Parámetro           | Valores                                       |
 | :------------------ | :-------------------------------------------- |
 | `search`            | Texto: busca por nombre, contacto o `id_cliente` |
+| `ordering`          | `nombre` (por defecto), `total_deuda`, `total_facturas`, `id_cliente`; con `-`, de mayor a menor. Quién debe más: `?ordering=-total_deuda` |
 | `page`, `page_size` | Paginación                                    |
 
 ```json
@@ -493,6 +503,7 @@ Los endpoints 9, 10 y 12 agregan una clave `resumen` con totales que **no depend
 | `tipo_compra`               | `Física` o `En Línea` |
 | `por_cobrar`                | `true` o `false`      |
 | `fecha_inicio`, `fecha_fin` | Rango de fechas       |
+| `ordering`                  | `-fecha` (por defecto), `fecha`, `total_venta`, `-total_venta`, `id_factura`. Venta más grande: `?ordering=-total_venta&page_size=1` |
 | `page`, `page_size`         | Paginación            |
 
 ```json
@@ -912,6 +923,143 @@ Es la Tarea 30: la API **lee las vistas SQL del equipo de datos, sin recalcular*
 
 ---
 
+### 14. Operaciones (ventas y gastos en una sola lista)
+
+`GET /api/finanzas/operaciones/`
+
+Para la pantalla **Compras y ventas** y las **operaciones recientes** del dashboard: junta las ventas (tabla `venta`, una fila por factura) y los gastos (tabla `gastos_insumo`), ya ordenados y paginados. El frontend no tiene que pedir dos listas y mezclarlas.
+
+| Parámetro                   | Valores                                                                 |
+| :-------------------------- | :---------------------------------------------------------------------- |
+| `tipo`                      | `venta` o `gasto` (omitir = ambos)                                      |
+| `mes`                       | `AAAA-MM` (ej. `2022-08`). O bien `fecha_inicio` y `fecha_fin`          |
+| `estado`                    | `pendiente` (ventas al fiado sin pagar) o `pagado`                      |
+| `tipo_compra`               | `Física` o `En Línea` (deja solo ventas: los gastos no tienen canal)    |
+| `search`                    | Busca en N° de factura, nombre del cliente y nombre del producto        |
+| `ordering`                  | `-fecha` (por defecto), `fecha`, `monto`, `-monto`                      |
+| `page`, `page_size`         | Paginación                                                              |
+
+```json
+// GET /api/finanzas/operaciones/?mes=2022-08&page_size=2
+{
+  "count": 141,
+  "next": "http://localhost:8000/api/finanzas/operaciones/?mes=2022-08&page=2&page_size=2",
+  "previous": null,
+  "results": [
+    {
+      "tipo": "VENTA",
+      "id": "INV7778500-20220831-L",
+      "fecha": "2022-08-31",
+      "detalle": "Luis García Silva",
+      "monto": 61,
+      "items_count": 1,
+      "tipo_compra": "En Línea",
+      "por_cobrar": false,
+      "estado_pago": "PAGADO",
+      "fecha_vencimiento": null,
+      "id_cliente": 1644,
+      "id_producto": null
+    }
+  ],
+  "resumen": {
+    "ventas": { "cantidad": 19, "monto": 16057 },
+    "gastos": { "cantidad": 122, "monto": 188863 },
+    "ventas_pendientes": { "cantidad": 2, "monto": 3155 }
+  }
+}
+```
+
+| Campo               | En una `VENTA`                                         | En un `GASTO`                    |
+| :------------------ | :----------------------------------------------------- | :------------------------------- |
+| `id`                | `id_factura`                                           | `id_gasto` (como texto)          |
+| `detalle`           | Nombre del cliente                                     | Nombre del producto comprado     |
+| `monto`             | Total de la venta                                      | Monto del gasto                  |
+| `items_count`       | Cantidad de líneas de la venta                         | `1`                              |
+| `tipo_compra`       | `Física` / `En Línea`                                  | `null`                           |
+| `estado_pago`       | `PAGADO` o `PENDIENTE`                                 | `PAGADO`                         |
+| `fecha_vencimiento` | La de su cuenta por cobrar (`null` si fue al contado)  | `null`                           |
+| `id_cliente`        | Cliente de la venta                                    | `null`                           |
+| `id_producto`       | `null` (los productos están en `facturas/{id_factura}/`) | Producto comprado              |
+
+- El `resumen` cuenta **todo lo filtrado**, no solo la página.
+- Para el detalle de una venta (sus productos y su deuda): `GET /facturas/{id}/` con el `id` de la fila.
+- Conviene pedir siempre un `mes` o un rango: sin fechas recorre los 120 mil registros y tarda cerca de un segundo.
+- La base no guarda la **hora** de las operaciones, solo la fecha.
+
+---
+
+### 15. Listas para los selectores de los formularios
+
+Livianas y rápidas, para buscar mientras se escribe. No están paginadas: devuelven `{"results": [...]}` con hasta `limit` filas (por defecto 20, máximo 100).
+
+`GET /api/finanzas/opciones/clientes/?search=vega&limit=2`
+
+```json
+{ "results": [
+  { "id_cliente": 1109, "nombre": "Ana Aguilar Vega", "contacto": "+56 9 1676 5133" },
+  { "id_cliente": 381, "nombre": "Ana Cruz Vega", "contacto": "+56 9 3235 3997" }
+] }
+```
+
+`GET /api/finanzas/opciones/productos/?search=arroz&limit=2` (también acepta `categoria`)
+
+```json
+{ "results": [
+  { "id_producto": "P122698", "producto": "Alamar ensalada de atún con arroz", "categoria": "Abarrotes",
+    "ultimo_precio_venta": 87, "ultimo_costo_venta": 75 },
+  { "id_producto": "P136351", "producto": "Arroz Castellano premium integral oryzica", "categoria": "Abarrotes",
+    "ultimo_precio_venta": 136, "ultimo_costo_venta": 117 }
+] }
+```
+
+> La base no tiene precio de catálogo. `ultimo_precio_venta` y `ultimo_costo_venta` son los de la **última venta** del producto, y son los que usa la API si la venta nueva no trae precio. Sirven como precio sugerido en el formulario. Si son `null`, el producto nunca se ha vendido y el formulario **debe pedir** precio y costo.
+>
+> Las demás listas desplegables (categorías, tipos de compra, estados) salen de `opciones-filtros/` (endpoint 1).
+
+---
+
+### 16. Contrato de los formularios (qué pide cada uno)
+
+Son las mismas reglas de la base del equipo de datos; la API las valida antes de guardar. Montos y cantidades son **enteros**; fechas en `AAAA-MM-DD`.
+
+**Nueva venta** — `POST /facturas/`
+
+| Campo                  | Obligatorio      | Regla                                                                                  | De dónde sale la lista          |
+| :--------------------- | :--------------: | :------------------------------------------------------------------------------------- | :------------------------------ |
+| `id_cliente`           |        Sí        | Debe existir                                                                           | `opciones/clientes/`            |
+| `items`                |        Sí        | Entre 1 y 200 productos                                                                | —                               |
+| `items[].id_producto`  |        Sí        | Debe existir                                                                           | `opciones/productos/`           |
+| `items[].cantidad`     |        Sí        | Entero de 1 a 100.000                                                                  | —                               |
+| `items[].precio_venta` | Si nunca se vendió | Entero ≥ 1 (unitario). Sugerido: `ultimo_precio_venta`                               | `opciones/productos/`           |
+| `items[].costo_venta`  | Si nunca se vendió | Entero ≥ 1 (unitario). Sugerido: `ultimo_costo_venta`                                | `opciones/productos/`           |
+| `tipo_compra`          |        No        | `Física` (por defecto) o `En Línea`                                                    | `opciones-filtros/`             |
+| `por_cobrar`           |        No        | `true` = al fiado. Por defecto `false`                                                 | —                               |
+| `fecha_vencimiento`    | Solo al fiado    | No anterior a la fecha de la venta. No se envía si es al contado                       | —                               |
+| `fecha`                |        No        | Por defecto, hoy                                                                       | —                               |
+
+**Gasto en insumos** — `POST /gastos/`
+
+| Campo         | Obligatorio | Regla            | De dónde sale la lista |
+| :------------ | :---------: | :--------------- | :--------------------- |
+| `id_producto` |     Sí      | Debe existir     | `opciones/productos/`  |
+| `monto`       |     Sí      | Entero ≥ 1       | —                      |
+| `fecha`       |     No      | Por defecto, hoy | —                      |
+
+**Nuevo cliente** — `POST /clientes/`
+
+| Campo      | Obligatorio | Regla                                         |
+| :--------- | :---------: | :-------------------------------------------- |
+| `nombre`   |     Sí      | Hasta 100 caracteres                          |
+| `contacto` |     Sí      | Hasta 100 caracteres. No se puede repetir     |
+
+**Registrar pago** — `POST /cuentas-por-cobrar/{id_cuenta}/pagar/`
+
+| Campo        | Obligatorio | Regla                                                           |
+| :----------- | :---------: | :-------------------------------------------------------------- |
+| `fecha_pago` |     No      | Por defecto, hoy. No futura ni anterior a la venta. Pago completo |
+
+---
+
 ## Parte 4 — Equipo de Frontend
 
 Todos los cambios se hacen dentro de la aplicación Vue ubicada en la rama `ux`:
@@ -1128,6 +1276,19 @@ export const apiService = {
   },
 
   // Endpoint 8 — Últimos movimientos
+  // Endpoint 14 — Ventas y gastos en una sola lista: getOperaciones({ mes: "2022-08", tipo: "venta" })
+  getOperaciones(filtros = {}) {
+    return request(`${API_BASE}/operaciones/`, filtros);
+  },
+
+  // Endpoint 15 — Selectores de los formularios (buscar mientras se escribe)
+  buscarClientes(texto) {
+    return request(`${API_BASE}/opciones/clientes/`, { search: texto });
+  },
+  buscarProductos(texto) {
+    return request(`${API_BASE}/opciones/productos/`, { search: texto });
+  },
+
   getUltimosMovimientos(filtros = {}) {
     return request(`${API_BASE}/ventas/`, { page_size: 10, ...filtros });
   },
@@ -1248,11 +1409,12 @@ const cargarDatosDashboard = async () => {
     };
 
     // 2. Resto de peticiones en paralelo
-    const [resumen, agrupado, cuentas, ventas, productos] = await Promise.all([
+    const [resumen, agrupado, cuentas, alertas, operaciones, productos] = await Promise.all([
       apiService.getResumenFinanciero(filtroRango),
       apiService.getResumenAgrupado("mensual", filtroRango), // ⚠️ P01
-      apiService.getCuentasPorCobrar({ vencidas: "true", page_size: 5 }),
-      apiService.getUltimosMovimientos({ page_size: 5 }),
+      apiService.getCuentasPorCobrar({ page_size: 1 }), // solo se usa su "resumen"
+      apiService.getAlertasCobro({ page_size: 5 }),
+      apiService.getOperaciones({ page_size: 5 }),
       apiService.getProductos({ page_size: 4 }),
     ]);
 
@@ -1269,7 +1431,8 @@ const cargarDatosDashboard = async () => {
       totalVentas: resumen.total_transacciones,
       totalGastos: resumen.flujo_caja.salidas.gastos_insumo,
       unidadesVendidas: resumen.total_unidades,
-      cuentasPendientes: cuentas.resumen?.total_cuentas || 0,
+      cuentasPendientes:
+        (cuentas.resumen?.por_estado.PENDIENTE.cantidad || 0) + (cuentas.resumen?.por_estado.VENCIDA.cantidad || 0),
     };
 
     // 5. Gráfico de flujo de caja (últimos 8 periodos)
@@ -1279,28 +1442,29 @@ const cargarDatosDashboard = async () => {
       gastos: p.flujo_caja.salidas.total,
     }));
 
-    // 6. Cobros prioritarios
-    priorityCollections.value = (cuentas.results || []).map((c) => ({
-      id: c.id_cuenta,
-      cliente: c.cliente_nombre || `Cliente #${c.id_cliente}`,
-      detalle: `Factura ${c.id_factura}`,
-      documento: c.id_factura,
-      monto: c.monto, // ya es un número entero
-      vencimientoTexto: c.estado_actual === "VENCIDA" ? "Vencida" : `Vence ${c.fecha_vencimiento}`,
-      estado: c.estado_actual,
+    // 6. Cobros prioritarios (endpoint 12: vencidos y por vencer, ya ordenados por urgencia)
+    priorityCollections.value = (alertas.results || []).map((a) => ({
+      id: a.id_cuenta,
+      cliente: a.cliente_nombre,
+      detalle: `Factura ${a.id_factura}`,
+      documento: a.id_factura,
+      monto: a.monto, // ya es un número entero
+      vencimientoTexto: a.tipo_alerta === "VENCIDA" ? `Vencida hace ${a.dias_atraso} días` : `Vence en ${a.dias_para_vencer} días`,
+      estado: a.tipo_alerta === "VENCIDA" ? "VENCIDA" : "PENDIENTE",
+      recordatorio: a.mensaje_sugerido,
     }));
 
-    // 7. Movimientos recientes
-    recentOperations.value = (ventas.results || []).map((v) => ({
-      id: v.id_detalle,
-      tipo: "VENTA",
-      concepto: v.categoria || "Venta",
-      detalle: v.producto_nombre,
-      clienteProveedor: v.tipo_compra === "En Línea" ? "En Línea" : "Tienda Física",
-      canal: v.tipo_compra,
-      fecha: v.fecha, // "AAAA-MM-DD"
-      estado: v.estado_pago,
-      monto: v.total_venta,
+    // 7. Operaciones recientes (endpoint 14: ventas y gastos juntos)
+    recentOperations.value = (operaciones.results || []).map((o) => ({
+      id: `${o.tipo}-${o.id}`,
+      tipo: o.tipo, // "VENTA" o "GASTO"
+      concepto: o.tipo === "VENTA" ? "Venta" : "Compra de insumos",
+      detalle: o.detalle, // cliente (venta) o producto (gasto)
+      clienteProveedor: o.tipo === "VENTA" ? o.detalle : "",
+      canal: o.tipo_compra, // "Física", "En Línea" o null
+      fecha: o.fecha, // "AAAA-MM-DD"
+      estado: o.estado_pago,
+      monto: o.monto,
     }));
 
     // 8. Productos
@@ -1384,10 +1548,15 @@ Esta tabla es **el contrato entre ambos equipos** 🟨. Cada fila dice qué camp
 | OperationsSummary · `totalVentas`        | `total_transacciones`                                                                      | `resumen-mensual`                  | ✅ Documentado         |
 | OperationsSummary · `totalGastos`        | `flujo_caja.salidas.gastos_insumo` (monto) o `resumen.total_registros_gasto` (cantidad)   | `resumen-mensual` / `gastos`       | ✅ Documentado         |
 | OperationsSummary · `unidadesVendidas`   | `total_unidades`                                                                           | `resumen-mensual`                  | ✅ Documentado         |
-| OperationsSummary · `cuentasPendientes`  | `resumen.total_cuentas`                                                                    | `cuentas-por-cobrar`               | ✅ Documentado         |
+| OperationsSummary · `cuentasPendientes`  | `resumen.por_estado.PENDIENTE.cantidad` + `.VENCIDA.cantidad`                                                                  | `cuentas-por-cobrar`               | ✅ Documentado         |
 | CashChart · `semana`, `ventas`, `gastos` | `periodos[].rango`, `.flujo_caja.entradas.total`, `.flujo_caja.salidas.total` | `resumen-agrupado?agrupacion=semanas_mes` | ✅ Documentado |
 | PriorityCollections                      | `id_cuenta`, `id_cliente`, `cliente_nombre`, `id_factura`, `monto`, `fecha_vencimiento`, `prioridad_alerta`, `ventana_alerta`, `dias_atraso`, `dias_para_vencer`, `mensaje_sugerido` | `alertas-cobro?page_size=5` | ✅ Documentado |
-| RecentOperations                         | `id_detalle`, `categoria`, `producto_nombre`, `tipo_compra`, `fecha`, `estado_pago`, `total_venta` | `ventas`                   | ✅ Documentado         |
+| RecentOperations                         | `tipo`, `id`, `detalle`, `tipo_compra`, `fecha`, `estado_pago`, `monto`                    | `operaciones?page_size=5`          | ✅ Documentado         |
+| Resumen mensual · ventas por canal       | `por_tipo_compra["Física"].ingresos`, `por_tipo_compra["En Línea"].ingresos`             | `resumen-mensual`                  | ✅ Documentado         |
+| Resumen mensual · venta más grande       | `results[0].total_venta`                                                                   | `facturas?ordering=-total_venta&page_size=1` + fechas | ✅ Documentado |
+| Resumen mensual · cliente que más debe   | `results[0].nombre`, `.total_deuda`                                                        | `clientes?ordering=-total_deuda&page_size=1` | ✅ Documentado |
+| Formularios · selector de cliente        | `id_cliente`, `nombre`, `contacto`                                                         | `opciones/clientes?search=`        | ✅ Documentado         |
+| Formularios · selector de producto       | `id_producto`, `producto`, `ultimo_precio_venta`, `ultimo_costo_venta`                     | `opciones/productos?search=`       | ✅ Documentado         |
 | TopProducts · `nombre`, `unidadesVendidas`, `totalVentas` | `producto`, `total_vendido`, `total_ingresos` | `productos?ordering=-total_vendido&page_size=4` + fechas del mes | ✅ Documentado |
 
 ---

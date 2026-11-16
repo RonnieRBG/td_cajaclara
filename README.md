@@ -57,6 +57,7 @@ Los montos son enteros (pesos chilenos) y las fechas no llevan hora.
 - 🏆 **Productos más vendidos**: unidades e ingresos por producto en cualquier período.
 - 🔔 **Alertas de cobro**: cuentas vencidas o que vencen en 7 y 15 días, con prioridad y un mensaje de recordatorio. Misma lógica que la vista `vw_alertas_cobro` del equipo de datos, calculada a la fecha de hoy.
 - 📐 **Métricas del equipo de datos**: margen por producto y categoría, ventas por categoría y mes, deuda por cliente, morosidad, ranking de productos y sustentabilidad. La API lee sus vistas SQL sin recalcular, así la app y Power BI muestran los mismos números.
+- 🔀 **Operaciones**: ventas y gastos en una sola lista por mes, con búsqueda y totales.
 - 🧾 **Listados con búsqueda**: clientes, productos, facturas, ventas, gastos y deudas (incluye filtro de deudas vencidas).
 - 📥 **Exportar a Excel**: descarga del resumen en una planilla.
 - 🎛️ **Opciones para filtros**: categorías, canales y el rango de fechas disponible, para armar los menús de la pantalla.
@@ -107,7 +108,7 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 | Usuarios, login (JWT) y configuración segura con `.env`          | ✅ Listo                             |
 | Registrar ventas, pagos y gastos desde la API                    | ✅ Listo                             |
 | Flujo de caja (entradas, salidas y saldo)                        | ✅ Listo                             |
-| Pruebas automáticas                                              | 🟡 Login, registros, flujo de caja, semanas, productos, esquema, importación, alertas y métricas (47 pruebas) |
+| Pruebas automáticas                                              | 🟡 Login, registros, flujo de caja, semanas, productos, esquema, importación, alertas, métricas y operaciones (51 pruebas) |
 
 ---
 
@@ -141,11 +142,13 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 - [ ] **Al publicar**: definir `DJANGO_DEBUG=False` y una `DJANGO_SECRET_KEY` propia, servir con HTTPS (y activar `SECURE_SSL_REDIRECT` y HSTS según el servidor) y configurar un servicio de correo real si se llega a enviar email.
 - [x] **Hora de Chile**: el sistema ahora usa `America/Santiago`, así los cortes de día y de mes calzan.
 - [x] **Completar dependencias**: `pandas` y `openpyxl` ya están en `requirements.txt`.
-- [ ] **Completar las pruebas automáticas**: ya hay 47 (login, registro de ventas, pagos, gastos, flujo de caja, agrupación semanal, productos más vendidos, esquema de datos, importación, alertas de cobro y métricas). Faltan más de listados y filtros. Se ejecutan con `python manage.py test`.
+- [ ] **Completar las pruebas automáticas**: ya hay 51 (login, registro de ventas, pagos, gastos, flujo de caja, agrupación semanal, productos más vendidos, esquema de datos, importación, alertas de cobro, métricas y operaciones). Faltan más de listados y filtros. Se ejecutan con `python manage.py test`.
 - [x] **Registrar datos nuevos**: ventas (contado y crédito), pagos, gastos y clientes con `POST` (ver el endpoint 11 en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md)).
 - [x] **Modelo igual al del equipo de datos**: mismas tablas, columnas y tipos que `schema_postgresql.sql`; se probó contra ese esquema en PostgreSQL con el usuario `cajaclara_app_rw`, y el flujo de caja coincide con `vw_flujo_caja_mensual`.
 - [x] **Alertas de cobro (Tarea 29 de datos)**: `/alertas-cobro/`, comparado campo por campo con `vw_alertas_cobro`.
 - [x] **Métricas en la plataforma (Tarea 30 de datos)**: `/metricas/…` lee las 7 vistas de la Etapa 5.
+- [x] **Lo que piden las pantallas de UX**: `/operaciones/` (ventas y gastos en una lista), ventas por canal en el resumen, orden por total de venta y por deuda, y listas livianas para los selectores con el último precio de cada producto (`/opciones/…`).
+- [x] **Contrato de los formularios (Tareas 34 a 36 de datos)**: campos, obligatorios y validaciones documentados en el endpoint 16 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
 - [x] **Lo que pide el dashboard**: agrupación semanal (`semanal` y `semanas_mes`) y productos más vendidos (`/productos/?ordering=-total_vendido`, con unidades e ingresos por período).
 - [x] **Flujo de caja como en el diseño**: `flujo_caja` en los resúmenes = ventas al contado + cobros − gastos en insumos.
 
