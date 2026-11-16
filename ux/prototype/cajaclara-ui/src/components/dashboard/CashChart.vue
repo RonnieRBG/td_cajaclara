@@ -31,7 +31,7 @@ const maxValue = computed(() => {
 
 const getBarHeight = (value) => {
   const safeValue = Number.isFinite(value) ? Math.max(value, 0) : 0
-  const height = Math.min(safeValue, maxValue.value) / maxValue.value * 100
+  const height = Math.min(safeValue / maxValue.value * 100, 90)
   return `${Math.round(height)}%`
 }
 
@@ -68,66 +68,60 @@ const totalGastos = computed(() => {
       </div>
     </div>
 
-    <!-- Chart visualization -->
-    <div class="chart-container" role="region" aria-label="Gráfico de barras de flujo semanal">
-      <div class="chart-plot">
-        <div class="chart-grid-lines" aria-hidden="true">
-          <div class="grid-line"><span>{{ formatCLP(maxValue) }}</span></div>
-          <div class="grid-line"><span>{{ formatCLP(maxValue * 0.66) }}</span></div>
-          <div class="grid-line"><span>{{ formatCLP(maxValue * 0.33) }}</span></div>
-          <div class="grid-line baseline"><span>$0</span></div>
-        </div>
+    <div class="cash-chart__body">
+      <div
+        class="chart-visual"
+        role="region"
+        :aria-label="`Flujo semanal de ${subtitle}. Ventas totales: ${formatCLP(totalVentas)}. Compras y gastos totales: ${formatCLP(totalGastos)}.`"
+      >
+        <div class="chart-plot">
+          <div class="chart-grid-lines" aria-hidden="true">
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line baseline"></div>
+          </div>
 
-        <div class="chart-columns">
           <div
-            v-for="(week, index) in weeklyData"
+            v-for="week in weeklyData"
             :key="week.semana"
-            class="chart-week-group"
+            class="chart-week"
           >
-            <!-- Bars Container -->
-            <div class="bars-pair">
-              <!-- Ventas Bar -->
+            <div class="chart-week__bars">
               <div
-                class="bar-wrapper"
+                class="chart-bar chart-bar--income"
                 @mouseenter="showTooltip(week, 'venta', week.ventas)"
                 @mouseleave="hoveredBar = null"
                 @focus="focusedBar = { ...week, type: 'venta', value: week.ventas }"
                 @blur="focusedBar = null"
                 @click="selectedBar = { ...week, type: 'venta', value: week.ventas }"
                 tabindex="0"
+                role="img"
                 :aria-label="`${week.semana}: Ventas de ${formatCLP(week.ventas)}`"
-              >
-                <div
-                  class="chart-bar chart-bar--income"
-                  :style="{ height: getBarHeight(week.ventas) }"
-                >
-                  <span class="bar-value-top">{{ formatCLP(week.ventas) }}</span>
-                </div>
-              </div>
-
-              <!-- Gastos Bar -->
+                :style="{ height: getBarHeight(week.ventas) }"
+              ></div>
               <div
-                class="bar-wrapper"
+                class="chart-bar chart-bar--expense"
                 @mouseenter="showTooltip(week, 'gasto', week.gastos)"
                 @mouseleave="hoveredBar = null"
                 @focus="focusedBar = { ...week, type: 'gasto', value: week.gastos }"
                 @blur="focusedBar = null"
                 @click="selectedBar = { ...week, type: 'gasto', value: week.gastos }"
                 tabindex="0"
+                role="img"
                 :aria-label="`${week.semana}: Compras y gastos de ${formatCLP(week.gastos)}`"
-              >
-                <div
-                  class="chart-bar chart-bar--expense"
-                  :style="{ height: getBarHeight(week.gastos) }"
-                >
-                  <span class="bar-value-top">{{ formatCLP(week.gastos) }}</span>
-                </div>
-              </div>
+                :style="{ height: getBarHeight(week.gastos) }"
+              ></div>
             </div>
-
-            <!-- Column Label -->
             <div class="week-label">{{ week.semana }}</div>
           </div>
+        </div>
+
+        <div class="chart-axis-y" role="group" aria-label="Valores en pesos chilenos">
+          <span>{{ formatCLP(maxValue) }}</span>
+          <span>{{ formatCLP(maxValue * 0.66) }}</span>
+          <span>{{ formatCLP(maxValue * 0.33) }}</span>
+          <span>$0</span>
         </div>
       </div>
     </div>
@@ -165,7 +159,7 @@ const totalGastos = computed(() => {
 
 .chart-header {
   display: flex;
-  min-width: var(--content-min-width);
+  min-width: 0;
   height: auto;
   flex: 0 0 auto;
   flex-direction: column;
@@ -178,7 +172,6 @@ const totalGastos = computed(() => {
   .chart-header {
     flex-direction: row;
     justify-content: space-between;
-    align-items: flex-start;
   }
 }
 
@@ -198,15 +191,15 @@ const totalGastos = computed(() => {
 
 .chart-legend {
   display: flex;
-  min-width: var(--content-min-width);
+  min-width: 0;
   flex-wrap: wrap;
-  gap: var(--space-5);
+  gap: var(--space-3);
   font-size: 0.825rem;
 }
 
 .legend-item {
   display: flex;
-  min-width: var(--content-min-width);
+  min-width: 0;
   align-items: center;
   gap: var(--space-2);
 }
@@ -234,47 +227,50 @@ const totalGastos = computed(() => {
   color: var(--color-text);
 }
 
-/* Chart Canvas */
-.chart-container {
+.cash-chart__body {
   display: flex;
-  min-height: 0;
-  width: 100%;
-  min-width: var(--content-min-width);
   flex: 1;
-  margin-top: var(--space-2);
-  align-items: center;
-  justify-content: center;
+  min-width: 0;
+  padding-block: var(--space-5);
+}
+
+.chart-visual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: var(--space-3);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: var(--chart-min-height);
+  max-height: calc(var(--chart-min-height) + var(--space-10));
 }
 
 .chart-plot {
   position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(3rem, 1fr));
+  column-gap: var(--chart-group-gap);
+  align-items: end;
   width: 100%;
-  height: 220px;
-  flex: 0 1 220px;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .chart-grid-lines {
   position: absolute;
-  inset: 0 0 28px 0;
+  inset: var(--space-1) 0 var(--space-5);
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   pointer-events: none;
+  z-index: 0;
 }
 
 .grid-line {
   border-top: 1px dashed var(--color-border);
-  position: relative;
-}
-
-.grid-line span {
-  position: absolute;
-  right: 0;
-  top: -10px;
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  background-color: var(--color-surface);
-  padding-left: var(--space-2);
 }
 
 .grid-line.baseline {
@@ -282,70 +278,53 @@ const totalGastos = computed(() => {
   border-top-color: var(--color-border-strong);
 }
 
-.chart-columns {
-  position: relative;
-  height: 100%;
+.chart-week {
   display: flex;
-  min-width: var(--content-min-width);
-  justify-content: space-around;
-  align-items: flex-end;
-  padding: 0 var(--space-4) 28px var(--space-4);
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
   z-index: 1;
 }
 
-.chart-week-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 20%;
-  min-width: 0;
-  height: 100%;
-  justify-content: flex-end;
-  position: relative;
-}
-
-.bars-pair {
+.chart-week__bars {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
-  height: 100%;
-  width: 100%;
-  max-width: 68px;
   justify-content: center;
-}
-
-.bar-wrapper {
-  position: relative;
-  width: 50%;
+  gap: var(--chart-series-gap);
+  width: 100%;
   height: 100%;
-  display: flex;
-  align-items: flex-end;
-  cursor: pointer;
-  outline: none;
+  flex: 1;
+  min-height: 0;
 }
 
 .chart-bar {
-  width: 100%;
-  min-height: 6px;
+  display: block;
+  width: var(--chart-bar-width);
+  max-width: 45%;
+  min-width: 0;
+  min-height: var(--space-1);
+  flex: 0 1 var(--chart-bar-width);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   opacity: 1;
   visibility: visible;
   transform: scaleY(1);
   transform-origin: bottom;
   transition: filter var(--transition-normal);
-  position: relative;
+  cursor: pointer;
 }
 
 .chart-bar--income {
-  background-color: var(--color-income);
+  background: var(--color-income);
 }
 
 .chart-bar--expense {
-  background-color: var(--color-expense);
+  background: var(--color-expense);
 }
 
 .chart-bar:hover,
-.bar-wrapper:focus-visible .chart-bar {
+.chart-bar:focus-visible {
   filter: brightness(0.94);
   outline: 2px solid var(--color-brand-primary);
   outline-offset: 2px;
@@ -358,16 +337,27 @@ const totalGastos = computed(() => {
   }
 }
 
-.bar-value-top {
-  display: none;
-}
-
 .week-label {
-  position: absolute;
-  bottom: -24px;
+  flex: 0 0 auto;
+  margin-top: var(--space-2);
   font-size: 0.75rem;
   font-weight: 600;
+  line-height: 1;
   color: var(--color-text-secondary);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.chart-axis-y {
+  display: flex;
+  width: var(--chart-axis-width);
+  min-width: max-content;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-block: var(--space-1) var(--space-5);
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -421,15 +411,8 @@ const totalGastos = computed(() => {
 }
 
 @media (max-width: 480px) {
-  .chart-plot {
-    height: 180px;
-    flex-basis: 180px;
-  }
-  .bars-pair {
-    gap: 3px;
-  }
-  .week-label {
-    font-size: 0.7rem;
+  .chart-header {
+    gap: var(--space-2);
   }
 }
 
@@ -437,9 +420,27 @@ const totalGastos = computed(() => {
   .cash-chart-card {
     height: auto;
   }
+}
 
-  .chart-container {
-    min-height: auto;
+@media (min-width: 768px) and (max-width: 1279px) {
+  .cash-chart-card {
+    --chart-min-height: 17.5rem;
+    --chart-bar-width: clamp(1rem, 2vw, 1.75rem);
+    --chart-group-gap: var(--space-4);
+  }
+}
+
+@media (max-width: 767px) {
+  .cash-chart-card {
+    --chart-min-height: 16rem;
+    --chart-bar-width: clamp(1rem, 3vw, 1.5rem);
+    --chart-series-gap: var(--space-1);
+    --chart-group-gap: var(--space-2);
+  }
+
+  .chart-axis-y,
+  .week-label {
+    font-size: 0.68rem;
   }
 }
 </style>
