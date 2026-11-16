@@ -70,62 +70,64 @@ const totalGastos = computed(() => {
 
     <!-- Chart visualization -->
     <div class="chart-container" role="region" aria-label="Gráfico de barras de flujo semanal">
-      <div class="chart-grid-lines" aria-hidden="true">
-        <div class="grid-line"><span>{{ formatCLP(maxValue) }}</span></div>
-        <div class="grid-line"><span>{{ formatCLP(maxValue * 0.66) }}</span></div>
-        <div class="grid-line"><span>{{ formatCLP(maxValue * 0.33) }}</span></div>
-        <div class="grid-line baseline"><span>$0</span></div>
-      </div>
+      <div class="chart-plot">
+        <div class="chart-grid-lines" aria-hidden="true">
+          <div class="grid-line"><span>{{ formatCLP(maxValue) }}</span></div>
+          <div class="grid-line"><span>{{ formatCLP(maxValue * 0.66) }}</span></div>
+          <div class="grid-line"><span>{{ formatCLP(maxValue * 0.33) }}</span></div>
+          <div class="grid-line baseline"><span>$0</span></div>
+        </div>
 
-      <div class="chart-columns">
-        <div
-          v-for="(week, index) in weeklyData"
-          :key="week.semana"
-          class="chart-week-group"
-        >
-          <!-- Bars Container -->
-          <div class="bars-pair">
-            <!-- Ventas Bar -->
-            <div
-              class="bar-wrapper"
-              @mouseenter="showTooltip(week, 'venta', week.ventas)"
-              @mouseleave="hoveredBar = null"
-              @focus="focusedBar = { ...week, type: 'venta', value: week.ventas }"
-              @blur="focusedBar = null"
-              @click="selectedBar = { ...week, type: 'venta', value: week.ventas }"
-              tabindex="0"
-              :aria-label="`${week.semana}: Ventas de ${formatCLP(week.ventas)}`"
-            >
+        <div class="chart-columns">
+          <div
+            v-for="(week, index) in weeklyData"
+            :key="week.semana"
+            class="chart-week-group"
+          >
+            <!-- Bars Container -->
+            <div class="bars-pair">
+              <!-- Ventas Bar -->
               <div
-                class="chart-bar chart-bar--income"
-                :style="{ height: getBarHeight(week.ventas) }"
+                class="bar-wrapper"
+                @mouseenter="showTooltip(week, 'venta', week.ventas)"
+                @mouseleave="hoveredBar = null"
+                @focus="focusedBar = { ...week, type: 'venta', value: week.ventas }"
+                @blur="focusedBar = null"
+                @click="selectedBar = { ...week, type: 'venta', value: week.ventas }"
+                tabindex="0"
+                :aria-label="`${week.semana}: Ventas de ${formatCLP(week.ventas)}`"
               >
-                <span class="bar-value-top">{{ formatCLP(week.ventas) }}</span>
+                <div
+                  class="chart-bar chart-bar--income"
+                  :style="{ height: getBarHeight(week.ventas) }"
+                >
+                  <span class="bar-value-top">{{ formatCLP(week.ventas) }}</span>
+                </div>
+              </div>
+
+              <!-- Gastos Bar -->
+              <div
+                class="bar-wrapper"
+                @mouseenter="showTooltip(week, 'gasto', week.gastos)"
+                @mouseleave="hoveredBar = null"
+                @focus="focusedBar = { ...week, type: 'gasto', value: week.gastos }"
+                @blur="focusedBar = null"
+                @click="selectedBar = { ...week, type: 'gasto', value: week.gastos }"
+                tabindex="0"
+                :aria-label="`${week.semana}: Compras y gastos de ${formatCLP(week.gastos)}`"
+              >
+                <div
+                  class="chart-bar chart-bar--expense"
+                  :style="{ height: getBarHeight(week.gastos) }"
+                >
+                  <span class="bar-value-top">{{ formatCLP(week.gastos) }}</span>
+                </div>
               </div>
             </div>
 
-            <!-- Gastos Bar -->
-            <div
-              class="bar-wrapper"
-              @mouseenter="showTooltip(week, 'gasto', week.gastos)"
-              @mouseleave="hoveredBar = null"
-              @focus="focusedBar = { ...week, type: 'gasto', value: week.gastos }"
-              @blur="focusedBar = null"
-              @click="selectedBar = { ...week, type: 'gasto', value: week.gastos }"
-              tabindex="0"
-              :aria-label="`${week.semana}: Compras y gastos de ${formatCLP(week.gastos)}`"
-            >
-              <div
-                class="chart-bar chart-bar--expense"
-                :style="{ height: getBarHeight(week.gastos) }"
-              >
-                <span class="bar-value-top">{{ formatCLP(week.gastos) }}</span>
-              </div>
-            </div>
+            <!-- Column Label -->
+            <div class="week-label">{{ week.semana }}</div>
           </div>
-
-          <!-- Column Label -->
-          <div class="week-label">{{ week.semana }}</div>
         </div>
       </div>
     </div>
@@ -158,11 +160,14 @@ const totalGastos = computed(() => {
   min-width: var(--content-min-width);
   flex-direction: column;
   gap: var(--space-5);
+  height: 100%;
 }
 
 .chart-header {
   display: flex;
   min-width: var(--content-min-width);
+  height: auto;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: var(--space-3);
   padding-bottom: var(--space-4);
@@ -231,13 +236,21 @@ const totalGastos = computed(() => {
 
 /* Chart Canvas */
 .chart-container {
-  position: relative;
+  display: flex;
+  min-height: 0;
   width: 100%;
   min-width: var(--content-min-width);
-  height: 220px;
+  flex: 1;
   margin-top: var(--space-2);
-  display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-plot {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  flex: 0 1 220px;
 }
 
 .chart-grid-lines {
@@ -359,7 +372,8 @@ const totalGastos = computed(() => {
 }
 
 .chart-footer-note {
-  min-height: 38px;
+  height: auto;
+  flex: 0 0 auto;
   padding-top: var(--space-4);
   margin-top: var(--space-2);
   border-top: 1px solid var(--color-border);
@@ -407,14 +421,25 @@ const totalGastos = computed(() => {
 }
 
 @media (max-width: 480px) {
-  .chart-container {
+  .chart-plot {
     height: 180px;
+    flex-basis: 180px;
   }
   .bars-pair {
     gap: 3px;
   }
   .week-label {
     font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 1279px) {
+  .cash-chart-card {
+    height: auto;
+  }
+
+  .chart-container {
+    min-height: auto;
   }
 }
 </style>

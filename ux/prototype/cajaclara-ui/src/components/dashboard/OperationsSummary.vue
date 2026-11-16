@@ -84,11 +84,14 @@ const props = defineProps({
   min-width: var(--content-min-width);
   flex-direction: column;
   gap: var(--space-4);
+  height: 100%;
 }
 
 .summary-header {
   display: flex;
   min-width: var(--content-min-width);
+  height: auto;
+  flex: 0 0 auto;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
@@ -116,13 +119,18 @@ const props = defineProps({
 .metrics-grid {
   display: grid;
   min-width: var(--content-min-width);
+  min-height: 0;
+  flex: 1;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
 .metric-item {
   display: flex;
   min-width: var(--content-min-width);
+  min-height: 0;
+  height: 100%;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-4);
@@ -186,6 +194,20 @@ const props = defineProps({
 @media (max-width: 480px) {
   .metrics-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1279px) {
+  .summary-card {
+    height: auto;
+  }
+
+  .metrics-grid {
+    grid-template-rows: none;
+  }
+
+  .metric-item {
+    height: auto;
   }
 }
 </style>

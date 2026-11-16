@@ -113,27 +113,35 @@ const handleModalSuccess = (data) => {
     </section>
 
     <section class="dashboard-grid" aria-label="Análisis principal de caja">
-      <CashChart
-        class="dashboard-grid__chart"
-        :weeklyData="mockData.weeklyFlow"
-      />
-      <PriorityCollections
-        class="dashboard-grid__collections"
-        :collections="mockData.priorityCollections"
-        @pay-collection="handlePayCollection"
-      />
+      <div class="dashboard-grid__wrapper dashboard-grid__chart">
+        <CashChart
+          class="dashboard-grid__card"
+          :weeklyData="mockData.weeklyFlow"
+        />
+      </div>
+      <div class="dashboard-grid__wrapper dashboard-grid__collections">
+        <PriorityCollections
+          class="dashboard-grid__card"
+          :collections="mockData.priorityCollections"
+          @pay-collection="handlePayCollection"
+        />
+      </div>
       <RecentOperations
         class="dashboard-grid__recent"
         :operations="mockData.recentOperations"
       />
-      <OperationsSummary
-        class="dashboard-grid__summary"
-        :summary="mockData.operationsSummary"
-      />
-      <TopProducts
-        class="dashboard-grid__products"
-        :products="mockData.topProducts"
-      />
+      <div class="dashboard-grid__wrapper dashboard-grid__summary">
+        <OperationsSummary
+          class="dashboard-grid__card"
+          :summary="mockData.operationsSummary"
+        />
+      </div>
+      <div class="dashboard-grid__wrapper dashboard-grid__products">
+        <TopProducts
+          class="dashboard-grid__card"
+          :products="mockData.topProducts"
+        />
+      </div>
     </section>
 
     <!-- Modal for New Operation / Collection -->
@@ -229,6 +237,18 @@ const handleModalSuccess = (data) => {
 .dashboard-grid__summary { grid-area: summary; }
 .dashboard-grid__products { grid-area: products; }
 
+.dashboard-grid__wrapper {
+  display: flex;
+  min-width: 0;
+  height: auto;
+}
+
+.dashboard-grid__recent,
+.dashboard-grid__card {
+  width: 100%;
+  height: auto;
+}
+
 @media (min-width: 1280px) {
   .dashboard-grid {
     grid-template-columns: minmax(0, 2fr) minmax(20rem, 1fr);
@@ -236,6 +256,23 @@ const handleModalSuccess = (data) => {
       "chart collections"
       "recent recent"
       "summary products";
+    align-items: stretch;
+  }
+
+  .dashboard-grid__wrapper,
+  .dashboard-grid__card {
+    height: 100%;
+  }
+}
+
+@media (max-width: 1279px) {
+  .dashboard-grid {
+    align-items: start;
+  }
+
+  .dashboard-grid__wrapper,
+  .dashboard-grid__card {
+    height: auto;
   }
 }
 
