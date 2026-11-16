@@ -108,6 +108,8 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 | Usuarios, login (JWT) y configuración segura con `.env`          | ✅ Listo                             |
 | Registrar ventas, pagos y gastos desde la API                    | ✅ Listo                             |
 | Flujo de caja (entradas, salidas y saldo)                        | ✅ Listo                             |
+| Listo para publicar (`gunicorn`, `whitenoise`, `build.sh`, `Procfile`) | ✅ Listo (falta elegir el servicio) |
+| Pruebas automáticas en GitHub (cada push a `backend`)            | ✅ Listo                             |
 | Pruebas automáticas                                              | 🟡 Login, registros, flujo de caja, semanas, productos, esquema, importación, alertas, métricas y operaciones (51 pruebas) |
 
 ---
@@ -139,7 +141,9 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 
 - [x] **Login y usuarios**: la API exige iniciar sesión con JWT (`/api/auth/login/`, `refresh/`, `logout/` y `perfil/`), con límite de intentos.
 - [x] **Seguridad**: clave secreta, modo depuración, dominios y CORS se configuran en `.env` (ver `.env.example`); `.env` está en el `.gitignore`.
-- [ ] **Al publicar**: definir `DJANGO_DEBUG=False` y una `DJANGO_SECRET_KEY` propia, servir con HTTPS (y activar `SECURE_SSL_REDIRECT` y HSTS según el servidor) y configurar un servicio de correo real si se llega a enviar email.
+- [x] **Preparado para publicar**: `gunicorn` (servidor), `whitenoise` (estáticos del `/admin/`), `build.sh`, `Procfile` y redirección a HTTPS. Ver [Publicar el backend](#-publicar-el-backend).
+- [x] **Pruebas en GitHub**: `.github/workflows/pruebas-backend.yml` corre las pruebas en SQLite y PostgreSQL, y revisa la configuración de producción, en cada push o pull request a `backend`.
+- [ ] **Publicar**: elegir el servicio (Render, Railway u otro) y cargar las variables de entorno.
 - [x] **Hora de Chile**: el sistema ahora usa `America/Santiago`, así los cortes de día y de mes calzan.
 - [x] **Completar dependencias**: `pandas` y `openpyxl` ya están en `requirements.txt`.
 - [ ] **Completar las pruebas automáticas**: ya hay 51 (login, registro de ventas, pagos, gastos, flujo de caja, agrupación semanal, productos más vendidos, esquema de datos, importación, alertas de cobro, métricas y operaciones). Faltan más de listados y filtros. Se ejecutan con `python manage.py test`.
@@ -165,6 +169,40 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 
 ---
 
+## 🌐 Publicar el backend
+
+El proyecto ya trae lo necesario para servicios como **Render** o **Railway** (cualquier servicio que ejecute Python sirve):
+
+| Archivo           | Para qué sirve                                                                                  |
+| :---------------- | :---------------------------------------------------------------------------------------------- |
+| `build.sh`        | Instala las dependencias y junta los archivos estáticos (`collectstatic`).                       |
+| `Procfile`        | Comando para iniciar: `gunicorn cajaclara.wsgi` en el puerto que entrega el servicio (`$PORT`). |
+| `.python-version` | Versión de Python (3.13).                                                                       |
+
+**En el servicio:**
+
+1. Crear un servicio web desde el repositorio, rama **`backend`**.
+2. **Build command:** `./build.sh` · **Start command:** el del `Procfile` (Render y Railway lo leen solos; si no, copiarlo).
+3. **Variables de entorno** (en el panel del servicio, nunca en el repositorio):
+
+| Variable                | Valor                                                                    |
+| :---------------------- | :----------------------------------------------------------------------- |
+| `DJANGO_DEBUG`          | `False`                                                                  |
+| `DJANGO_SECRET_KEY`     | Una clave nueva y larga (no la de desarrollo)                            |
+| `DJANGO_ALLOWED_HOSTS`  | El dominio del servicio (Render y Railway lo agregan solos)              |
+| `CORS_ALLOWED_ORIGINS`  | La dirección donde se publique el frontend, ej. `https://cajaclara.vercel.app` |
+| `CSRF_TRUSTED_ORIGINS`  | La dirección del backend con `https://` (para entrar al `/admin/`)       |
+| `DB_*` y `DB_SSLMODE`   | Los de Neon, con el usuario `cajaclara_app_rw` (ver `.env.example`)      |
+
+4. **No hace falta correr migraciones al publicar**: en Neon las tablas de datos son del equipo de datos y las de usuarios se crean una sola vez (paso 1.4 de [`ACOPLAMIENTO.md`](./ACOPLAMIENTO.md)).
+5. Probar `https://<dominio>/api/` y `https://<dominio>/admin/`.
+
+> Con `DJANGO_DEBUG=False` el backend redirige `http` a `https`. Si el servicio ya lo hace y aparece un bucle de redirecciones, definir `DJANGO_SSL_REDIRECT=False`.
+>
+> HSTS (`SECURE_HSTS_SECONDS`) se deja sin activar a propósito: obliga a los navegadores a usar siempre HTTPS en ese dominio y no se puede deshacer fácilmente. Se activa cuando el dominio final esté decidido.
+
+---
+
 ## 🔮 Mejoras futuras
 
 ### Varios negocios en el mismo sistema (multi-pyme)
@@ -186,7 +224,7 @@ Hoy Caja Clara maneja **un solo negocio**. Si más adelante cada usuario debe ve
 
 ## 🛠️ Tecnologías
 
-**Python** · **Django** (estructura del backend) · **Django REST Framework** (la API) · **Simple JWT** (login con tokens) · **SQLite** en desarrollo y **PostgreSQL** en producción · **pandas** (exportación a Excel).
+**Python** · **Django** (estructura del backend) · **Django REST Framework** (la API) · **Simple JWT** (login con tokens) · **SQLite** en desarrollo y **PostgreSQL** (Neon) en producción · **pandas** (exportación a Excel) · **gunicorn** y **whitenoise** (publicación) · **GitHub Actions** (pruebas automáticas).
 
 ---
 

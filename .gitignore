@@ -5,3 +5,6 @@ db.sqlite3
 
 # Variables de entorno con claves (usar .env.example como plantilla)
 .env
+
+# Archivos estáticos generados por collectstatic
+staticfiles/

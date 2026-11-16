@@ -43,6 +43,10 @@ if not SECRET_KEY:
     SECRET_KEY = "django-insecure-solo-desarrollo-cambiar-en-produccion"
 
 ALLOWED_HOSTS = _lista("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+# Render y Railway informan el dominio público del servicio en estas variables
+for _variable in ("RENDER_EXTERNAL_HOSTNAME", "RAILWAY_PUBLIC_DOMAIN"):
+    if os.environ.get(_variable):
+        ALLOWED_HOSTS.append(os.environ[_variable])
 
 
 # Application definition
@@ -63,6 +67,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Sirve los archivos estáticos (CSS/JS del /admin/) en producción, sin un servidor aparte
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -185,16 +191,28 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# Carpeta donde `python manage.py collectstatic` junta los estáticos para publicar
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    # En producción: archivos comprimidos y con nombre versionado (whitenoise)
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        if DEBUG
+        else 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 
 # Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
-
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# La app no envía correos. En desarrollo, si Django llegara a enviar uno, se muestra
+# en la consola; en producción no se define nada (Django usaría SMTP si algún día se configura).
+if DEBUG:
+    MAILERS = {
+        'default': {
+            'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        },
+    }
 
 # CORS: qué sitios web pueden llamar a la API desde el navegador.
 # Con el proxy de Vite no hace falta en desarrollo; importa al publicar el frontend en otro dominio.
@@ -209,3 +227,5 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    # Redirige http → https (desactivable si el servicio ya lo hace: DJANGO_SSL_REDIRECT=False)
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SSL_REDIRECT", "True").strip().lower() in ("true", "1", "si", "sí")

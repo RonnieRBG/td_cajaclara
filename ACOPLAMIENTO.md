@@ -397,4 +397,4 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 - [ ] **Gastos que no son insumos** (arriendo, flete, servicios): hoy la base no los permite. Si se quieren, datos tiene que agregar una tabla o columnas y avisar al backend.
 - [ ] **Anular ventas:** la base no lo permite. Si se necesita, acordar cómo marcarlo (por ejemplo, una columna `anulada` en `venta`).
 - [ ] **Pagos parciales (abonos):** hoy un pago es siempre completo.
-- [ ] **Dónde se publica** la app (backend y frontend) para la presentación final.
+- [ ] **Dónde se publica** la app (backend y frontend) para la presentación final. El backend ya está preparado para Render, Railway u otro servicio (ver *Publicar el backend* en el README); falta elegir y, con eso, poner la dirección del frontend en `CORS_ALLOWED_ORIGINS`.
