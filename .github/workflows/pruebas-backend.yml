@@ -36,9 +36,9 @@ jobs:
       DB_PORT: "5432"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
           cache: pip
@@ -62,8 +62,8 @@ jobs:
       DJANGO_SECRET_KEY: clave-solo-para-esta-prueba-de-github-actions-0123456789
       DJANGO_ALLOWED_HOSTS: localhost
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
           cache: pip
