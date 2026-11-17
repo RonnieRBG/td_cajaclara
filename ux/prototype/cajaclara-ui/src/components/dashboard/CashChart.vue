@@ -59,20 +59,23 @@ const totalGastos = computed(() => {
       <div class="chart-legend">
         <div class="legend-item">
           <span class="legend-dot dot-ventas"></span>
-          <span class="legend-label">Ventas (Entradas): <strong>{{ formatCLP(totalVentas) }}</strong></span>
+          <span class="legend-label">Entradas de caja: <strong>{{ formatCLP(totalVentas) }}</strong></span>
         </div>
         <div class="legend-item">
           <span class="legend-dot dot-gastos"></span>
-          <span class="legend-label">Compras y gastos (Salidas): <strong>{{ formatCLP(totalGastos) }}</strong></span>
+          <span class="legend-label">Salidas de caja: <strong>{{ formatCLP(totalGastos) }}</strong></span>
         </div>
       </div>
     </div>
 
-    <div class="cash-chart__body">
+    <p v-if="weeklyData.length === 0" class="chart-empty">
+      No hay datos semanales disponibles para este periodo.
+    </p>
+    <div v-else class="cash-chart__body">
       <div
         class="chart-visual"
         role="region"
-        :aria-label="`Flujo semanal de ${subtitle}. Ventas totales: ${formatCLP(totalVentas)}. Compras y gastos totales: ${formatCLP(totalGastos)}.`"
+        :aria-label="`Flujo semanal de ${subtitle}. Entradas de caja: ${formatCLP(totalVentas)}. Salidas de caja: ${formatCLP(totalGastos)}.`"
       >
         <div class="chart-plot">
           <div class="chart-grid-lines" aria-hidden="true">
@@ -90,14 +93,14 @@ const totalGastos = computed(() => {
             <div class="chart-week__bars">
               <div
                 class="chart-bar chart-bar--income"
-                @mouseenter="showTooltip(week, 'venta', week.ventas)"
+                @mouseenter="showTooltip(week, 'entrada', week.ventas)"
                 @mouseleave="hoveredBar = null"
-                @focus="focusedBar = { ...week, type: 'venta', value: week.ventas }"
+                @focus="focusedBar = { ...week, type: 'entrada', value: week.ventas }"
                 @blur="focusedBar = null"
-                @click="selectedBar = { ...week, type: 'venta', value: week.ventas }"
+                @click="selectedBar = { ...week, type: 'entrada', value: week.ventas }"
                 tabindex="0"
                 role="img"
-                :aria-label="`${week.semana}: Ventas de ${formatCLP(week.ventas)}`"
+                :aria-label="`${week.semana}: Entradas de caja por ${formatCLP(week.ventas)}`"
                 :style="{ height: getBarHeight(week.ventas) }"
               ></div>
               <div
@@ -109,7 +112,7 @@ const totalGastos = computed(() => {
                 @click="selectedBar = { ...week, type: 'gasto', value: week.gastos }"
                 tabindex="0"
                 role="img"
-                :aria-label="`${week.semana}: Compras y gastos de ${formatCLP(week.gastos)}`"
+                :aria-label="`${week.semana}: Salidas de caja por ${formatCLP(week.gastos)}`"
                 :style="{ height: getBarHeight(week.gastos) }"
               ></div>
             </div>
@@ -129,8 +132,8 @@ const totalGastos = computed(() => {
     <!-- Dynamic hover hint/tooltip for micro-businesses -->
     <div class="chart-footer-note">
       <div v-if="activeBar" class="active-tooltip">
-        <span class="tooltip-badge" :class="activeBar.type === 'venta' ? 'badge-ingreso' : 'badge-salida'">
-          {{ activeBar.type === 'venta' ? 'Entrada / Venta' : 'Salida / Gasto' }}
+        <span class="tooltip-badge" :class="activeBar.type === 'entrada' ? 'badge-ingreso' : 'badge-salida'">
+          {{ activeBar.type === 'entrada' ? 'Entrada de caja' : 'Salida / Gasto' }}
         </span>
         <span class="tooltip-text">
           <strong>{{ activeBar.semana }}</strong>: {{ formatCLP(activeBar.value) }}
@@ -232,6 +235,13 @@ const totalGastos = computed(() => {
   flex: 1;
   min-width: 0;
   padding-block: var(--space-5);
+}
+
+.chart-empty {
+  padding: var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 .chart-visual {

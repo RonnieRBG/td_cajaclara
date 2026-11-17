@@ -1,6 +1,8 @@
 <script setup>
-import { ref } from 'vue'
-import { mockData } from '@/data/dashboardMock'
+import { computed, onMounted, ref } from 'vue'
+import { ApiError } from '@/services/apiClient'
+import { getDashboardData } from '@/services/dashboardService'
+import { getFilterOptions, getPeriodRange, USE_MOCKS } from '@/services/optionsService'
 import StatCard from '@/components/common/StatCard.vue'
 import QuickActions from '@/components/common/QuickActions.vue'
 import CashChart from '@/components/dashboard/CashChart.vue'
@@ -10,12 +12,35 @@ import PriorityCollections from '@/components/dashboard/PriorityCollections.vue'
 import RecentOperations from '@/components/dashboard/RecentOperations.vue'
 import NewOperationModal from '@/components/dashboard/NewOperationModal.vue'
 
-// Modal state
+const filterOptions = ref(null)
+const selectedPeriod = ref('')
+const selectedChannel = ref('')
+const dashboardData = ref(null)
+const loading = ref(false)
+const error = ref(null)
+let requestSequence = 0
+
+const periodLabel = computed(() => {
+  const period = filterOptions.value?.periods.find(item => item.value === selectedPeriod.value)
+  if (!period) return ''
+  return `${period.label.charAt(0).toLocaleUpperCase('es-CL')}${period.label.slice(1)} de ${period.year}`
+})
+const numberFormatter = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 })
+
+const errorMessage = computed(() => {
+  if (error.value instanceof ApiError && error.value.code === 'SESSION_EXPIRED') {
+    return 'Tu sesión expiró. Inicia sesión nuevamente para volver a consultar el Dashboard.'
+  }
+  if (error.value instanceof ApiError && error.value.code === 'NETWORK_ERROR') {
+    return 'No se pudo conectar con el Backend. Verifica que esté disponible e inténtalo de nuevo.'
+  }
+  return error.value?.message || 'No se pudo cargar el Dashboard.'
+})
+
 const isModalOpen = ref(false)
 const modalType = ref('VENTA_PAGADA')
 const modalInitialData = ref(null)
 
-// Toast notification state
 const toastMessage = ref('')
 const showToast = ref(false)
 
@@ -46,6 +71,37 @@ const handlePayCollection = (item) => {
 const handleModalSuccess = (data) => {
   triggerToast(`Movimiento registrado: ${data.concepto} por $${data.monto?.toLocaleString('es-CL')}`)
 }
+
+const loadDashboard = async () => {
+  const sequence = ++requestSequence
+  loading.value = true
+  error.value = null
+
+  try {
+    if (!filterOptions.value) filterOptions.value = await getFilterOptions()
+    if (!selectedPeriod.value) selectedPeriod.value = filterOptions.value.initialPeriod
+
+    const period = filterOptions.value.periods.find(item => item.value === selectedPeriod.value)
+    if (!period) {
+      dashboardData.value = null
+      return
+    }
+
+    const range = getPeriodRange(filterOptions.value, period.year, period.month)
+    const result = await getDashboardData({
+      ...range,
+      channel: selectedChannel.value,
+      period: selectedPeriod.value
+    })
+    if (sequence === requestSequence) dashboardData.value = result
+  } catch (requestError) {
+    if (sequence === requestSequence) error.value = requestError
+  } finally {
+    if (sequence === requestSequence) loading.value = false
+  }
+}
+
+onMounted(loadDashboard)
 </script>
 
 <template>
@@ -59,55 +115,75 @@ const handleModalSuccess = (data) => {
       <span>{{ toastMessage }}</span>
     </div>
 
-    <!-- Quick Actions Bar -->
-    <section class="section-quick-actions" aria-label="Acciones rápidas de caja">
+    <section class="dashboard-controls" aria-label="Filtros del Dashboard">
+      <label for="dashboard-period">Periodo</label>
+      <select id="dashboard-period" v-model="selectedPeriod" :disabled="loading" @change="loadDashboard">
+        <option v-for="period in filterOptions?.periods ?? []" :key="period.value" :value="period.value">
+          {{ period.label }} {{ period.year }}
+        </option>
+      </select>
+      <template v-if="!USE_MOCKS">
+        <label for="dashboard-channel">Canal</label>
+        <select id="dashboard-channel" v-model="selectedChannel" :disabled="loading" @change="loadDashboard">
+          <option value="">Todos los canales</option>
+          <option v-for="type in filterOptions?.types ?? []" :key="type.value" :value="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+      </template>
+      <span v-if="periodLabel" class="dashboard-period-label">{{ periodLabel }}</span>
+      <p v-if="selectedChannel" class="dashboard-filter-note">
+        El canal se aplica a ventas; las alertas de cobro no se filtran por canal.
+      </p>
+    </section>
+
+    <p v-if="USE_MOCKS" class="data-source-notice" role="note">Modo de demostración: datos simulados.</p>
+    <p v-if="loading" class="dashboard-state" role="status" aria-live="polite">Cargando datos del Dashboard…</p>
+    <div v-else-if="error" class="dashboard-state dashboard-state--error" role="alert">
+      <p>{{ errorMessage }}</p>
+      <button type="button" class="btn btn-primary" @click="loadDashboard">Reintentar</button>
+    </div>
+    <p v-else-if="!dashboardData || !dashboardData.hasMovements" class="dashboard-state" role="status">
+      No hay movimientos disponibles para este periodo.
+    </p>
+    <template v-else>
+    <section v-if="USE_MOCKS" class="section-quick-actions" aria-label="Acciones rápidas de caja">
       <QuickActions @open-modal="handleOpenModal" />
     </section>
 
-    <!-- Financial KPIs (4 Cards Grid) -->
     <section class="section-kpis" aria-label="Indicadores financieros clave del periodo">
       <div class="kpis-grid">
-        <!-- Saldo del periodo (Hero Card) -->
         <StatCard
           title="Saldo del periodo"
-          :amount="mockData.kpis.saldoPeriodo"
-          subtitle="Ventas cobradas menos compras y gastos"
+          :amount="dashboardData.kpis.balance"
+          :subtitle="periodLabel"
           variant="balance"
-          trend="+18.4%"
-          trendLabel="vs septiembre"
           tooltip="Es el dinero líquido disponible tras restar los gastos a los ingresos cobrados."
         />
 
-        <!-- Ventas del mes -->
         <StatCard
-          title="Ventas del mes"
-          :amount="mockData.kpis.ventasMes"
-          subtitle="Total de ingresos cobrados en caja"
+          title="Entradas de caja"
+          :amount="dashboardData.kpis.sales"
+          subtitle="Ventas al contado y cobros del periodo"
           variant="income"
-          trend="+12.5%"
-          trendLabel="126 ventas"
           tooltip="Suma total de todas las ventas que ya ingresaron a la caja."
         />
 
-        <!-- Compras y gastos -->
         <StatCard
-          title="Compras y gastos"
-          :amount="mockData.kpis.comprasGastos"
-          subtitle="Reposición de mercadería y fletes"
+          title="Gastos en insumos"
+          :amount="dashboardData.kpis.expenses"
+          subtitle="Salidas registradas en el periodo"
           variant="expense"
-          trend="-4.2%"
-          trendLabel="41 salidas"
-          tooltip="Suma de mercadería comprada más gastos operativos como transporte o insumos."
+          tooltip="Monto de gastos en insumos devuelto por Backend."
         />
 
-        <!-- Dinero que te deben -->
         <StatCard
-          title="Dinero que te deben"
-          :amount="mockData.kpis.pendienteCobrar"
-          subtitle="7 ventas pendientes por cobrar"
+          title="Cobros prioritarios"
+          :amount="dashboardData.kpis.priorityCollections"
+          :subtitle="`${numberFormatter.format(dashboardData.operationsSummary.priorityCollections)} alertas`"
           variant="pending"
           badge="Atención requerida"
-          tooltip="Monto pendiente de cobro de clientes que compraron al fiado."
+          tooltip="Monto incluido en las alertas de cobro devueltas por Backend."
         />
       </div>
     </section>
@@ -116,36 +192,47 @@ const handleModalSuccess = (data) => {
       <div class="dashboard-grid__wrapper dashboard-grid__chart">
         <CashChart
           class="dashboard-grid__card"
-          :weeklyData="mockData.weeklyFlow"
+          :weeklyData="dashboardData.weeklyFlow"
+          :subtitle="`Flujo de caja de ${periodLabel}`"
         />
       </div>
       <div class="dashboard-grid__wrapper dashboard-grid__collections">
         <PriorityCollections
           class="dashboard-grid__card"
-          :collections="mockData.priorityCollections"
+          :collections="dashboardData.collections"
+          :total-count="dashboardData.operationsSummary.priorityCollections"
+          :allow-pay="USE_MOCKS"
           @pay-collection="handlePayCollection"
         />
       </div>
       <RecentOperations
         class="dashboard-grid__recent"
-        :operations="mockData.recentOperations"
+        :operations="dashboardData.recentOperations"
       />
       <div class="dashboard-grid__wrapper dashboard-grid__summary">
         <OperationsSummary
           class="dashboard-grid__card"
-          :summary="mockData.operationsSummary"
+          :summary="{
+            totalVentas: dashboardData.operationsSummary.sales,
+            totalGastos: dashboardData.operationsSummary.expenses,
+            unidadesVendidas: dashboardData.operationsSummary.units,
+            cuentasPendientes: dashboardData.operationsSummary.priorityCollections
+          }"
+          :period-label="periodLabel"
         />
       </div>
       <div class="dashboard-grid__wrapper dashboard-grid__products">
         <TopProducts
           class="dashboard-grid__card"
-          :products="mockData.topProducts"
+          :products="dashboardData.topProducts"
+          subtitle="Unidades vendidas en el periodo seleccionado"
         />
       </div>
     </section>
+    </template>
 
-    <!-- Modal for New Operation / Collection -->
     <NewOperationModal
+      v-if="USE_MOCKS"
       :isOpen="isModalOpen"
       :initialType="modalType"
       :initialData="modalInitialData"
@@ -158,10 +245,75 @@ const handleModalSuccess = (data) => {
 <style scoped>
 .dashboard-view {
   display: flex;
-  min-width: var(--content-min-width);
+  min-width: 0;
   flex-direction: column;
   gap: var(--layout-section-gap);
   position: relative;
+}
+
+.dashboard-controls {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.dashboard-controls label {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.dashboard-controls select {
+  min-height: var(--control-min-height);
+  max-width: 100%;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.dashboard-period-label {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.dashboard-filter-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.data-source-notice,
+.dashboard-state {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.data-source-notice {
+  font-size: 0.8125rem;
+}
+
+.dashboard-state--error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  border-color: var(--color-danger, #b91c1c);
 }
 
 /* Toast */
@@ -200,7 +352,7 @@ const handleModalSuccess = (data) => {
 
 .kpis-grid {
   display: grid;
-  min-width: var(--content-min-width);
+  min-width: 0;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--layout-card-gap);
 }

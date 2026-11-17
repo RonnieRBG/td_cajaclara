@@ -87,19 +87,20 @@ const getOperationIcon = (tipo) => {
                 </div>
                 <div class="op-title-block">
                   <span class="op-concept">{{ op.concepto }}</span>
-                  <span class="op-detail">{{ op.detalle }} • {{ formatDateTime(op.fecha) }}</span>
+                  <span v-if="op.detalle" class="op-detail">{{ op.detalle }} • {{ formatDateTime(op.fecha) }}</span>
+                  <span v-else class="op-detail">{{ formatDateTime(op.fecha) }}</span>
                 </div>
               </div>
             </td>
 
             <!-- Contraparte -->
             <td>
-              <span class="op-party">{{ op.clienteProveedor }}</span>
+              <span class="op-party">{{ op.clienteProveedor || '—' }}</span>
             </td>
 
             <!-- Canal / Pago -->
             <td>
-              <span class="op-channel-tag">{{ op.canal }}</span>
+              <span class="op-channel-tag">{{ op.canal || '—' }}</span>
             </td>
 
             <!-- Estado -->
@@ -120,6 +121,9 @@ const getOperationIcon = (tipo) => {
                 {{ (op.tipo === 'VENTA' && op.estado === 'PAGADA') ? '+' : '' }}{{ (op.tipo === 'COMPRA' || op.tipo === 'GASTO') ? '-' : '' }}{{ formatCLP(op.monto) }}
               </span>
             </td>
+          </tr>
+          <tr v-if="operations.length === 0">
+            <td colspan="5" class="operations-empty">No hay operaciones para mostrar.</td>
           </tr>
         </tbody>
       </table>
@@ -216,6 +220,11 @@ const getOperationIcon = (tipo) => {
   padding: var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
+}
+
+.operations-empty {
+  color: var(--color-text-secondary);
+  text-align: center;
 }
 
 .operation-row:hover td {

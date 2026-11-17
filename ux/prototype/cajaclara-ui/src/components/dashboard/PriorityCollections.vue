@@ -7,6 +7,14 @@ const props = defineProps({
   collections: {
     type: Array,
     required: true
+  },
+  totalCount: {
+    type: Number,
+    default: 0
+  },
+  allowPay: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -40,7 +48,7 @@ const handlePay = (item) => {
       </div>
 
       <button type="button" class="btn btn-secondary btn-sm" @click="goToCollections">
-        <span>Ver todas (7)</span>
+        <span>Ver todas ({{ totalCount }})</span>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="9 18 15 12 9 6" />
         </svg>
@@ -74,6 +82,7 @@ const handlePay = (item) => {
         <div class="amount-column">
           <span class="collection-amount">{{ formatCLP(item.monto) }}</span>
           <button
+            v-if="allowPay"
             type="button"
             class="btn btn-success btn-xs pay-btn"
             @click="handlePay(item)"
@@ -86,6 +95,9 @@ const handlePay = (item) => {
           </button>
         </div>
       </div>
+      <p v-if="collections.length === 0" class="collections-empty">
+        No hay cobros prioritarios para mostrar.
+      </p>
     </div>
   </div>
 </template>
@@ -157,6 +169,13 @@ const handlePay = (item) => {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.collections-empty {
+  padding: var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 .collection-item {

@@ -1,10 +1,12 @@
 <script setup>
-import { computed } from 'vue'
-
-const props = defineProps({
+defineProps({
   summary: {
     type: Object,
     required: true
+  },
+  periodLabel: {
+    type: String,
+    default: ''
   }
 })
 </script>
@@ -13,7 +15,7 @@ const props = defineProps({
   <div class="card summary-card">
     <div class="summary-header">
       <h3 class="summary-title">Resumen de actividad</h3>
-      <span class="period-pill">Octubre 2026</span>
+      <span class="period-pill">{{ periodLabel }}</span>
     </div>
 
     <div class="metrics-grid">
@@ -26,7 +28,7 @@ const props = defineProps({
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-value">{{ summary.totalVentas }}</span>
+          <span class="metric-value">{{ summary.totalVentas ?? '—' }}</span>
           <span class="metric-label">Ventas realizadas</span>
         </div>
       </div>
@@ -40,7 +42,7 @@ const props = defineProps({
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-value">{{ summary.totalGastos }}</span>
+          <span class="metric-value">{{ summary.totalGastos ?? '—' }}</span>
           <span class="metric-label">Compras y gastos</span>
         </div>
       </div>

@@ -6,6 +6,10 @@ const props = defineProps({
   products: {
     type: Array,
     required: true
+  },
+  subtitle: {
+    type: String,
+    default: 'Demanda acumulada del mes'
   }
 })
 
@@ -23,12 +27,15 @@ const getBarWidth = (units) => {
     <div class="card-header">
       <div>
         <h3 class="card-title">Productos más vendidos</h3>
-        <p class="card-subtitle">Demanda acumulada del mes</p>
+        <p class="card-subtitle">{{ subtitle }}</p>
       </div>
-      <span class="badge-tag">Top 4</span>
+      <span class="badge-tag">Top {{ products.length }}</span>
     </div>
 
     <div class="products-list">
+      <p v-if="products.length === 0" class="products-empty">
+        No hay productos para mostrar en este periodo y canal.
+      </p>
       <div
         v-for="(product, index) in products"
         :key="product.id"
@@ -110,6 +117,12 @@ const getBarWidth = (units) => {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.products-empty {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 .product-item {

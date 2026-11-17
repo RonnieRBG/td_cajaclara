@@ -1,57 +1,109 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import BadgeStatus from '@/components/common/BadgeStatus.vue'
 import CashChart from '@/components/dashboard/CashChart.vue'
 import StatCard from '@/components/common/StatCard.vue'
-import { monthlySummaryData } from '@/data/monthlySummaryMock'
+import { ApiError } from '@/services/apiClient'
+import { getFilterOptions, getPeriodRange, USE_MOCKS } from '@/services/optionsService'
+import { getMonthlySummaryData } from '@/services/summaryService'
 import { formatCLP, formatDate } from '@/utils/formatters'
 
-const monthOptions = Array.from({ length: 12 }, (_, index) => {
-  const date = new Date(2026, index, 1)
-  return {
-    value: String(index + 1).padStart(2, '0'),
-    label: date.toLocaleDateString('es-CL', { month: 'long' })
-  }
-})
-
-const selectedMonth = ref('10')
-const selectedYear = ref(2026)
+const filterOptions = ref(null)
+const selectedMonth = ref('')
+const selectedYear = ref(null)
+const selectedChannel = ref('')
+const periodData = ref(null)
+const loading = ref(false)
+const error = ref(null)
 const periodAnnouncement = ref('')
 const numberFormatter = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 })
+let requestSequence = 0
 
-const periodKey = computed(() => `${selectedYear.value}-${selectedMonth.value}`)
-const periodData = computed(() => monthlySummaryData[periodKey.value] ?? null)
-const periodLabel = computed(() => {
-  const month = monthOptions.find(option => option.value === selectedMonth.value)?.label ?? ''
-  return `${month.charAt(0).toLocaleUpperCase('es-CL')}${month.slice(1)} de ${selectedYear.value}`
+const availableYears = computed(() => [
+  ...new Set((filterOptions.value?.periods ?? []).map(period => period.year))
+])
+const monthOptions = computed(() => (
+  filterOptions.value?.periods.filter(period => period.year === selectedYear.value) ?? []
+))
+const periodKey = computed(() => (
+  selectedYear.value && selectedMonth.value
+    ? `${selectedYear.value}-${selectedMonth.value}`
+    : ''
+))
+const selectedRange = computed(() => {
+  const period = filterOptions.value?.periods.find(item => item.value === periodKey.value)
+  return period ? getPeriodRange(filterOptions.value, period.year, period.month) : null
 })
-const salesTotal = computed(() => (
-  (periodData.value?.sales.paid.amount ?? 0) +
-  (periodData.value?.sales.pending.amount ?? 0)
-))
-const expensesTotal = computed(() => (
-  periodData.value?.expenses.reduce((total, item) => total + item.amount, 0) ?? 0
-))
-const periodBalance = computed(() => salesTotal.value - expensesTotal.value)
-
-const expenseShare = (amount) => (
-  expensesTotal.value ? Math.round((amount / expensesTotal.value) * 100) : 0
-)
-
-const announcePeriodChange = () => {
-  if (!periodData.value) {
-    periodAnnouncement.value = `No hay información disponible para ${periodLabel.value}.`
-    return
+const periodLabel = computed(() => {
+  const month = monthOptions.value.find(option => option.month === selectedMonth.value)?.label ?? ''
+  return month
+    ? `${month.charAt(0).toLocaleUpperCase('es-CL')}${month.slice(1)} de ${selectedYear.value}`
+    : ''
+})
+const dateRangeLabel = computed(() => selectedRange.value
+  ? `${formatDate(selectedRange.value.startDate)} – ${formatDate(selectedRange.value.endDate)}`
+  : '')
+const errorMessage = computed(() => {
+  if (error.value instanceof ApiError && error.value.code === 'SESSION_EXPIRED') {
+    return 'Tu sesión expiró. Inicia sesión nuevamente para volver a consultar el resumen.'
   }
-
-  if (!periodData.value.hasMovements) {
-    periodAnnouncement.value = `${periodLabel.value}: periodo seleccionado sin movimientos.`
-    return
+  if (error.value instanceof ApiError && error.value.code === 'NETWORK_ERROR') {
+    return 'No se pudo conectar con el Backend. Verifica que esté disponible e inténtalo de nuevo.'
   }
+  return error.value?.message || 'No se pudo cargar el resumen mensual.'
+})
 
-  periodAnnouncement.value = `Resumen actualizado para ${periodLabel.value}.`
+const loadSummary = async () => {
+  const sequence = ++requestSequence
+  loading.value = true
+  error.value = null
+
+  try {
+    if (!filterOptions.value) filterOptions.value = await getFilterOptions()
+    if (!periodKey.value) {
+      const [year, month] = filterOptions.value.initialPeriod.split('-')
+      selectedYear.value = Number(year)
+      selectedMonth.value = month
+    }
+
+    let period = filterOptions.value.periods.find(item => item.value === periodKey.value)
+    if (!period && availableYears.value.length) {
+      period = filterOptions.value.periods.find(item => item.year === availableYears.value[0])
+      selectedYear.value = period.year
+      selectedMonth.value = period.month
+    }
+    if (!period) {
+      periodData.value = null
+      return
+    }
+
+    const range = getPeriodRange(filterOptions.value, period.year, period.month)
+    const result = await getMonthlySummaryData({
+      ...range,
+      channel: selectedChannel.value,
+      period: period.value
+    })
+    if (sequence === requestSequence) {
+      periodData.value = result
+      periodAnnouncement.value = result?.hasMovements
+        ? `Resumen actualizado para ${periodLabel.value}.`
+        : `${periodLabel.value}: periodo sin movimientos.`
+    }
+  } catch (requestError) {
+    if (sequence === requestSequence) error.value = requestError
+  } finally {
+    if (sequence === requestSequence) loading.value = false
+  }
 }
+
+const handleYearChange = () => {
+  const firstPeriod = filterOptions.value?.periods.find(period => period.year === selectedYear.value)
+  if (firstPeriod) selectedMonth.value = firstPeriod.month
+  loadSummary()
+}
+
+onMounted(loadSummary)
 </script>
 
 <template>
@@ -67,17 +119,26 @@ const announcePeriodChange = () => {
         <div class="period-selectors" role="group" aria-label="Seleccionar periodo">
           <div class="period-field">
             <label for="summary-month">Mes</label>
-            <select id="summary-month" v-model="selectedMonth" @change="announcePeriodChange">
-              <option v-for="month in monthOptions" :key="month.value" :value="month.value">
+            <select id="summary-month" v-model="selectedMonth" :disabled="loading" @change="loadSummary">
+              <option v-for="month in monthOptions" :key="month.value" :value="month.month">
                 {{ month.label }}
               </option>
             </select>
           </div>
           <div class="period-field period-field--year">
             <label for="summary-year">Año</label>
-            <select id="summary-year" v-model.number="selectedYear" @change="announcePeriodChange">
-              <option v-for="year in [2025, 2026, 2027]" :key="year" :value="year">
+            <select id="summary-year" v-model.number="selectedYear" :disabled="loading" @change="handleYearChange">
+              <option v-for="year in availableYears" :key="year" :value="year">
                 {{ year }}
+              </option>
+            </select>
+          </div>
+          <div v-if="!USE_MOCKS" class="period-field period-field--channel">
+            <label for="summary-channel">Canal</label>
+            <select id="summary-channel" v-model="selectedChannel" :disabled="loading" @change="loadSummary">
+              <option value="">Todos los canales</option>
+              <option v-for="type in filterOptions?.types ?? []" :key="type.value" :value="type.value">
+                {{ type.label }}
               </option>
             </select>
           </div>
@@ -87,12 +148,30 @@ const announcePeriodChange = () => {
         </RouterLink>
       </div>
 
+      <p v-if="selectedChannel" class="period-announcement">
+        El canal filtra ventas; los gastos en insumos no tienen canal.
+      </p>
       <p v-if="periodAnnouncement" class="period-announcement" role="status" aria-live="polite">
         {{ periodAnnouncement }}
       </p>
     </header>
 
-    <p v-if="!periodData" class="summary-empty summary-empty--unavailable" role="status">
+    <p v-if="USE_MOCKS" class="data-source-notice" role="note">Modo de demostración: datos simulados.</p>
+    <p v-if="dateRangeLabel" class="summary-date-range">
+      Fechas consultadas: {{ dateRangeLabel }}
+    </p>
+    <p v-if="!USE_MOCKS && !selectedChannel" class="summary-date-range">
+      No hay desglose de gastos por categoría en el contrato; se muestra el total de gastos en insumos.
+    </p>
+
+    <p v-if="loading" class="summary-empty" role="status" aria-live="polite">
+      Cargando resumen mensual…
+    </p>
+    <div v-else-if="error" class="summary-empty summary-error" role="alert">
+      <p>{{ errorMessage }}</p>
+      <button type="button" class="btn btn-primary" @click="loadSummary">Reintentar</button>
+    </div>
+    <p v-else-if="!periodData" class="summary-empty summary-empty--unavailable" role="status">
       No hay información disponible para este periodo
     </p>
 
@@ -104,27 +183,29 @@ const announcePeriodChange = () => {
       <section class="summary-stats" aria-label="Indicadores del periodo">
         <StatCard
           label="Ventas del periodo"
-          :amount="salesTotal"
-          :subtext="`${numberFormatter.format(periodData.sales.paid.operations + periodData.sales.pending.operations)} operaciones`"
+          :amount="periodData.totals.sales"
+          :subtext="`${numberFormatter.format(periodData.totals.transactions)} transacciones`"
           type="sales"
         />
         <StatCard
-          label="Compras y gastos"
-          :amount="expensesTotal"
-          :subtext="`${numberFormatter.format(periodData.expenses.length)} categorías de gasto`"
+          label="Gastos en insumos"
+          :amount="periodData.totals.expenses"
+          :subtext="periodData.totals.expensesCount === null
+            ? 'Sin conteo separado para el canal seleccionado'
+            : `${numberFormatter.format(periodData.totals.expensesCount)} ${periodData.totals.expensesCountLabel}`"
           type="expenses"
         />
         <StatCard
           label="Saldo del periodo"
-          :amount="periodBalance"
-          subtext="Ventas - Compras y gastos"
+          :amount="periodData.totals.balance"
+          subtext="Flujo de caja devuelto por Backend"
           type="balance"
           :is-emphasis="true"
         />
         <StatCard
           label="Pendiente por cobrar"
           :amount="periodData.sales.pending.amount"
-          :subtext="`${numberFormatter.format(periodData.sales.pending.operations)} ventas pendientes`"
+          :subtext="`${numberFormatter.format(periodData.sales.pending.transactions)} transacciones pendientes`"
           type="pending"
         />
       </section>
@@ -136,8 +217,9 @@ const announcePeriodChange = () => {
             <h2 id="weekly-comparison-title">Comparación semanal</h2>
           </div>
           <p class="chart-description">
-            En {{ periodLabel }}, las ventas sumaron {{ formatCLP(salesTotal) }} y las compras y gastos
-            {{ formatCLP(expensesTotal) }}. El saldo del periodo fue de {{ formatCLP(periodBalance) }}.
+            En {{ periodLabel }}, las ventas sumaron {{ formatCLP(periodData.totals.sales) }} y los gastos
+            en insumos {{ formatCLP(periodData.totals.expenses) }}. El saldo informado fue
+            {{ formatCLP(periodData.totals.balance) }}.
           </p>
         </div>
         <CashChart
@@ -151,18 +233,20 @@ const announcePeriodChange = () => {
           <div class="section-heading">
             <div>
               <p class="section-kicker">{{ periodLabel }}</p>
-              <h2 id="expense-breakdown-title">Desglose de gastos</h2>
+              <h2 id="expense-breakdown-title">Gastos disponibles</h2>
             </div>
-            <span class="panel-total">{{ formatCLP(expensesTotal) }}</span>
+            <span class="panel-total">{{ formatCLP(periodData.totals.expenses) }}</span>
           </div>
 
           <ul class="expense-list">
             <li v-for="expense in periodData.expenses" :key="expense.category" class="expense-item">
               <div class="expense-item__label">
                 <span>{{ expense.category }}</span>
-                <span class="expense-item__percent">{{ expenseShare(expense.amount) }}% del total</span>
               </div>
               <strong>{{ formatCLP(expense.amount) }}</strong>
+            </li>
+            <li v-if="periodData.expenses.length === 0" class="expense-item">
+              <span>No hay gastos desglosados disponibles.</span>
             </li>
           </ul>
         </section>
@@ -180,28 +264,28 @@ const announcePeriodChange = () => {
               <dt>Ventas pagadas</dt>
               <dd>
                 <strong>{{ formatCLP(periodData.sales.paid.amount) }}</strong>
-                <span>{{ numberFormatter.format(periodData.sales.paid.operations) }} operaciones</span>
+                <span>{{ numberFormatter.format(periodData.sales.paid.transactions) }} transacciones</span>
               </dd>
             </div>
             <div class="sales-breakdown__row">
               <dt>Ventas pendientes</dt>
               <dd>
                 <strong>{{ formatCLP(periodData.sales.pending.amount) }}</strong>
-                <span>{{ numberFormatter.format(periodData.sales.pending.operations) }} operaciones</span>
+                <span>{{ numberFormatter.format(periodData.sales.pending.transactions) }} transacciones</span>
               </dd>
             </div>
             <div class="sales-breakdown__row">
               <dt>Ventas físicas</dt>
               <dd>
                 <strong>{{ formatCLP(periodData.sales.physical.amount) }}</strong>
-                <span>{{ numberFormatter.format(periodData.sales.physical.operations) }} operaciones</span>
+                <span>{{ numberFormatter.format(periodData.sales.physical.invoices) }} facturas</span>
               </dd>
             </div>
             <div class="sales-breakdown__row">
               <dt>Ventas en línea</dt>
               <dd>
                 <strong>{{ formatCLP(periodData.sales.online.amount) }}</strong>
-                <span>{{ numberFormatter.format(periodData.sales.online.operations) }} operaciones</span>
+                <span>{{ numberFormatter.format(periodData.sales.online.invoices) }} facturas</span>
               </dd>
             </div>
           </dl>
@@ -216,20 +300,25 @@ const announcePeriodChange = () => {
           </div>
 
           <div class="highlights-grid">
-            <article class="highlight-item">
+            <article v-if="periodData.highlights.topProduct" class="highlight-item">
               <span class="highlight-item__label">Producto más vendido</span>
               <h3>{{ periodData.highlights.topProduct }}</h3>
-              <p>{{ numberFormatter.format(periodData.highlights.topProductUnits) }} unidades</p>
+              <p v-if="periodData.highlights.topProductUnits !== null">
+                {{ numberFormatter.format(periodData.highlights.topProductUnits) }} unidades
+              </p>
             </article>
-            <article class="highlight-item">
+            <article v-if="periodData.highlights.pendingCustomer" class="highlight-item">
               <span class="highlight-item__label">Cliente con mayor monto pendiente</span>
               <h3>{{ periodData.highlights.pendingCustomer }}</h3>
               <p>{{ formatCLP(periodData.highlights.pendingAmount) }} por cobrar</p>
             </article>
             <article class="highlight-item">
               <span class="highlight-item__label">Mayor venta del periodo</span>
-              <h3>{{ formatCLP(periodData.highlights.largestSale) }}</h3>
-              <p>Venta individual</p>
+              <h3 v-if="periodData.highlights.largestSale !== null">
+                {{ formatCLP(periodData.highlights.largestSale) }}
+              </h3>
+              <h3 v-else>Sin datos disponibles</h3>
+              <p v-if="periodData.highlights.largestSale !== null">Venta individual</p>
             </article>
             <article class="highlight-item">
               <span class="highlight-item__label">Total de unidades vendidas</span>
@@ -362,6 +451,27 @@ const announcePeriodChange = () => {
   grid-column: 1 / -1;
   color: var(--color-text-secondary);
   font-size: 0.8125rem;
+}
+
+.summary-date-range,
+.data-source-notice {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.data-source-notice {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.summary-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
 .summary-stats {

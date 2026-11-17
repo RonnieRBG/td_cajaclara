@@ -10,24 +10,24 @@ Documentación técnica del prototipo frontend de alta fidelidad. Para la invest
 - Formularios, filtros, búsqueda, detalle y confirmaciones simuladas según el módulo.
 - Layout responsive y design tokens compartidos.
 - Login JWT, restauración de sesión, refresh automático, perfil y logout.
-- Datos mock y estado local para interacciones financieras del prototipo.
+- Dashboard y Resumen mensual conectados a los endpoints financieros con JWT, estados de carga/error/vacío y reintento.
+- Modo mock explícito para Dashboard y Resumen mensual.
+- Compras y ventas y Cuentas por cobrar conservan sus mocks y estado local.
 
 ### En desarrollo
 
-La autenticación está conectada a Backend. La integración de las vistas financieras se hará por etapas y continúa usando los mocks existentes.
+Persistencia y sincronización de operaciones; integración de Compras y ventas y Cuentas por cobrar.
 
 ### Pendiente
 
-- Conectar las vistas financieras con los contratos de Backend acordados.
 - Persistir y sincronizar operaciones entre módulos.
-- Incorporar estados de carga y error en cada módulo financiero al integrarlo.
 - Añadir pruebas automatizadas y completar la validación de accesibilidad.
 
 ### Fuera del alcance actual
 
 Pagos parciales, gestión de usuarios, facturación electrónica, inventario automático y notificaciones reales por WhatsApp o correo.
 
-> Solo la autenticación se comunica con Backend. Los datos financieros siguen siendo mocks: los cambios locales se pierden al recargar y no se sincronizan entre módulos. El deploy de demostración utiliza datos simulados y requiere configurar el Backend por entorno para habilitar login.
+> La autenticación y, en modo API, Dashboard y Resumen mensual se comunican con Backend. Las demás vistas financieras siguen simuladas. El modo de datos financieros se configura por entorno.
 
 ## Stack y versiones
 
@@ -95,7 +95,11 @@ cajaclara-ui/
     ├── router/index.js
     ├── services/
     │   ├── apiClient.js
-    │   └── authService.js
+    │   ├── apiAdapters.js
+    │   ├── dashboardService.js
+    │   ├── authService.js
+    │   ├── optionsService.js
+    │   └── summaryService.js
     ├── utils/formatters.js
     └── views/
         └── LoginView.vue
@@ -173,9 +177,10 @@ La URL del Backend se configura con Vite. Crea un `.env.local` a partir de `.env
 
 ```dotenv
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
+VITE_USE_MOCKS=true
 ```
 
-Reinicia Vite después de cambiar variables `VITE_*`. No guardes `.env.local` en Git. La URL base se lee en `src/services/apiClient.js`; los componentes no contienen URLs de Backend.
+`VITE_USE_MOCKS=true` usa mocks exclusivamente en Dashboard y Resumen mensual. Con `VITE_USE_MOCKS=false` ambas vistas usan la API con JWT y no hacen fallback a mocks. La URL base se lee en `src/services/apiClient.js`; los componentes no contienen URLs de Backend. Reinicia Vite después de cambiar variables `VITE_*`. No guardes `.env.local` en Git.
 
 ### Contrato JWT integrado
 
@@ -204,13 +209,24 @@ Backend permite por defecto `http://localhost:5173` y `http://127.0.0.1:5173`. A
 
 [Ver prototipo desplegado en Vercel](https://tdcajaclara-cajaclara-ui-omega.vercel.app/)
 
-El deploy es una demostración con datos financieros simulados. El login requiere que `VITE_API_BASE_URL` apunte a un Backend accesible; las operaciones y pagos de los módulos financieros no persisten.
+El login requiere que `VITE_API_BASE_URL` apunte a un Backend accesible. Configura `VITE_USE_MOCKS=true` para el modo de demostración o `false` para consultar Dashboard y Resumen mensual en Backend. Compras y ventas y Cuentas por cobrar todavía usan datos simulados y sus cambios no persisten.
 
-## Integración futura con Backend
+## Integración financiera conectada
 
-La autenticación ya consume Backend; las vistas financieras todavía no realizan solicitudes. El Dashboard, Operaciones, Cobros y Resumen conservan sus mocks.
+Dashboard y Resumen mensual llaman, a través de servicios y `apiClient`, a:
 
-Antes de conectar esos módulos se deben respetar sus contratos de periodo, operaciones, cobros, estados y errores. La [guía de integración UX/Frontend con Backend](../../INTEGRACION-BACKEND.md) detalla las limitaciones y dependencias conocidas. Actualmente todos los usuarios autenticados acceden al mismo negocio; Backend no filtra por negocio individual.
+| Endpoint | Datos mostrados |
+| --- | --- |
+| `GET /api/finanzas/opciones-filtros/` | Rango de fechas disponible y canales `Física` / `En Línea`; determina el periodo inicial. |
+| `GET /api/finanzas/resumen-mensual/` | Indicadores, flujo de caja, ventas por estado y canal. |
+| `GET /api/finanzas/resumen-agrupado/` con `agrupacion=semanas_mes` | Flujo semanal y etiquetas entregadas por Backend. |
+| `GET /api/finanzas/operaciones/` | Operaciones recientes y del periodo, fechas ISO y montos. |
+| `GET /api/finanzas/alertas-cobro/` | Alertas prioritarias operativas vigentes a la fecha actual. |
+| `GET /api/finanzas/productos/` | Productos más vendidos del periodo/canal, ordenados por unidades vendidas. |
+
+`src/services/apiAdapters.js` valida y adapta las respuestas sin deducir el contrato de los mocks. `dashboardService.js`, `summaryService.js` y `optionsService.js` separan consultas y selección de fuente. Las peticiones protegidas reutilizan JWT y refresh automático del `apiClient`.
+
+Limitaciones del contrato: no hay desglose de gastos por categoría; se muestra el total de gastos en insumos. Las alertas operativas no corresponden al periodo seleccionado y no tienen filtro por canal. La métrica `ranking-productos` es histórica, por lo que las vistas usan en su lugar el endpoint `/productos/`, que sí permite filtrar por periodo y canal. Los gastos carecen de canal. Otros módulos financieros siguen en modo mock. Ver [guía de integración UX/Backend](../../INTEGRACION-BACKEND.md). Backend comparte actualmente el mismo negocio entre usuarios autenticados.
 
 Pasos técnicos previstos:
 
@@ -227,11 +243,12 @@ No hay suite de pruebas automatizadas, comandos de lint ni formateo en `package.
 npm run build
 ```
 
-El build se ejecutó correctamente al actualizar esta documentación.
-
 ## Limitaciones
 
-- Solo autenticación tiene conexión con Backend; los módulos financieros siguen simulados.
+- Dashboard y Resumen mensual usan una sola fuente por ejecución; API fallida produce estado de error y no fallback a mocks.
+- Compras y ventas y Cuentas por cobrar siguen simulados y no se sincronizan con Backend.
+- El contrato no proporciona desglose de gastos por categorías ni filtro por canal para las alertas.
+- Las alertas se calculan a la fecha actual, no al periodo histórico seleccionado.
 - Los mocks de cada módulo son independientes y no se sincronizan.
 - La autenticación JWT usa `localStorage` y no se ha hecho una auditoría de seguridad de producción.
 - No hay pagos parciales.
