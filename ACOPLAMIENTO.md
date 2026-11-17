@@ -25,6 +25,8 @@ Guía paso a paso para juntar las tres ramas del proyecto en una sola aplicació
 |  5   | Todos    | Prueba de integración completa (checklist final)                   |  1 al 4    | ⏳ Pendiente                                          |
 
 > El frontend **no necesita esperar a Neon**: puede avanzar desde el día 1 contra el backend en local con SQLite (ver 3.1).
+>
+> 🤖 **Equipo UX:** si usan un asistente de IA, la [Parte 3B](#-parte-3b--prompt-para-la-ia-del-equipo-ux) trae un prompt listo para copiar con todo el contexto.
 
 ---
 
@@ -371,6 +373,139 @@ export async function descargarExcel(filtros) {
 - [ ] Estados de carga, error y vacío (3.7).
 - [ ] Período inicial según `rango_fechas_disponible.max` (3.8).
 - [ ] Exportar a Excel descargando con el token (3.9).
+
+---
+
+## 🤖 Parte 3B — Prompt para la IA del equipo UX
+
+Para que el asistente de IA del equipo UX (Claude, Copilot, Cursor u otro) tenga todo el contexto y conecte el prototipo con el backend sin inventar campos. **Copiar el bloque completo** y pegarlo como primer mensaje, con el repositorio abierto en la rama `ux`.
+
+```text
+Eres el asistente del equipo UX/Frontend del proyecto Caja Clara (Bootcamp Talento Digital):
+una app de flujo de caja para pymes, montos en pesos chilenos (CLP). Tu tarea es conectar el
+prototipo Vue con la API del backend, reemplazando los datos simulados (mocks) por datos reales.
+
+## 1. El repositorio y sus ramas
+- Repositorio: RonnieRBG/td_cajaclara. Hay 3 equipos y cada uno trabaja en su rama:
+  - `datos`: base PostgreSQL en Neon (6 tablas + vistas para Power BI). La define el equipo de datos.
+  - `backend`: API Django REST que usa EXACTAMENTE el esquema de datos.
+  - `ux`: este prototipo, en `ux/prototype/cajaclara-ui` (Vue 3 + Vue Router + Vite).
+- La regla del proyecto es: datos define las tablas, backend se adapta a datos, y UX se adapta a los dos.
+
+## 2. Reglas para ti
+- Trabaja SOLO en la rama `ux` y SOLO dentro de `ux/` (sobre todo `ux/prototype/cajaclara-ui/src`).
+- NO modifiques, ni hagas commits o push en, las ramas `backend`, `datos` ni `main`.
+- En la raíz de la rama `ux` hay una copia ANTIGUA de Django (`manage.py`, `cajaclara/`, `finanzas/`).
+  NO la uses ni la modifiques: está desactualizada. El backend real está en la rama `backend`.
+- `ux/INTEGRACION-BACKEND.md` está DESACTUALIZADO (habla de `Movimiento`, `Categoria` y de un solo
+  endpoint). No lo uses como referencia. Al final, actualízalo para que apunte a los documentos del punto 3.
+- No inventes campos ni endpoints. Si una pantalla necesita algo que la API no entrega, NO lo simules:
+  anótalo en una lista "Pedidos al backend" y sigue con lo demás.
+- Haz commits chicos y descriptivos en español (una pantalla o pieza por commit).
+
+## 3. Fuentes de verdad (léelas antes de escribir código)
+Están en la rama `backend`. Léelas sin cambiar de rama:
+    git fetch origin
+    git show origin/backend:ACOPLAMIENTO.md        # qué hace cada equipo; Parte 3 = tus pasos
+    git show origin/backend:API_DOCUMENTACION.md   # contrato de la API, endpoint por endpoint
+En API_DOCUMENTACION.md, lo más importante para ti:
+  - Parte 3: cada endpoint con parámetros y respuesta de ejemplo (endpoints 1 a 16).
+  - Endpoint 16: contrato de los formularios (campos, obligatorios, reglas).
+  - Parte 5: tabla "qué campo de la API alimenta cada componente".
+En ACOPLAMIENTO.md: paso 3.5 (qué endpoint usa cada pantalla y la tabla mock → API) y pasos 3.6 a 3.9.
+Si algo de este prompt contradice esos documentos, mandan los documentos.
+
+## 4. Levantar el backend en local (sin tocar la rama ux)
+En una carpeta APARTE (no dentro del repo de ux):
+    git clone -b backend https://github.com/RonnieRBG/td_cajaclara.git cajaclara_backend
+    cd cajaclara_backend
+    python -m venv venv && source venv/bin/activate      # Windows: venv\Scripts\activate
+    pip install -r requirements.txt
+    python manage.py migrate
+    python manage.py importar_csv --fechas-originales     # datos 2010–2022, iguales a Neon
+    python manage.py createsuperuser
+    python manage.py runserver                            # http://127.0.0.1:8000/api/
+Con `--fechas-originales` los números coinciden con la documentación y con Neon. Sin esa opción,
+las fechas se mueven al presente (útil para ver "el mes actual" con datos).
+Catálogo de endpoints: http://127.0.0.1:8000/api/
+
+## 5. Lo que YA existe en ux (reutilízalo, no lo reescribas)
+- `src/services/apiClient.js`: `apiRequest(path, { authenticated, retryAfterRefresh, method, body })`.
+  Agrega el token, lo renueva solo si llega un 401 y lanza `ApiError` (con `status` y `validationErrors`).
+- `src/services/authService.js`, `src/composables/useAuth.js`, `src/views/LoginView.vue` y el
+  `beforeEach` de `src/router/index.js`: el login ya funciona y se probó contra el backend.
+- `src/utils/formatters.js`: `formatCLP` y `formatDate` (espera fechas `AAAA-MM-DD`).
+- `.env.example`: `VITE_API_BASE_URL=http://127.0.0.1:8000/api` (cópialo a `.env`). No hace falta
+  proxy de Vite: el backend ya acepta CORS desde localhost:5173 y 127.0.0.1:5173.
+Como `VITE_API_BASE_URL` ya termina en `/api`, las rutas se piden así:
+    apiRequest('/finanzas/resumen-mensual/?fecha_inicio=2022-08-01&fecha_fin=2022-08-31',
+               { authenticated: true, retryAfterRefresh: true })
+
+## 6. Cómo hacerlo (en este orden)
+1. Crea `src/services/finanzasService.js` con una función por endpoint (todas con
+   `authenticated: true, retryAfterRefresh: true`), armando los parámetros con URLSearchParams.
+2. Crea adaptadores (por ejemplo `src/services/adapters.js`) que conviertan la respuesta de la API
+   a la forma que ya esperan los componentes. Así los componentes cambian lo mínimo.
+   La tabla mock → API está en ACOPLAMIENTO.md, paso 3.5.
+3. Conecta cada pantalla y borra su import de `@/data/*Mock`:
+   - Dashboard (`/`): opciones-filtros/ (para el mes inicial), resumen-mensual/,
+     resumen-agrupado/?agrupacion=semanas_mes, alertas-cobro/?page_size=5 (cobros prioritarios),
+     operaciones/?page_size=5 (operaciones recientes), productos/?ordering=-total_vendido&page_size=4,
+     cuentas-por-cobrar/?page_size=1 (solo su "resumen").
+   - Compras y ventas (`/operaciones`): operaciones/?mes=AAAA-MM (filtros tipo, estado, search y su
+     "resumen"); detalle con facturas/{id_factura}/.
+   - Cuentas por cobrar (`/cobros`): cuentas-por-cobrar/ (lista + "resumen"), alertas-cobro/,
+     pagar con POST cuentas-por-cobrar/{id_cuenta}/pagar/.
+   - Resumen mensual (`/resumen`): resumen-mensual/ (incluye por_tipo_compra),
+     resumen-agrupado/?agrupacion=semanas_mes, productos/?ordering=-total_vendido,
+     facturas/?ordering=-total_venta&page_size=1, clientes/?ordering=-total_deuda&page_size=1.
+4. Formularios (endpoint 16 de API_DOCUMENTACION.md):
+   - Nueva venta: POST facturas/ con { id_cliente, items: [{ id_producto, cantidad, precio_venta?,
+     costo_venta? }], tipo_compra, por_cobrar, fecha_vencimiento? }. El cliente es OBLIGATORIO
+     siempre. Selectores: opciones/clientes/?search= y opciones/productos/?search= (este trae
+     ultimo_precio_venta y ultimo_costo_venta como precio sugerido; si vienen null, pide precio y costo).
+   - Gasto: POST gastos/ con { id_producto, monto, fecha? }. Quita del formulario categoría de
+     gasto, proveedor y descripción: no existen en la base.
+   - Cliente: POST clientes/ con { nombre, contacto } (contacto único).
+   - Pago: POST cuentas-por-cobrar/{id_cuenta}/pagar/ con { fecha_pago? }. Pago completo, sin abonos.
+   - Quita el botón "Anular venta": la base no permite anular ni borrar.
+   - Errores: 400 con { campo: [mensaje] } → bajo el campo (ApiError.validationErrors);
+     400 con { error: mensaje } → toast.
+5. Estados de carga, error (con "Reintentar") y vacío en cada vista. Nunca muestres mocks como si
+   fueran datos reales.
+6. Período inicial: pide primero opciones-filtros/ y usa rango_fechas_disponible.max como mes inicial
+   (en Neon los datos terminan en noviembre de 2022; "el mes actual" saldría vacío).
+7. Exportar a Excel: GET finanzas/exportar-excel/ devuelve un archivo, no JSON, así que no sirve
+   apiRequest(). Descárgalo con fetch + `Authorization: Bearer ${tokenStore.access}` (ejemplo en
+   ACOPLAMIENTO.md, paso 3.9).
+8. Actualiza `ux/INTEGRACION-BACKEND.md` y el README del prototipo con cómo correr ambos proyectos.
+
+## 7. Reglas de datos (no las cambies)
+- Los nombres de campo son los de la base: id_factura, id_cliente (número), id_producto (ej. P100055),
+  id_cuenta, id_gasto, precio_venta, costo_venta, fecha_vencimiento, etc.
+- Montos: enteros en CLP (ya son números: no uses parseFloat). Muéstralos con formatCLP.
+- Fechas: "AAAA-MM-DD", sin hora. La base no guarda hora: no la muestres.
+- tipo_compra: "Física" o "En Línea" (con tilde y L mayúscula).
+- Cuentas por cobrar: para mostrar usa estado_actual (PENDIENTE, VENCIDA, PAGADA), no estado.
+- Ventas: estado_pago es PAGADO o PENDIENTE; por_cobrar=true significa venta al fiado.
+- Listados paginados: { count, next, previous, results } y a veces "resumen". Usa page y page_size.
+
+## 8. Cómo verificar antes de dar por terminado
+- `npm run build` sin errores en ux/prototype/cajaclara-ui.
+- Con el backend importado con --fechas-originales, en agosto de 2022:
+  saldo del período (flujo_caja.saldo) = -164.348; ventas = 16.057; gastos = 188.863.
+- Registra un cliente, una venta al fiado, págala y registra un gasto: todo debe seguir ahí después
+  de recargar la página.
+- Cierra sesión: las rutas protegidas deben mandar a /login.
+- Revisa la consola del navegador: sin errores de CORS ni 401 repetidos.
+
+## 9. Qué entregar
+- Commits en la rama `ux` (nunca en backend, datos ni main).
+- Un resumen corto con: pantallas conectadas, cambios en formularios, mocks eliminados y la lista
+  "Pedidos al backend" (si quedó algo que la API no entrega).
+```
+
+> Si la IA encuentra algo que la API no entrega, la lista **"Pedidos al backend"** es la que hay que traer al equipo backend: se agrega en la rama `backend` y se actualiza `API_DOCUMENTACION.md`.
 
 ---
 
