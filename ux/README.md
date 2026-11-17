@@ -73,7 +73,7 @@ Los PNG exportados de los wireframes muestran la versión móvil para facilitar 
 - Ajustes de espaciado, gráficos, altura de componentes y distribución del Dashboard.
 - Estados principales, feedback y confirmaciones simuladas.
 
-El [prototipo desplegado en Vercel](https://tdcajaclara-cajaclara-eml0tsuhf-jltamayocabello-droids-projects.vercel.app/) presenta datos financieros simulados. Las operaciones y los pagos no persisten ni se sincronizan entre módulos. En el prototipo Vue, la conexión real al Backend se limita a autenticación JWT.
+El [prototipo desplegado en Vercel](https://tdcajaclara-cajaclara-ui-omega.vercel.app/) presenta datos financieros simulados. Las operaciones y los pagos no persisten ni se sincronizan entre módulos. En el prototipo Vue, la conexión real al Backend se limita a autenticación JWT.
 
 La implementación técnica, las rutas y las limitaciones de cada módulo están documentadas en el [README técnico](./prototype/cajaclara-ui/README.md).
 
