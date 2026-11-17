@@ -16,13 +16,13 @@ Guía paso a paso para juntar las tres ramas del proyecto en una sola aplicació
 
 ## 📅 Orden de trabajo
 
-| Paso | Equipo   | Qué se hace                                                        | Depende de |
-| :--: | :------- | :----------------------------------------------------------------- | :--------: |
-|  1   | Datos    | Dejar Neon listo y entregar las credenciales del backend           |     —      |
-|  2   | Datos    | Crear (una sola vez) las tablas de usuarios de Django en Neon      |     1      |
-|  3   | Backend  | Conectar la API a Neon y comprobar el esquema                      |    1, 2    |
-|  4   | Frontend | Conectar el prototipo a la API (login, lecturas y formularios)     |     3      |
-|  5   | Todos    | Prueba de integración completa (checklist final)                   |  1 al 4    |
+| Paso | Equipo   | Qué se hace                                                        | Depende de | Estado (16/11/2026)                                   |
+| :--: | :------- | :----------------------------------------------------------------- | :--------: | :---------------------------------------------------- |
+|  1   | Datos    | Dejar Neon listo y entregar las credenciales del backend           |     —      | 🟡 Neon cargado; faltan claves nuevas y entregarlas   |
+|  2   | Datos    | Crear (una sola vez) las tablas de usuarios de Django en Neon      |     1      | ⏳ Pendiente                                          |
+|  3   | Backend  | Conectar la API a Neon y comprobar el esquema                      |    1, 2    | 🟡 Backend listo; espera las credenciales             |
+|  4   | Frontend | Conectar el prototipo a la API (login, lecturas y formularios)     |     3      | 🟡 Login conectado y probado; faltan las 4 pantallas  |
+|  5   | Todos    | Prueba de integración completa (checklist final)                   |  1 al 4    | ⏳ Pendiente                                          |
 
 > El frontend **no necesita esperar a Neon**: puede avanzar desde el día 1 contra el backend en local con SQLite (ver 3.1).
 
@@ -206,7 +206,13 @@ Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entre
 
 ## 🎨 Parte 3 — Equipo de Frontend / UX
 
-El prototipo (`ux/prototype/cajaclara-ui`) hoy funciona con datos simulados: `dashboardMock.js`, `operationsMock.js`, `receivablesMock.js` y `monthlySummaryMock.js`. Hay que reemplazarlos por llamadas a la API.
+El prototipo está en `ux/prototype/cajaclara-ui`.
+
+> **Estado al 16/11/2026** (rama `ux`, commit `1b64e4b`):
+>
+> - ✅ **Login listo y compatible con el backend.** Se probó contra la API con las mismas llamadas que hace el código de `ux`: login, perfil, renovación del token (con `refresh` nuevo en cada renovación), cierre de sesión, mensaje de clave incorrecta y CORS desde `127.0.0.1:5173`. No hubo que cambiar nada en ningún lado.
+> - ✅ `node_modules/` y `dist/` fuera del repositorio.
+> - 🟡 **Las 4 pantallas siguen con datos simulados** (`dashboardMock.js`, `operationsMock.js`, `receivablesMock.js`, `monthlySummaryMock.js`). Es lo que falta: pasos 3.5 a 3.9.
 
 ### Paso 3.1 — Tener el backend corriendo en local (sin esperar a Neon)
 
@@ -224,48 +230,47 @@ python manage.py runserver       # queda en http://127.0.0.1:8000
 
 > En local las fechas se desplazan para que la última venta quede en esta semana, así el dashboard muestra "el mes actual" con datos. **En Neon no**: ahí los datos terminan en noviembre de 2022 (ver paso 3.8).
 
-### Paso 3.2 — Limpiar la rama `ux` antes de integrar
+### Paso 3.2 — Limpiar la rama `ux` antes de integrar ✅
 
-La rama `ux` tiene subidas las carpetas `node_modules/` y `dist/`, que pesan mucho y se generan solas. Agregar en `ux/prototype/cajaclara-ui/.gitignore`:
+**Hecho** (commits `e520c03` y `df42a8e`): `node_modules/` y `dist/` ya no están en el repositorio y el `.gitignore` de la raíz los excluye. El `.gitignore` del prototipo excluye `.env`.
 
-```gitignore
-node_modules/
-dist/
-.env
-```
+### Paso 3.3 — Conexión con la API ✅ (sin proxy)
 
-Y sacarlas del repositorio (quedan en el computador):
+**Hecho, de otra forma:** el prototipo llama a la API directamente con la variable `VITE_API_BASE_URL` (`.env.example`: `http://127.0.0.1:8000/api`). Funciona porque el backend ya acepta el origen del servidor de Vite (`http://localhost:5173` y `http://127.0.0.1:5173`) en `CORS_ALLOWED_ORIGINS`. **El proxy de Vite no hace falta.**
 
-```bash
-git rm -r --cached ux/prototype/cajaclara-ui/node_modules ux/prototype/cajaclara-ui/dist
-```
+Para correrlo: copiar `.env.example` como `.env` en `ux/prototype/cajaclara-ui/` y luego `npm install` y `npm run dev`.
 
-### Paso 3.3 — Proxy de Vite
+> **Al publicar:** `VITE_API_BASE_URL` pasa a ser la dirección pública del backend (ej. `https://<backend>/api`), y el backend agrega la dirección pública del frontend en `CORS_ALLOWED_ORIGINS` (sección *Publicar el backend* del README).
+>
+> Si algún día prefieren el proxy (por ejemplo, para evitar CORS en otro puerto), se agrega `server.proxy: { '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true } }` en `vite.config.js` y `VITE_API_BASE_URL=/api`.
 
-En `ux/prototype/cajaclara-ui/vite.config.js`, agregar `server.proxy` para que `/api` llegue a Django sin problemas de CORS:
+### Paso 3.4 — Servicio de API y login ✅
+
+**Hecho** (commit `1b64e4b`), con archivos propios de `ux` en vez del `api.js` de ejemplo:
+
+| Archivo de `ux`                 | Qué hace                                                                                                  |
+| :------------------------------ | :-------------------------------------------------------------------------------------------------------- |
+| `src/services/apiClient.js`     | `apiRequest()`: agrega el token, renueva el `access` una sola vez si llega un `401` y guarda los tokens.  |
+| `src/services/authService.js`   | `login`, `refreshToken`, `logout` y `getProfile` contra `/api/auth/...`.                                  |
+| `src/composables/useAuth.js`    | Estado del usuario y aviso de sesión expirada (`auth:session-expired`).                                   |
+| `src/views/LoginView.vue`       | Pantalla de login.                                                                                        |
+| `src/router/index.js`           | `beforeEach`: las rutas con `requiresAuth` mandan a `/login` si no hay sesión.                            |
+| `AppHeader.vue`                 | Botón **Cerrar sesión**.                                                                                  |
+
+**Para conectar las pantallas (3.5), usar el mismo `apiRequest()`** con `authenticated: true, retryAfterRefresh: true`. Por ejemplo:
 
 ```js
-export default defineConfig({
-  plugins: [vue()],
-  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  server: {
-    proxy: {
-      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-    },
-  },
+import { apiRequest } from '@/services/apiClient'
+
+const resumen = await apiRequest('/finanzas/resumen-mensual/?fecha_inicio=2022-08-01&fecha_fin=2022-08-31', {
+  authenticated: true,
+  retryAfterRefresh: true,
 })
 ```
 
-### Paso 3.4 — Servicio de API y login
+Las rutas y parámetros de cada consulta están en la sección 4.3 de `API_DOCUMENTACION.md` (`apiService`): sirven de guía aunque no se use ese archivo.
 
-Crear `src/services/api.js` con el código de la **sección 4.3 de `API_DOCUMENTACION.md`** (ya trae login, renovación automática del token, `apiService` con todas las consultas y la descarga de Excel).
-
-Luego:
-
-1. Crear una vista de **login** (`/login`) con usuario y contraseña que llame a `authService.login(usuario, clave)`.
-2. En `src/router/index.js`, agregar un `beforeEach` que mande a `/login` si `authService.estaLogueado()` es `false`.
-3. Escuchar el evento `sesion-expirada` para volver al login.
-4. Botón **Cerrar sesión** en `AppHeader.vue` → `authService.logout()`.
+> `apiRequest()` lee las respuestas como JSON. Para **Exportar a Excel** (3.9) hace falta una función aparte que descargue el archivo con el token; ver 3.9.
 
 ### Paso 3.5 — Conectar cada pantalla
 
@@ -336,19 +341,36 @@ En Neon las ventas llegan hasta **18/11/2022**. Si el dashboard parte en "el mes
 
 ### Paso 3.9 — Botón Exportar a Excel
 
-Usar `apiService.descargarExcel({ fecha_inicio, fecha_fin })`. Un enlace `<a href>` directo **no funciona**, porque la descarga necesita el token.
+Un enlace `<a href>` directo **no funciona**, porque la descarga necesita el token. Y `apiRequest()` no sirve tal cual, porque la respuesta es un archivo y no JSON. Se descarga con `fetch` y el token guardado:
+
+```js
+import { tokenStore } from '@/services/apiClient'
+
+export async function descargarExcel(filtros) {
+  const url = `${import.meta.env.VITE_API_BASE_URL}/finanzas/exportar-excel/?${new URLSearchParams(filtros)}`
+  const respuesta = await fetch(url, { headers: { Authorization: `Bearer ${tokenStore.access}` } })
+  if (!respuesta.ok) throw new Error('No se pudo descargar el Excel.')
+  const enlace = document.createElement('a')
+  enlace.href = URL.createObjectURL(await respuesta.blob())
+  enlace.download = 'cajaclara_ventas.xlsx'
+  enlace.click()
+  URL.revokeObjectURL(enlace.href)
+}
+```
+
+> Si el `access` venció (`401`), llamar antes a `refreshToken()` de `authService.js` y reintentar.
 
 ### ✅ Checklist del equipo de Frontend
 
 - [ ] Backend corriendo en local (3.1).
-- [ ] `node_modules/` y `dist/` fuera del repositorio (3.2).
-- [ ] Proxy de Vite (3.3).
-- [ ] `api.js`, pantalla de login y protección de rutas (3.4).
+- [x] `node_modules/` y `dist/` fuera del repositorio (3.2).
+- [x] Conexión con la API por `VITE_API_BASE_URL`, sin proxy (3.3).
+- [x] Cliente de API, pantalla de login y protección de rutas (3.4). Probado contra el backend.
 - [ ] Las 4 pantallas sin mocks (3.5).
 - [ ] Formularios ajustados: cliente obligatorio, gasto = producto + monto, sin anular (3.6).
 - [ ] Estados de carga, error y vacío (3.7).
 - [ ] Período inicial según `rango_fechas_disponible.max` (3.8).
-- [ ] Exportar a Excel con `descargarExcel()` (3.9).
+- [ ] Exportar a Excel descargando con el token (3.9).
 
 ---
 
@@ -382,10 +404,11 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 | `permission denied for table auth_user`       | `migrate --fake-initial` no se corrió con `neondb_owner`  | Datos       |
 | `relation "venta" already exists` al migrar   | Faltó `--fake-initial`                                    | Datos       |
 | `SSL connection is required`                  | Falta `DB_SSLMODE=require` en el `.env`                   | Backend     |
-| `401` en todas las consultas                  | No se inició sesión o falta el encabezado `Authorization` | Frontend    |
-| Error de CORS en la consola del navegador     | Falta el proxy de Vite (3.3) o el dominio en `CORS_ALLOWED_ORIGINS` | Frontend / Backend |
+| `401` en todas las consultas                  | No se inició sesión, o la consulta no usa `apiRequest(..., { authenticated: true })` | Frontend    |
+| Error de CORS en la consola del navegador     | La dirección del frontend no está en `CORS_ALLOWED_ORIGINS` del backend, o `VITE_API_BASE_URL` apunta mal (3.3) | Backend / Frontend |
 | Dashboard en cero con Neon                    | Está pidiendo el mes actual (paso 3.8)                    | Frontend    |
 | Montos en `NaN` o campos vacíos               | Se usa un nombre de campo antiguo del mock (tabla del 3.5) | Frontend   |
+| *"Falta configurar VITE_API_BASE_URL"*       | No se creó el `.env` del prototipo a partir de `.env.example` (3.3) | Frontend |
 | `400` al registrar una venta                  | Falta `id_cliente`, o el producto nunca se vendió y no se envió `precio_venta`/`costo_venta` | Frontend |
 
 ---
