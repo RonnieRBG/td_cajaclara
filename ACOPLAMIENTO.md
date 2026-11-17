@@ -16,13 +16,14 @@ Guía paso a paso para juntar las tres ramas del proyecto en una sola aplicació
 
 ## 📅 Orden de trabajo
 
-| Paso | Equipo   | Qué se hace                                                        | Depende de | Estado (16/11/2026)                                   |
+| Paso | Equipo   | Qué se hace                                                        | Depende de | Estado (17/11/2026)                                   |
 | :--: | :------- | :----------------------------------------------------------------- | :--------: | :---------------------------------------------------- |
 |  1   | Datos    | Dejar Neon listo y entregar las credenciales del backend           |     —      | 🟡 Neon cargado; faltan claves nuevas y entregarlas   |
 |  2   | Datos    | Crear (una sola vez) las tablas de usuarios de Django en Neon      |     1      | ⏳ Pendiente                                          |
 |  3   | Backend  | Conectar la API a Neon y comprobar el esquema                      |    1, 2    | 🟡 Backend listo; espera las credenciales             |
-|  4   | Frontend | Conectar el prototipo a la API (login, lecturas y formularios)     |     3      | 🟡 Login conectado y probado; faltan las 4 pantallas  |
+|  4   | Frontend | Conectar el prototipo a la API (login, lecturas y formularios)     |     3      | 🟡 Login, Dashboard y Resumen conectados (rama `integration/ux-backend`); faltan Operaciones, Cobros y formularios |
 |  5   | Todos    | Prueba de integración completa (checklist final)                   |  1 al 4    | ⏳ Pendiente                                          |
+|  6   | Backend + Frontend | Publicar: backend en un servicio + frontend en Vercel (Parte 5) | 3, 5 | ⏳ Falta elegir dónde publicar el backend |
 
 > El frontend **no necesita esperar a Neon**: puede avanzar desde el día 1 contra el backend en local con SQLite (ver 3.1).
 >
@@ -177,17 +178,32 @@ python manage.py runserver
    - Neon: `SELECT flujo_caja_neto FROM vw_flujo_caja_mensual WHERE periodo = '2022-08';`
    - Los dos deben dar **-164348**.
 
-### Paso 2.4 — Crear los usuarios del equipo
+### Paso 2.4 — Crear los usuarios de la app (los administra backend)
 
-No hay registro público. Cada persona que use la app necesita un usuario, creado desde `/admin/` → **Usuarios** → **Agregar**, o con:
+Hay **dos tipos de usuario** y es fácil confundirlos:
+
+| Tipo                          | Qué es                                                          | Ejemplos                               | Quién lo maneja |
+| :---------------------------- | :-------------------------------------------------------------- | :------------------------------------- | :-------------- |
+| **Usuario de la base de datos** | Con el que Django se conecta a Neon. Nadie entra a la app con él. | `cajaclara_app_rw`, `neondb_owner`   | Datos           |
+| **Usuario de la app**         | Con el que una persona entra al login (Vercel o local). Es una fila de la tabla `auth_user` de Django, guardada en Neon. | `admin`, `demo`, `jorge` | **Backend** |
+
+- **No hay un usuario ni una contraseña fijos en el código**, y no debe haberlos. Tampoco hay registro público.
+- **Requisito:** las tablas de usuarios de Django deben existir en Neon (paso 1.4). Crearlas necesita `neondb_owner`. Si el equipo de datos prefiere, puede pasarle esa clave a backend **solo para ese paso**, y backend la borra de su `.env` al terminar.
+- Después, backend crea los usuarios de la app con las credenciales normales (`cajaclara_app_rw`):
 
 ```bash
-python manage.py createsuperuser
+python manage.py createsuperuser      # administrador (entra también a /admin/)
 ```
+
+  o desde `/admin/` → **Usuarios** → **Agregar** (para usuarios comunes, como el de la demo).
+
+- Se sugiere: **un administrador** (backend), **un usuario por integrante** que lo necesite y **un usuario `demo`** para la presentación.
+- Las contraseñas se entregan por un canal privado. **Nunca** en GitHub, en el README ni en las variables de Vercel.
+- En **local** (SQLite), cada persona crea su propio usuario con `createsuperuser`: no hace falta pedirlo.
 
 ### Paso 2.5 — Avisar al frontend
 
-Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entregarles **un usuario de prueba** (no el administrador).
+Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entregarles **un usuario de prueba** (no el administrador). El equipo UX **no necesita credenciales de Neon**: solo un usuario de la app.
 
 ### Paso 2.6 — Si el equipo de datos cambia el esquema
 
@@ -201,7 +217,7 @@ Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entre
 - [ ] `.env` con Neon, clave secreta y CORS (2.1).
 - [ ] `verificar_esquema` y `test` sin errores (2.2).
 - [ ] Saldo de agosto 2022 igual a `vw_flujo_caja_mensual` (2.3).
-- [ ] Usuarios del equipo creados (2.4).
+- [ ] Usuarios de la app creados: administrador, integrantes y `demo` (2.4).
 - [ ] Usuario de prueba entregado al frontend (2.5).
 
 ---
@@ -210,11 +226,18 @@ Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entre
 
 El prototipo está en `ux/prototype/cajaclara-ui`.
 
-> **Estado al 16/11/2026** (rama `ux`, commit `1b64e4b`):
+> **Estado al 17/11/2026**
 >
-> - ✅ **Login listo y compatible con el backend.** Se probó contra la API con las mismas llamadas que hace el código de `ux`: login, perfil, renovación del token (con `refresh` nuevo en cada renovación), cierre de sesión, mensaje de clave incorrecta y CORS desde `127.0.0.1:5173`. No hubo que cambiar nada en ningún lado.
+> El trabajo de integración está en la rama **`integration/ux-backend`** (Jorge, commit `1463e4e`). Es `ux` + `backend` unidos; el merge no cambió el código del backend y se puede volver a unir con la rama `backend` actual sin conflictos. Todavía **no está en `main`**.
+>
+> - ✅ **Login** listo y compatible con el backend (login, perfil, renovación del token, cierre de sesión, errores y CORS).
+> - ✅ **Dashboard y Resumen mensual** conectados a la API, con modo de datos simulados opcional (`VITE_USE_MOCKS=true`). Se probaron sus adaptadores con las respuestas reales de la API (datos 2010-2022): los 10 funcionan sin errores y el saldo de agosto 2022 da **-$164.348**, igual que `vw_flujo_caja_mensual`.
 > - ✅ `node_modules/` y `dist/` fuera del repositorio.
-> - 🟡 **Las 4 pantallas siguen con datos simulados** (`dashboardMock.js`, `operationsMock.js`, `receivablesMock.js`, `monthlySummaryMock.js`). Es lo que falta: pasos 3.5 a 3.9.
+> - 🔧 **Dos ajustes pendientes** (enviados a Jorge):
+>   1. **Cobros prioritarios:** usar `tipo_alerta` (`VENCIDA` o `POR_VENCER`) en vez de `estado`. Hay cuentas guardadas como `PENDIENTE` que ya vencieron (2 de 8) y se verían como "Pendiente" siendo críticas.
+>   2. **Resumen mensual:** "ventas" (lo vendido, agosto: $16.057) menos gastos ($188.863) no da el saldo (-$164.348), porque el saldo incluye cobros de fiados de meses anteriores. Mostrar "Entradas de caja" (`flujo_caja.entradas.total` = $24.515) o agregar la línea "Cobros de fiados" (`flujo_caja.entradas.cobros`).
+> - 🟡 **Faltan:** pantallas de **Operaciones** y **Cobros**, los **formularios** (venta, gasto, pago, cliente) y **Exportar a Excel** (pasos 3.5 a 3.9).
+> - 🌐 El sitio en Vercel (`https://tdcajaclara-cajaclara-ui-omega.vercel.app`) todavía muestra datos simulados: falta publicar el backend (Parte 5).
 
 ### Paso 3.1 — Tener el backend corriendo en local (sin esperar a Neon)
 
@@ -368,17 +391,17 @@ export async function descargarExcel(filtros) {
 - [x] `node_modules/` y `dist/` fuera del repositorio (3.2).
 - [x] Conexión con la API por `VITE_API_BASE_URL`, sin proxy (3.3).
 - [x] Cliente de API, pantalla de login y protección de rutas (3.4). Probado contra el backend.
-- [ ] Las 4 pantallas sin mocks (3.5).
+- [ ] Las 4 pantallas sin mocks (3.5). Dashboard y Resumen ✅ en `integration/ux-backend`; faltan Operaciones y Cobros.
 - [ ] Formularios ajustados: cliente obligatorio, gasto = producto + monto, sin anular (3.6).
 - [ ] Estados de carga, error y vacío (3.7).
-- [ ] Período inicial según `rango_fechas_disponible.max` (3.8).
+- [x] Período inicial según `rango_fechas_disponible.max` (3.8). Hecho en `integration/ux-backend`.
 - [ ] Exportar a Excel descargando con el token (3.9).
 
 ---
 
 ## 🤖 Parte 3B — Prompt para la IA del equipo UX
 
-Para que el asistente de IA del equipo UX (Claude, Copilot, Cursor u otro) tenga todo el contexto y conecte el prototipo con el backend sin inventar campos. **Copiar el bloque completo** y pegarlo como primer mensaje, con el repositorio abierto en la rama `ux`.
+Para que el asistente de IA del equipo UX (Claude, Copilot, Cursor u otro) tenga todo el contexto y conecte el prototipo con el backend sin inventar campos. **Copiar el bloque completo** y pegarlo como primer mensaje, con el repositorio abierto en la rama `integration/ux-backend`.
 
 ```text
 Eres el asistente del equipo UX/Frontend del proyecto Caja Clara (Bootcamp Talento Digital):
@@ -393,7 +416,9 @@ prototipo Vue con la API del backend, reemplazando los datos simulados (mocks) p
 - La regla del proyecto es: datos define las tablas, backend se adapta a datos, y UX se adapta a los dos.
 
 ## 2. Reglas para ti
-- Trabaja SOLO en la rama `ux` y SOLO dentro de `ux/` (sobre todo `ux/prototype/cajaclara-ui/src`).
+- Trabaja SOLO en la rama de integración del equipo UX, `integration/ux-backend` (o en `ux` si así
+  te lo piden), y SOLO dentro de `ux/` (sobre todo `ux/prototype/cajaclara-ui/src`).
+- Para traer novedades del backend: `git merge origin/backend` (no cambies sus archivos).
 - NO modifiques, ni hagas commits o push en, las ramas `backend`, `datos` ni `main`.
 - En la raíz de la rama `ux` hay una copia ANTIGUA de Django (`manage.py`, `cajaclara/`, `finanzas/`).
   NO la uses ni la modifiques: está desactualizada. El backend real está en la rama `backend`.
@@ -500,7 +525,7 @@ Como `VITE_API_BASE_URL` ya termina en `/api`, las rutas se piden así:
 - Revisa la consola del navegador: sin errores de CORS ni 401 repetidos.
 
 ## 9. Qué entregar
-- Commits en la rama `ux` (nunca en backend, datos ni main).
+- Commits en `integration/ux-backend` (nunca en backend, datos ni main).
 - Un resumen corto con: pantallas conectadas, cambios en formularios, mocks eliminados y la lista
   "Pedidos al backend" (si quedó algo que la API no entrega).
 ```
@@ -548,6 +573,34 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 
 ---
 
+## 🌐 Parte 5 — Publicar: backend + frontend en Vercel
+
+**Vercel publica solo el frontend.** El backend Django se publica aparte (Render, Railway u otro). Sin el backend publicado, el sitio de Vercel no tiene una API a la cual conectarse: `127.0.0.1` es el computador de cada uno.
+
+| Paso | Equipo   | Qué se hace                                                                                                   |
+| :--: | :------- | :------------------------------------------------------------------------------------------------------------ |
+|  1   | Datos    | Neon listo: claves nuevas, credenciales entregadas y paso 1.4 hecho.                                          |
+|  2   | Backend  | Publicar el backend conectado a Neon (sección *Publicar el backend* del README) y crear los usuarios (2.4).  |
+|  3   | Backend  | Agregar el dominio de Vercel en las variables del servicio del backend: `CORS_ALLOWED_ORIGINS=https://tdcajaclara-cajaclara-ui-omega.vercel.app` |
+|  4   | Todos    | Pasar la integración a `main` (unir `integration/ux-backend` y la rama `backend` actual).                     |
+|  5   | Frontend | En Vercel → **Settings → Environment Variables**: `VITE_API_BASE_URL=https://<dirección-del-backend>/api` y `VITE_USE_MOCKS=false`. Luego **Redeploy**. |
+|  6   | Todos    | Entrar al sitio de Vercel con el usuario `demo` y repetir la prueba de la Parte 4.                            |
+
+**Configuración del proyecto en Vercel:**
+
+- **Root Directory:** `ux/prototype/cajaclara-ui`.
+- **Rama de producción:** `main` (cuando la integración esté ahí).
+- Las variables `VITE_*` se leen **al construir** el sitio: si se cambian, hay que volver a desplegar para que tomen efecto.
+- Si al **recargar** una página interna (por ejemplo `/cobros`) aparece un error **404**, falta un `vercel.json` en `ux/prototype/cajaclara-ui/` que mande todas las rutas a `index.html`:
+
+```json
+{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+```
+
+> **Seguridad:** en Vercel solo van la dirección del backend y `VITE_USE_MOCKS`. Ninguna clave (ni de Neon ni de usuarios) va en las variables de Vercel: todo lo que empieza con `VITE_` queda visible en el código que descarga el navegador.
+
+---
+
 ## 📌 Decisiones pendientes (para conversar entre los tres equipos)
 
 - [ ] **Una regla para la fecha de corte:** las vistas de análisis de datos calculan al `2022-09-01` y la API operativa a la fecha de hoy (hoy: 6 vencidas según la vista, 8 según la API). Propuesta: lo histórico (`/metricas/`, Power BI) usa las vistas tal cual; lo operativo (`/cuentas-por-cobrar/`, `/alertas-cobro/`) usa hoy; y cada pantalla dice a qué fecha corresponde su número.
@@ -555,4 +608,5 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 - [ ] **Gastos que no son insumos** (arriendo, flete, servicios): hoy la base no los permite. Si se quieren, datos tiene que agregar una tabla o columnas y avisar al backend.
 - [ ] **Anular ventas:** la base no lo permite. Si se necesita, acordar cómo marcarlo (por ejemplo, una columna `anulada` en `venta`).
 - [ ] **Pagos parciales (abonos):** hoy un pago es siempre completo.
-- [ ] **Dónde se publica** la app (backend y frontend) para la presentación final. El backend ya está preparado para Render, Railway u otro servicio (ver *Publicar el backend* en el README); falta elegir y, con eso, poner la dirección del frontend en `CORS_ALLOWED_ORIGINS`.
+- [ ] **Dónde se publica el backend** para la presentación final (Render, Railway u otro). El frontend ya está en Vercel; el backend está preparado (sección *Publicar el backend* del README). Con eso se completan los pasos de la Parte 5.
+- [ ] **Qué mes muestra la demo:** con los datos en Neon, el mes inicial es noviembre 2022, que tiene muy pocas ventas (1 venta y 102 gastos). Elegir un mes con más movimiento o desplazar las fechas.
