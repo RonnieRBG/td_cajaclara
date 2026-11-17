@@ -9,24 +9,25 @@ Documentación técnica del prototipo frontend de alta fidelidad. Para la invest
 - Vistas navegables de Dashboard, Compras y ventas, Cuentas por cobrar y Resumen mensual.
 - Formularios, filtros, búsqueda, detalle y confirmaciones simuladas según el módulo.
 - Layout responsive y design tokens compartidos.
-- Datos mock y estado local para interacciones del prototipo.
+- Login JWT, restauración de sesión, refresh automático, perfil y logout.
+- Datos mock y estado local para interacciones financieras del prototipo.
 
 ### En desarrollo
 
-El trabajo continúa en la iteración del prototipo y en la definición de la integración futura. La guía de integración recoge acuerdos pendientes; el cliente Vue sigue aislado de la API.
+La autenticación está conectada a Backend. La integración de las vistas financieras se hará por etapas y continúa usando los mocks existentes.
 
 ### Pendiente
 
-- Conectar las vistas con contratos de Backend acordados.
+- Conectar las vistas financieras con los contratos de Backend acordados.
 - Persistir y sincronizar operaciones entre módulos.
-- Incorporar estados de carga y error para solicitudes reales.
+- Incorporar estados de carga y error en cada módulo financiero al integrarlo.
 - Añadir pruebas automatizadas y completar la validación de accesibilidad.
 
 ### Fuera del alcance actual
 
-Pagos parciales, autenticación productiva, facturación electrónica, inventario automático y notificaciones reales por WhatsApp o correo.
+Pagos parciales, gestión de usuarios, facturación electrónica, inventario automático y notificaciones reales por WhatsApp o correo.
 
-> Los datos no persisten ni se envían al Backend. Los cambios locales se pierden al recargar y no se sincronizan entre módulos. El deploy también utiliza datos simulados.
+> Solo la autenticación se comunica con Backend. Los datos financieros siguen siendo mocks: los cambios locales se pierden al recargar y no se sincronizan entre módulos. El deploy de demostración utiliza datos simulados y requiere configurar el Backend por entorno para habilitar login.
 
 ## Stack y versiones
 
@@ -90,9 +91,14 @@ cajaclara-ui/
     │   ├── operations/
     │   └── receivables/
     ├── data/
+    ├── composables/useAuth.js
     ├── router/index.js
+    ├── services/
+    │   ├── apiClient.js
+    │   └── authService.js
     ├── utils/formatters.js
     └── views/
+        └── LoginView.vue
 ```
 
 `vite.config.js` configura el plugin de Vue, el alias `@` hacia `src/` y el puerto 5173. `dist/` es un directorio generado por el build.
@@ -122,14 +128,15 @@ Definidas en `src/router/index.js` con `createWebHistory`:
 
 | Ruta | Vista | Estado |
 | --- | --- | --- |
-| `/` | Dashboard | Implementada |
-| `/operaciones` | Compras y ventas | Implementada |
-| `/cobros` | Cuentas por cobrar | Implementada |
-| `/resumen` | Resumen mensual | Implementada |
+| `/login` | Inicio de sesión | Pública |
+| `/` | Dashboard | Protegida por JWT; datos mock |
+| `/operaciones` | Compras y ventas | Protegida por JWT; datos mock |
+| `/cobros` | Cuentas por cobrar | Protegida por JWT; datos mock |
+| `/resumen` | Resumen mensual | Protegida por JWT; datos mock |
 | `/dashboard` | Redirección a `/` | Activa |
 | Ruta desconocida | Redirección a `/` | Activa |
 
-No hay rutas de login o configuración ni protección de rutas.
+Una visita no autenticada a una ruta protegida se envía a `/login`; después del login se recupera la ruta solicitada. Una sesión válida que abre `/login` va al Dashboard. El layout de login no muestra header, sidebar ni navegación inferior.
 
 ## Datos mock y comportamiento local
 
@@ -162,7 +169,36 @@ Esto **no representa cumplimiento completo de accesibilidad**. No se ha document
 
 ## Variables de entorno
 
-No hay archivos `.env*`, referencias a `VITE_*` ni lectura de `import.meta.env` en el prototipo actual. No se necesita una URL de API para ejecutar los mocks. Cuando se acuerde la integración, deberá configurarse la URL del Backend mediante una variable de entorno de Vite, sin fijarla en el código.
+La URL del Backend se configura con Vite. Crea un `.env.local` a partir de `.env.example`:
+
+```dotenv
+VITE_API_BASE_URL=http://127.0.0.1:8000/api
+```
+
+Reinicia Vite después de cambiar variables `VITE_*`. No guardes `.env.local` en Git. La URL base se lee en `src/services/apiClient.js`; los componentes no contienen URLs de Backend.
+
+### Contrato JWT integrado
+
+Se usan únicamente estas rutas documentadas:
+
+| Método | Ruta | Contrato |
+| --- | --- | --- |
+| `POST` | `/api/auth/login/` | Request `{ "username": "...", "password": "..." }`; respuesta `{ "access": "...", "refresh": "...", "usuario": { "id", "username", "nombre", "email", "es_admin" } }`. |
+| `POST` | `/api/auth/refresh/` | Request `{ "refresh": "..." }`; respuesta con `access` y un `refresh` rotado. |
+| `POST` | `/api/auth/logout/` | Request `{ "refresh": "..." }`; invalida el refresh. Backend confirma `200`; el cliente limpia ambos tokens incluso si la llamada falla. |
+| `GET` | `/api/auth/perfil/` | Requiere `Authorization: Bearer <access>` y devuelve `id`, `username`, `nombre`, `email` y `es_admin`. |
+
+No existe registro público; las cuentas las crea un administrador. Los errores documentados son `401` para credenciales inválidas y `429` al superar 10 intentos de login por minuto. El mensaje de credenciales inválidas es “Usuario o contraseña incorrectos.”. Los errores de refresh inválido se manejan como sesión expirada sin mostrar respuestas sensibles.
+
+### Almacenamiento y expiración
+
+El Backend recomienda `localStorage`: access en `cc_access` y refresh en `cc_refresh`. El access dura 30 minutos y el refresh 7 días por defecto (configurables en Backend). Al recibir `401` en una petición protegida, el cliente comparte un único refresh concurrente, guarda el par rotado y reintenta esa petición una sola vez. Si refresh falla, se eliminan ambos tokens, se redirige al login y se conserva la ruta solicitada como contexto.
+
+El logout invalida el refresh en Backend y elimina ambos valores locales. `localStorage` persiste tras recargar, pero es accesible desde JavaScript; un XSS podría robar tokens. No son cookies `HttpOnly`, no se registran en consola y no se muestran en mensajes de error. Esta estrategia debe revisarse antes de producción.
+
+### CORS
+
+Backend permite por defecto `http://localhost:5173` y `http://127.0.0.1:5173`. Al publicar el frontend en otro origen, ese origen debe agregarse a `CORS_ALLOWED_ORIGINS` en Backend. La API usa JSON y no depende de cookies.
 
 ## Deploy en Vercel
 
@@ -172,17 +208,16 @@ El deploy es una demostración con datos simulados; no persiste cambios ni se co
 
 ## Integración futura con Backend
 
-El proyecto Vue todavía no realiza solicitudes HTTP. El repositorio incluye un Backend Django separado; su endpoint actual `GET /api/finanzas/resumen-mensual/` entrega totales del periodo actual, pero no cubre todos los filtros, operaciones y desgloses que esperan las vistas.
+La autenticación ya consume Backend; las vistas financieras todavía no realizan solicitudes. El Dashboard, Operaciones, Cobros y Resumen conservan sus mocks.
 
-Antes de conectar el prototipo se deben acordar contratos de periodo, operaciones, cobros, estados y errores. La [guía de integración UX/Frontend con Backend](../../INTEGRACION-BACKEND.md) detalla las limitaciones y dependencias conocidas.
+Antes de conectar esos módulos se deben respetar sus contratos de periodo, operaciones, cobros, estados y errores. La [guía de integración UX/Frontend con Backend](../../INTEGRACION-BACKEND.md) detalla las limitaciones y dependencias conocidas. Actualmente todos los usuarios autenticados acceden al mismo negocio; Backend no filtra por negocio individual.
 
 Pasos técnicos previstos:
 
-1. Acordar contratos y formatos con Backend y Análisis de Datos.
-2. Configurar la URL de API por entorno e introducir un cliente HTTP.
-3. Sustituir mocks gradualmente y adaptar respuestas a los modelos de vista.
-4. Persistir y sincronizar cambios, con estados de carga, error y vacío.
-5. Validar build, navegación, formularios y persistencia de los flujos conectados.
+1. Acordar los contratos financieros y formatos con Backend y Análisis de Datos.
+2. Sustituir los mocks gradualmente y adaptar respuestas a los modelos de vista.
+3. Persistir y sincronizar cambios, con estados de carga, error y vacío.
+4. Validar formularios, permisos y flujos financieros conectados.
 
 ## Pruebas y calidad
 
@@ -196,17 +231,17 @@ El build se ejecutó correctamente al actualizar esta documentación.
 
 ## Limitaciones
 
-- Sin persistencia, autenticación ni conexión desde Vue al Backend.
+- Solo autenticación tiene conexión con Backend; los módulos financieros siguen simulados.
 - Los mocks de cada módulo son independientes y no se sincronizan.
-- Los estados de carga y error HTTP aún no aplican porque no hay solicitudes.
+- La autenticación JWT usa `localStorage` y no se ha hecho una auditoría de seguridad de producción.
 - No hay pagos parciales.
 - No se ha completado una auditoría de accesibilidad.
 - `PlaceholderView.vue` existe, pero no está asociado a una ruta activa.
 
 ## Roadmap técnico
 
-1. Definir y validar contratos de API.
-2. Conectar primero el resumen y luego operaciones y cuentas por cobrar.
+1. Definir y validar los contratos financieros de API.
+2. Conectar gradualmente resumen, operaciones y cuentas por cobrar.
 3. Añadir persistencia, sincronización y manejo de errores/carga.
-4. Incorporar pruebas para rutas y flujos críticos.
-5. Completar validación de accesibilidad y preparar autenticación y configuración de producción.
+4. Incorporar pruebas automatizadas para rutas, autenticación y flujos críticos.
+5. Completar validación de accesibilidad y revisar almacenamiento de tokens para producción.

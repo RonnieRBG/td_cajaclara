@@ -60,8 +60,21 @@
         </div>
         <div class="app-header__user-meta">
           <strong class="app-header__user-name">{{ activeUser }}</strong>
-          <span class="app-header__user-role">Emprendedor</span>
+          <span class="app-header__user-role">{{ ownerEmail || 'Cuenta autenticada' }}</span>
         </div>
+        <button
+          type="button"
+          class="app-header__logout"
+          aria-label="Cerrar sesión"
+          @click="$emit('logout')"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 17l5-5-5-5" />
+            <path d="M15 12H3" />
+            <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
+          </svg>
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </div>
   </header>
@@ -94,14 +107,18 @@ const props = defineProps({
   ownerInitials: {
     type: String,
     default: 'MC'
+  },
+  ownerEmail: {
+    type: String,
+    default: ''
   }
 })
 
-defineEmits(['toggle-sidebar'])
+defineEmits(['toggle-sidebar', 'logout'])
 
 const activePeriod = computed(() => props.period || props.periodLabel || 'Octubre de 2026')
-const activeUser = computed(() => props.ownerName || props.userName || 'Max Ceballos')
-const activeInitials = computed(() => props.ownerInitials || 'MC')
+const activeUser = computed(() => props.ownerName || props.userName || 'Usuario')
+const activeInitials = computed(() => props.ownerInitials || 'U')
 </script>
 
 <style scoped>
@@ -300,6 +317,27 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
   color: var(--color-text-muted);
 }
 
+.app-header__logout {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.app-header__logout:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-main);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .app-header__mobile-toggle {
@@ -315,6 +353,34 @@ const activeInitials = computed(() => props.ownerInitials || 'MC')
   .app-header__business,
   .app-header__user-meta {
     display: none;
+  }
+
+  .app-header__logout {
+    width: 36px;
+    padding: 0;
+  }
+
+  .app-header__logout span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-header__brand-tag,
+  .app-header__period-icon,
+  .app-header__chevron {
+    display: none;
+  }
+
+  .app-header__period {
+    max-width: 118px;
+    padding-inline: var(--space-2);
+    font-size: 0.7rem;
   }
 }
 </style>

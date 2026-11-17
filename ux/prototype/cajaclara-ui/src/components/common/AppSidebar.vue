@@ -10,6 +10,18 @@ const props = defineProps({
   pendingCount: {
     type: Number,
     default: 7
+  },
+  userName: {
+    type: String,
+    default: 'Usuario'
+  },
+  userEmail: {
+    type: String,
+    default: ''
+  },
+  userInitials: {
+    type: String,
+    default: 'U'
   }
 })
 
@@ -148,11 +160,11 @@ const navigateTo = (path) => {
       <div class="sidebar-footer">
         <div class="business-card">
           <div class="business-avatar" aria-hidden="true">
-            MC
+            {{ userInitials }}
           </div>
           <div class="business-details">
-            <span class="business-name">Max Ceballos</span>
-            <span class="business-role">Almacén La Esquina · Propietario</span>
+            <span class="business-name">{{ userName }}</span>
+            <span class="business-role">{{ userEmail || 'Cuenta autenticada' }}</span>
           </div>
         </div>
         <div class="sidebar-help">

@@ -1,11 +1,27 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { mockData } from '@/data/dashboardMock'
 import AppSidebar from '@/components/common/AppSidebar.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
 import AppBottomNav from '@/components/common/AppBottomNav.vue'
+import { useAuth } from '@/composables/useAuth'
 
 const isSidebarOpen = ref(false)
+const route = useRoute()
+const router = useRouter()
+const { user, logout } = useAuth()
+const isAuthLayout = computed(() => route.meta.layout === 'auth')
+const profileName = computed(() => user.value?.nombre || user.value?.username || 'Usuario')
+const profileInitials = computed(() => (
+  profileName.value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase() || 'U'
+))
 
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value
@@ -14,10 +30,20 @@ const toggleSidebar = () => {
 const closeSidebar = () => {
   isSidebarOpen.value = false
 }
+
+const handleLogout = async () => {
+  const loggedOut = await logout()
+  await router.replace({
+    name: 'Login',
+    query: loggedOut ? {} : { reason: 'logout-error' }
+  })
+}
 </script>
 
 <template>
-  <div class="app-layout">
+  <RouterView v-if="isAuthLayout" />
+
+  <div v-else class="app-layout">
     <!-- Skip link for keyboard accessibility -->
     <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
 
@@ -25,6 +51,9 @@ const closeSidebar = () => {
     <AppSidebar
       :isOpen="isSidebarOpen"
       :pendingCount="mockData.operationsSummary.cuentasPendientes"
+      :userName="profileName"
+      :userEmail="user?.email || ''"
+      :userInitials="profileInitials"
       @close="closeSidebar"
     />
 
@@ -34,9 +63,11 @@ const closeSidebar = () => {
       <AppHeader
         :businessName="mockData.business.name"
         :period="mockData.business.period"
-        :ownerName="mockData.business.owner"
-        :ownerInitials="mockData.business.initials"
+        :ownerName="profileName"
+        :ownerEmail="user?.email || ''"
+        :ownerInitials="profileInitials"
         @toggle-sidebar="toggleSidebar"
+        @logout="handleLogout"
       />
 
       <!-- Main Page Content -->
