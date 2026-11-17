@@ -204,7 +204,7 @@ Backend permite por defecto `http://localhost:5173` y `http://127.0.0.1:5173`. A
 
 [Ver prototipo desplegado en Vercel](https://tdcajaclara-cajaclara-eml0tsuhf-jltamayocabello-droids-projects.vercel.app/)
 
-El deploy es una demostración con datos simulados; no persiste cambios ni se conecta al Backend.
+El deploy es una demostración con datos financieros simulados. El login requiere que `VITE_API_BASE_URL` apunte a un Backend accesible; las operaciones y pagos de los módulos financieros no persisten.
 
 ## Integración futura con Backend
 

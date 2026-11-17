@@ -46,13 +46,11 @@ Sus principales necesidades son comprender el saldo, registrar movimientos rápi
 - Integraciones reales con WhatsApp o correo.
 - Reportes tributarios y cálculos contables definitivos.
 
-El alcance del MVP describe la propuesta funcional; no significa que exista persistencia o conexión productiva. El prototipo actual trabaja con datos simulados y sus interacciones no se guardan.
+El alcance del MVP describe la propuesta funcional; no significa que exista persistencia financiera o conexión productiva. La autenticación del prototipo sí se conecta al Backend; las interacciones financieras usan datos simulados y no se guardan.
 
 ## User flows
 
-Los [user flows](./user-flows/userflows-cajaclara.md) describen recorridos de acceso y configuración, consulta financiera, registro de movimientos, cobros y resumen mensual. Los diagramas PNG facilitan su revisión en GitHub.
-
-Los recorridos de acceso y configuración son parte de la definición UX, no rutas de autenticación implementadas en el prototipo.
+Los [user flows](./user-flows/userflows-cajaclara.md) describen recorridos de acceso y configuración, consulta financiera, registro de movimientos, cobros y resumen mensual. Los diagramas PNG facilitan su revisión en GitHub. El inicio de sesión JWT está implementado en el prototipo; la configuración del negocio no es una ruta activa.
 
 ## Wireframes
 
@@ -75,7 +73,7 @@ Los PNG exportados de los wireframes muestran la versión móvil para facilitar 
 - Ajustes de espaciado, gráficos, altura de componentes y distribución del Dashboard.
 - Estados principales, feedback y confirmaciones simuladas.
 
-El [prototipo desplegado en Vercel](https://tdcajaclara-cajaclara-eml0tsuhf-jltamayocabello-droids-projects.vercel.app/) utiliza datos simulados. Las operaciones y los pagos no persisten, no se sincronizan entre módulos y todavía no existe integración real con Backend.
+El [prototipo desplegado en Vercel](https://tdcajaclara-cajaclara-eml0tsuhf-jltamayocabello-droids-projects.vercel.app/) presenta datos financieros simulados. Las operaciones y los pagos no persisten ni se sincronizan entre módulos. En el prototipo Vue, la conexión real al Backend se limita a autenticación JWT.
 
 La implementación técnica, las rutas y las limitaciones de cada módulo están documentadas en el [README técnico](./prototype/cajaclara-ui/README.md).
 
@@ -85,7 +83,7 @@ La implementación técnica, las rutas y las limitaciones de cada módulo están
 | --- | --- | --- |
 | Semana 1 | Benchmarking, definición del problema y User Persona | Completada |
 | Semana 2 | User flows y wireframes responsive | Completada |
-| Semana 3 | Prototipo de alta fidelidad y ajustes responsive | Implementado; continúa como prototipo simulado |
+| Semana 3 | Prototipo de alta fidelidad y ajustes responsive | Implementado; módulos financieros con datos simulados |
 
 ## Alineación con Backend y Análisis de Datos
 
@@ -96,9 +94,9 @@ La experiencia representa las operaciones de esta forma:
 - Venta pendiente: saldo asociado a una cuenta por cobrar.
 - Saldo del periodo: ingresos menos compras y gastos.
 
-UX revisó el modelo analítico compartido por Análisis de Datos (`cliente`, `producto`, `venta`, `detalle_venta`, `cuenta_por_cobrar` y `gastos_insumo`). Sus conceptos no se consideran automáticamente contratos de API.
+UX revisó el esquema compartido por Análisis de Datos (`cliente`, `producto`, `venta`, `detalle_venta`, `cuenta_por_cobrar` y `gastos_insumo`). El Backend Django actual respeta ese esquema y documenta sus endpoints en [`../API_DOCUMENTACION.md`](../API_DOCUMENTACION.md).
 
-El Backend Django dispone de modelos propios y de un endpoint de resumen mensual, pero su respuesta actual no cubre los filtros, el detalle de operaciones ni el desglose semanal que necesita la interfaz. El prototipo Vue no consume ese endpoint. Los contratos, dependencias y decisiones pendientes se detallan en la [guía de integración UX/Frontend con Backend](./INTEGRACION-BACKEND.md).
+El prototipo Vue consume el Backend para autenticación JWT. Dashboard y módulos financieros aún usan mocks; el merge de ramas no implica una integración automática de esas vistas. El estado y las reglas de integración verificadas están en la [guía de integración](./INTEGRACION-BACKEND.md). El README técnico del [prototipo Vue](./prototype/cajaclara-ui/README.md) detalla las rutas, almacenamiento JWT y ejecución.
 
 ## Roadmap UX
 

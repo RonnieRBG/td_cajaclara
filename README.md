@@ -1,285 +1,232 @@
-# Caja Clara - Sistema de Gestión Financiera y Flujo de Caja
+# 💰 Caja Clara
 
-> **Proyecto Bootcamp Talento Digital** | Semana 2: Fundamentos de Backend & Primeros Endpoints
-> Plataforma para que microempresas, pymes y personas ordenen sus finanzas, controlen ingresos/gastos y gestionen cuentas por cobrar.
+**Una herramienta para que las pymes sepan, de un vistazo, cuánta plata entra, cuánta sale y cuánto les deben.**
 
-## Tabla de Contenidos
-
-1. [Sobre el Proyecto](#sobre-el-proyecto)
-2. [Estado (Semana 2)](#estado-semana-2)
-3. [Stack Tecnológico](#stack-tecnológico)
-4. [Estructura del Repositorio](#estructura-del-repositorio)
-5. [Instalación Local](#instalación-local)
-6. [Configuración y Pruebas](#configuración-y-pruebas)
-7. [Modelos de Base de Datos](#modelos-de-base-de-datos)
-8. [API REST](#api-rest)
-9. [Guía para UX / UI & Frontend](#guía-para-ux--ui--frontend)
-10. [Notas Técnicas y Decisiones Pendientes](#notas-técnicas-y-decisiones-pendientes)
-11. [Flujo de Trabajo con Git](#flujo-de-trabajo-con-git)
-12. [Roadmap (Semana 3)](#roadmap-semana-3)
+> Proyecto del Bootcamp **Talento Digital**. Este repositorio contiene el **backend** (el "motor" que guarda los datos y hace los cálculos). La documentación técnica de cada endpoint está en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
+>
+> 🔗 **¿Cómo se juntan datos, backend y frontend?** Los pasos de cada equipo están en [`ACOPLAMIENTO.md`](./ACOPLAMIENTO.md).
+>
+> 🎨 El frontend Vue 3 se mantiene en [`ux/prototype/cajaclara-ui/`](./ux/prototype/cajaclara-ui/) y su estado de diseño está en [`ux/README.md`](./ux/README.md), [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md) y el [README técnico de Vue](./ux/prototype/cajaclara-ui/README.md). Login JWT y rutas protegidas están implementados; los módulos financieros conservan sus mocks hasta validar cada endpoint.
 
 ---
 
-## Sobre el Proyecto
+## 🤔 ¿Qué problema resuelve?
 
-Muchas pymes facturan pero no tienen liquidez, o no saben si su saldo mensual es positivo o negativo. **Caja Clara** resuelve esto con:
+Muchos negocios pequeños venden bien, pero igual les falta dinero a fin de mes. ¿Por qué? Porque no tienen claro:
 
-- Registro categorizado de ingresos y gastos en Pesos Chilenos (CLP).
-- Seguimiento de cuentas por cobrar para anticipar cobros y evitar morosidad.
-- Métricas instantáneas de flujo de caja.
+- **Cuánto ganan de verdad**: no es lo mismo vender que ganar; hay que restar lo que cuesta cada producto.
+- **Cuánto les deben**: ventas hechas que todavía no se cobran.
+- **Cómo van en el tiempo**: si este mes fue mejor o peor que el anterior.
 
-## Estado (Semana 2)
+Caja Clara junta toda esa información y la entrega ordenada, lista para mostrarse en un panel (dashboard).
 
-- [x] Proyecto Django (`cajaclara`) y app de dominio (`finanzas`).
-- [x] Modelos: Categorías, Movimientos y Cuentas por Cobrar.
-- [x] Registro en Django Admin (`/admin/`).
-- [x] CORS habilitado (solo desarrollo).
-- [x] Primer endpoint: resumen financiero mensual (`/api/finanzas/resumen-mensual/`).
+---
 
-> Esta sección quedará obsoleta; conviene moverla a un `CHANGELOG.md` más adelante.
+## ⚙️ ¿Cómo funciona?
 
-## Stack Tecnológico
-
-| Capa          | Tecnología                     | Versión |
-| :------------ | :----------------------------- | :------ |
-| Lenguaje      | Python                         | 3.10+   |
-| Framework     | Django                         | 6.1.2   |
-| API REST      | Django REST Framework          | 3.18.3  |
-| CORS          | django-cors-headers            | 4.9.0   |
-| BD local      | SQLite                         | 3       |
-| BD producción | PostgreSQL (`psycopg2-binary`) | 2.9.13  |
-
-> Las versiones deben coincidir con `requirements.txt`.
-
-## Estructura del Repositorio
+Piensa en Caja Clara como una cadena de tres piezas:
 
 ```text
-TalentoDigital/
-├── cajaclara/          # Configuración global (settings, urls, asgi, wsgi)
-├── finanzas/           # App principal
-│   ├── migrations/     # Historial del esquema de BD
-│   ├── admin.py        # Modelos en el panel de control
-│   ├── models.py       # Categoria, Movimiento, CuentaPorCobrar
-│   ├── tests.py        # Pruebas unitarias
-│   └── views.py        # Controladores de la API
-├── .env.example        # Plantilla de variables de entorno
-├── .gitignore          # Excluye db.sqlite3, venv/, .env
-├── manage.py
-├── requirements.txt
-└── README.md
+  📂 Datos del negocio  ──►  🧠 Backend (este repo)  ──►  🖥️ Pantalla (frontend)
+  ventas, clientes,         guarda, calcula y           muestra gráficos,
+  productos, gastos         responde preguntas          tarjetas y tablas
 ```
 
-## Instalación Local
+1. **Los datos entran.** Usamos el set de un supermercado que preparó el equipo de datos: unas 100 mil ventas entre 2010 y 2022, 2 mil clientes, 7 mil productos, 20 mil gastos y 15 mil cuentas por cobrar. En producción están en la base **Neon** del equipo de datos; para trabajar en local, la carpeta `data/` tiene los mismos CSV (`Etapa_4_Carga_y_Nube/datos_procesados/` de la rama `datos`).
+2. **El backend los ordena y calcula.** Cada venta se conecta con su cliente, sus productos y su costo. Con eso el sistema calcula ingresos, costos, utilidad, margen y deudas pendientes.
+3. **El frontend pregunta y muestra.** La pantalla le hace "preguntas" al backend (por ejemplo, _"¿cuánto vendimos en 2012 en la tienda física?"_) y recibe la respuesta lista para dibujar.
 
-```bash
-# 1. Clonar
-git clone <URL_DEL_REPOSITORIO>
-cd TalentoDigital
+### ¿Qué información guarda?
 
-# 2. Entorno virtual
-python -m venv venv
-.\venv\Scripts\activate          # Windows (PowerShell)
-source venv/bin/activate         # macOS / Linux
+El backend usa **las mismas 6 tablas que definió el equipo de datos** (`schema_postgresql.sql` de la rama `datos`), con los mismos nombres de tabla y de columna, sin agregar nada. La API también devuelve los campos con esos nombres (`id_factura`, `id_cliente`, `precio_venta`…).
 
-# 3. Dependencias y variables de entorno
-pip install -r requirements.txt
-cp .env.example .env             # Windows (cmd): copy .env.example .env
+| Tabla                  | En palabras simples                                               |
+| :--------------------- | :---------------------------------------------------------------- |
+| **`cliente`**          | Quién compra: nombre y contacto.                                  |
+| **`producto`**         | Qué se vende y su categoría.                                      |
+| **`venta`**            | Cada factura: fecha, cliente, si fue en tienda física o en línea y si fue a crédito. |
+| **`detalle_venta`**    | Qué productos iban en cada factura, en qué cantidad, a qué precio y con qué costo. |
+| **`cuenta_por_cobrar`**| Una por cada venta a crédito: monto, fecha límite, estado (pendiente, vencida o pagada) y fecha de pago. |
+| **`gastos_insumo`**    | Compras de productos para reponer: producto, fecha y monto.       |
 
-# 4. Base de datos, superusuario y servidor
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
+Los montos son enteros (pesos chilenos) y las fechas no llevan hora.
 
-El servidor queda en **http://127.0.0.1:8000/**. Si el entorno está activo verás `(venv)` en la terminal.
+### ¿Qué puede responder hoy?
 
-## Configuración y Pruebas
+- 📊 **Resumen financiero**: ventas, costos, utilidad y margen, y el **flujo de caja** (dinero que entró por ventas al contado y cobros, menos gastos en insumos), filtrando por fechas y por canal (física o en línea). Es el mismo cálculo que la vista `vw_flujo_caja_mensual` del equipo de datos.
+- ✍️ **Registrar datos**: ventas al contado o a crédito, pagos de deudas (y deshacerlos), gastos en insumos y clientes.
+- 📈 **Evolución en el tiempo**: los mismos números agrupados por día, semana, mes, trimestre o año, ideal para gráficos.
+- 🏆 **Productos más vendidos**: unidades e ingresos por producto en cualquier período.
+- 🔔 **Alertas de cobro**: cuentas vencidas o que vencen en 7 y 15 días, con prioridad y un mensaje de recordatorio. Misma lógica que la vista `vw_alertas_cobro` del equipo de datos, calculada a la fecha de hoy.
+- 📐 **Métricas del equipo de datos**: margen por producto y categoría, ventas por categoría y mes, deuda por cliente, morosidad, ranking de productos y sustentabilidad. La API lee sus vistas SQL sin recalcular, así la app y Power BI muestran los mismos números.
+- 🔀 **Operaciones**: ventas y gastos en una sola lista por mes, con búsqueda y totales.
+- 🧾 **Listados con búsqueda**: clientes, productos, facturas, ventas, gastos y deudas (incluye filtro de deudas vencidas).
+- 📥 **Exportar a Excel**: descarga del resumen en una planilla.
+- 🎛️ **Opciones para filtros**: categorías, canales y el rango de fechas disponible, para armar los menús de la pantalla.
 
-Los valores sensibles van en `.env`, nunca en Git. Plantilla `.env.example`:
-
-```dotenv
-DJANGO_SECRET_KEY=cambia-esto-por-una-clave-larga-y-aleatoria
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
-
-# Solo PostgreSQL (producción)
-DB_NAME=cajaclara
-DB_USER=postgres
-DB_PASSWORD=
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-Lectura en `settings.py`:
-
-```python
-import os
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "clave-solo-para-desarrollo")
-DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
-```
-
-Para PostgreSQL, usa `django.db.backends.postgresql` en `DATABASES` con las variables `DB_*` y ejecuta `migrate`.
-
-**Pruebas:** `python manage.py test` (o `python manage.py test finanzas`).
-
-## Modelos de Base de Datos
-
-Definidos en `finanzas/models.py`; todos se asocian al `User` de Django.
-
-**`Categoria`**: clasifica los movimientos.
-
-- `usuario` (FK), `nombre` (50), `tipo` (`INGRESO` | `GASTO`).
-- Un usuario no puede repetir nombre + tipo.
-
-**`Movimiento`**: cada transacción real. Su tipo (ingreso/gasto) lo define la categoría.
-
-- `usuario` (FK), `categoria` (FK), `transaccion_id` (50, opcional), `monto` (CLP, sin decimales), `fecha`, `descripcion` (opcional), `fecha_registro` (automático).
-
-**`CuentaPorCobrar`**: pagos pendientes de clientes.
-
-- `usuario` (FK), `deudor` (100), `monto` (CLP), `fecha_emision`, `fecha_vencimiento`, `notas_contacto` (opcional).
-- `estado`: `PENDIENTE` (por defecto) | `PAGADA` | `VENCIDA`. Es un campo almacenado: nada lo cambia solo al pasar la fecha de vencimiento (ver [Notas Técnicas](#notas-técnicas-y-decisiones-pendientes)).
-
-## API REST
-
-### `GET /api/finanzas/resumen-mensual/`
-
-Local: `http://127.0.0.1:8000/api/finanzas/resumen-mensual/` · Sin autenticación (solo desarrollo).
-
-> ⚠️ **Temporal:** el endpoint no filtra por el usuario que consulta; usa un usuario fijo (el primero en la base de datos). En la Semana 3 pasará a usar el usuario autenticado.
-
-**Funcionamiento:** toma el mes y año actuales (`now().date()`), filtra los `Movimiento` de ese período y calcula:
-
-- `total_ingresos`: suma de movimientos con categoría `INGRESO`.
-- `total_gastos`: suma de movimientos con categoría `GASTO`.
-- `flujo_caja`: `total_ingresos - total_gastos` (puede ser negativo).
-
-**Respuesta `200 OK`:**
-
-```json
-{
-  "mes": 10,
-  "anio": 2026,
-  "total_ingresos": 2850000,
-  "total_gastos": 1420000,
-  "flujo_caja": 1430000
-}
-```
-
-> ⚠️ **Frontend:** DRF serializa `DecimalField` como string por defecto (`"2850000"`). Si la vista no convierte a `int`, usa `Number(...)` antes de operar. se necesita verificar la respuesta real con Postman y ajusta este ejemplo.
-
-**Error `400 Bad Request`** (no hay usuarios en la BD):
-
-```json
-{ "error": "No hay usuarios en la base de datos para probar." }
-```
-
-Solución: `python manage.py createsuperuser` y agregar movimientos desde `/admin/`.
-
-## Guía para UX / UI & Frontend
-
-Ya puedes maquetar con datos reales del resumen mensual.
-
-**CORS:** en desarrollo `CORS_ALLOW_ALL_ORIGINS = True`, se necesita consumir la API desde React/Vite u otro (`localhost:5173`, `localhost:3000`), HTML/JS vanilla o Postman/Insomnia. Se restringirá antes de producción.
-
-### Pantallas a diseñar
-
-**A. Dashboard** (se usa el endpoint actual)
-
-- Header con mes y año (ej: _"Octubre 2026"_).
-- 3 tarjetas KPI: 🟢 Total Ingresos, 🔴 Total Gastos, ⚖️ Flujo de Caja Neto (verde si es positivo, rojo si es negativo).
-- Gráfico de dona o barras: Ingresos vs. Gastos.
-
-**B. Movimientos** (endpoints pendientes; maquetar con datos de ejemplo)
-
-- Tabla: Fecha, Categoría, Descripción, N° Transacción, Monto, con badge de color por Ingreso/Gasto.
-- Formulario "Nuevo Movimiento": tipo (filtra categorías), categoría, monto en CLP, fecha, descripción y comprobante (opcionales).
-
-**C. Cuentas por Cobrar**
-
-- Listado con deudor, monto y fecha límite.
-- Badges: 🟡 `PENDIENTE`, 🟢 `PAGADA`, 🔴 `VENCIDA`.
-- Acciones rápidas: _"Registrar Pago"_ y _"Contactar"_.
-
-### Reglas de formato
-
-- Montos en **CLP sin decimales**. Si `flujo_caja` es negativo, mostrar una alerta sugiriendo revisar gastos.
-
-```javascript
-export const formatCLP = (amount) =>
-  new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    maximumFractionDigits: 0,
-  }).format(Number(amount)); // Number() por si la API entrega strings
-```
-
-### Ejemplo de consumo
-
-```javascript
-async function cargarResumenMensual() {
-  try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/finanzas/resumen-mensual/",
-    );
-    if (!response.ok) throw new Error("Error al obtener los datos");
-    const data = await response.json();
-    console.log("Datos del mes:", data);
-  } catch (error) {
-    console.error("Error en la petición:", error);
-  }
-}
-```
-
-## Notas Técnicas y Decisiones Pendientes
-
-**Seguridad (antes de producción)**
-
-- Endpoint sin autenticación: se corrige con Token/JWT en la Semana 3.
-- Reemplazar `CORS_ALLOW_ALL_ORIGINS` por `CORS_ALLOWED_ORIGINS` con los dominios del frontend.
-- `DEBUG=False`, `SECRET_KEY` única y `ALLOWED_HOSTS` definido, todo desde variables de entorno.
-
-**Zona horaria:** `now().date()`se puede desfasar el cambio de mes si `TIME_ZONE` no es `America/Santiago`. Recomendado:
-
-```python
-# settings.py
-TIME_ZONE = "America/Santiago"
-USE_TZ = True
-
-# views.py
-from django.utils import timezone
-hoy = timezone.localdate()
-```
-
-**Estado `VENCIDA` (decisión pendiente):** se necesita definir antes de crear los endpoints de `CuentaPorCobrar`:
-
-1. _Calculado:_ una cuenta `PENDIENTE` con `fecha_vencimiento` anterior a hoy se trata como vencida (siempre consistente, sin tareas programadas).
-2. _Almacenado:_ se actualiza con un _management command_ diario.
-
-## Flujo de Trabajo con Git
-
-1. **No trabajes sobre `main`:** crea una rama, ej. `git checkout -b feature/crud-movimientos` o `ui/dashboard-cards`.
-2. **No se suben a Git:** `db.sqlite3`, `venv/` y `.env` (cada integrante tiene los suyos).
-3. **Commits claros:** `feat: agregar endpoint de resumen mensual`, `style: mejorar badges de cuentas por cobrar`, `fix: corregir cálculo de flujo de caja`.
-4. **Sincroniza antes del Pull Request:**
-   ```bash
-   git checkout main && git pull origin main
-   git checkout feature/tu-rama && git merge main
-   ```
-
-## Roadmap (Semana 3)
-
-- [ ] Autenticación con Tokens / JWT (login y registro).
-- [ ] Resumen filtrado por usuario autenticado y por `?mes=X&anio=Y`.
-- [ ] CRUD completo de `Movimiento` y `Categoria`.
-- [ ] Endpoints de `CuentaPorCobrar` y cambio de estado (`PAGADA`).
-- [ ] Definir manejo de `VENCIDA` y configurar zona horaria `America/Santiago`.
-- [ ] Restringir CORS y endurecer configuración para producción.
-- [ ] Integración con el frontend del equipo de diseño.
-
-**Licencia:** pendiente de definir.
+> El detalle de cada consulta (rutas, parámetros y ejemplos de respuesta) está en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
 
 ---
 
-_Desarrollado por el equipo de Caja Clara en el Bootcamp Talento Digital._
+## 🚀 Probarlo en tu computador
+
+Necesitas **Python 3.10 o superior**. Son seis pasos:
+
+```bash
+python -m venv venv                 # 1. Crear un entorno aislado
+venv\Scripts\activate               # 2. Activarlo (en Mac/Linux: source venv/bin/activate)
+pip install -r requirements.txt     # 3. Instalar lo necesario
+python manage.py migrate            # 4. Crear la base de datos local (las mismas 6 tablas)
+python manage.py importar_csv       # 5. Cargar los CSV del equipo de datos
+python manage.py createsuperuser    # 6. Crear tu usuario para iniciar sesión
+```
+
+Luego enciende el servidor con `python manage.py runserver` y abre **http://127.0.0.1:8000/api/** en el navegador. Verás el catálogo de consultas disponibles.
+
+> 🔐 **La API pide iniciar sesión.** Para ver los datos en el navegador, entra primero a **http://127.0.0.1:8000/admin/** con el usuario del paso 6. El frontend inicia sesión con `/api/auth/login/` (detalles en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md)).
+>
+> ⚙️ **Configuración opcional:** copia `.env.example` como `.env` para cambiar la base de datos, la clave secreta o los dominios permitidos. Sin `.env`, el proyecto arranca en modo desarrollo con SQLite.
+>
+> 🗄️ **Conectarse a Neon (la base del equipo de datos):** completa las variables `DB_*` del `.env` con el usuario `cajaclara_app_rw` y `DB_SSLMODE=require`. La primera vez, el equipo de datos corre `python manage.py migrate --fake-initial` con el usuario administrador (crea las tablas de usuarios y login sin tocar las suyas). Para revisar que todo calza: `python manage.py verificar_esquema`. Detalle en la Parte 1 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
+>
+> ♻️ **Si ya tenías un `db.sqlite3` de antes** (con tablas `finanzas_*`), bórralo y repite los pasos 4 a 6: las tablas cambiaron para calzar con el esquema del equipo de datos.
+
+> La carga de datos puede tardar un par de minutos, porque son más de 240 mil registros.
+>
+> Los CSV terminan en noviembre de 2022. Al importarlos, las fechas se desplazan para que la última venta quede en la semana actual y el dashboard muestre datos "de hoy". Para conservar las fechas originales usa `python manage.py importar_csv --fechas-originales`.
+
+---
+
+## ✅ Estado actual
+
+| Pieza                                                            | Estado                               |
+| :--------------------------------------------------------------- | :----------------------------------- |
+| Modelo de datos igual al esquema del equipo de datos (Neon)      | ✅ Listo                             |
+| Carga automática de los CSV                                      | ✅ Listo                             |
+| Consultas de resumen, evolución y listados                       | ✅ Listo                             |
+| Exportación a Excel                                              | ✅ Listo                             |
+| Conexión con cualquier base de datos (SQLite, PostgreSQL, MySQL) | ✅ Listo                             |
+| Conexión con el frontend                                         | 🟡 Login JWT conectado; módulos financieros aún usan mocks (ver [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md)) |
+| Usuarios, login (JWT) y configuración segura con `.env`          | ✅ Listo                             |
+| Registrar ventas, pagos y gastos desde la API                    | ✅ Listo                             |
+| Flujo de caja (entradas, salidas y saldo)                        | ✅ Listo                             |
+| Listo para publicar (`gunicorn`, `whitenoise`, `build.sh`, `Procfile`) | ✅ Listo (falta elegir el servicio) |
+| Pruebas automáticas en GitHub (cada push a `backend`)            | ✅ Listo                             |
+| Pruebas automáticas                                              | 🟡 Login, registros, flujo de caja, semanas, productos, esquema, importación, alertas, métricas y operaciones (51 pruebas) |
+
+---
+
+## 📋 Lo que falta, equipo por equipo
+
+### 🗄️ Equipo de Base de Datos
+
+- [x] **Base de producción**: Neon (PostgreSQL), con el esquema, los datos, los roles y las vistas de las Etapas 4 a 6.
+- [ ] **Entregar al equipo backend** las credenciales de `cajaclara_app_rw` por un canal seguro.
+- [ ] **Una sola vez**, con `neondb_owner`: `python manage.py migrate --fake-initial` y `python manage.py createsuperuser` (crea las tablas de usuarios y login de Django sin tocar las 6 tablas).
+- [ ] **Avisar al equipo backend antes de cambiar una tabla o columna**: el backend usa exactamente el esquema de `schema_postgresql.sql`. `python manage.py verificar_esquema` muestra si algo dejó de calzar.
+- [ ] **Fechas de la demo**: en Neon los datos llegan hasta noviembre de 2022, así que "el mes actual" del dashboard sale vacío (ver P13 en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md)).
+- [ ] **Revisar la caída de ventas en 2021-2022**: de ~16 mil ventas en 2019 se pasa a 241 en 2022 (en noviembre de 2022 hay una sola), mientras los gastos se mantienen en ~1.500 al año. Por eso el mes actual del dashboard muestra muy pocas ventas y los gastos superan a las ventas.
+
+### 🎨 Equipo de Frontend / UX
+
+- [ ] **Conectar gradualmente las vistas financieras** a los endpoints confirmados. Los mocks de Dashboard, Operaciones, Cobros y Resumen se conservan hasta validar la respuesta real; la matriz y fases están en [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md).
+- [ ] **Gráfico semanal y formularios financieros**: validar parámetros, respuestas y estados de error antes de reemplazar datos demo. La API ofrece `resumen-agrupado?agrupacion=semanas_mes` y contratos de venta, gasto y pago en la Parte 4 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
+- [ ] **Mostrar los montos en pesos chilenos** (ej.: `$1.250.000`). La API ya los entrega como números enteros.
+- [ ] **Usar los nombres de campo del esquema de datos** (`id_factura`, `id_cliente`, `id_producto`, `precio_venta`, `tipo_compra: "Física" / "En Línea"`…). La Parte 5 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md) trae la lista.
+- [ ] **Formularios**: toda venta necesita un cliente (`id_cliente`); un gasto es siempre la compra de un producto (`id_producto` + `monto`); un cliente nuevo necesita `nombre` y `contacto`. No existe anular una venta.
+- [ ] **Diseñar los estados de carga y error**: qué ve el usuario mientras cargan los datos o si el servidor no responde.
+- [x] **Pantalla de login JWT**: el frontend Vue ya usa `login`, `refresh`, `logout` y `perfil`, protege las rutas financieras y no ofrece registro público. El procedimiento y las limitaciones de tokens están en el [README técnico de Vue](./ux/prototype/cajaclara-ui/README.md).
+- [ ] **Conectar el botón "Exportar a Excel"** con `apiService.descargarExcel()` (un enlace directo ya no sirve, porque la descarga necesita el token).
+
+### 🧠 Equipo de Backend
+
+- [x] **Login y usuarios**: la API exige iniciar sesión con JWT (`/api/auth/login/`, `refresh/`, `logout/` y `perfil/`), con límite de intentos.
+- [x] **Seguridad**: clave secreta, modo depuración, dominios y CORS se configuran en `.env` (ver `.env.example`); `.env` está en el `.gitignore`.
+- [x] **Preparado para publicar**: `gunicorn` (servidor), `whitenoise` (estáticos del `/admin/`), `build.sh`, `Procfile` y redirección a HTTPS. Ver [Publicar el backend](#-publicar-el-backend).
+- [x] **Pruebas en GitHub**: `.github/workflows/pruebas-backend.yml` corre las pruebas en SQLite y PostgreSQL, y revisa la configuración de producción, en cada push o pull request a `backend`.
+- [ ] **Publicar**: elegir el servicio (Render, Railway u otro) y cargar las variables de entorno.
+- [x] **Hora de Chile**: el sistema ahora usa `America/Santiago`, así los cortes de día y de mes calzan.
+- [x] **Completar dependencias**: `pandas` y `openpyxl` ya están en `requirements.txt`.
+- [ ] **Completar las pruebas automáticas**: ya hay 51 (login, registro de ventas, pagos, gastos, flujo de caja, agrupación semanal, productos más vendidos, esquema de datos, importación, alertas de cobro, métricas y operaciones). Faltan más de listados y filtros. Se ejecutan con `python manage.py test`.
+- [x] **Registrar datos nuevos**: ventas (contado y crédito), pagos, gastos y clientes con `POST` (ver el endpoint 11 en [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md)).
+- [x] **Modelo igual al del equipo de datos**: mismas tablas, columnas y tipos que `schema_postgresql.sql`; se probó contra ese esquema en PostgreSQL con el usuario `cajaclara_app_rw`, y el flujo de caja coincide con `vw_flujo_caja_mensual`.
+- [x] **Alertas de cobro (Tarea 29 de datos)**: `/alertas-cobro/`, comparado campo por campo con `vw_alertas_cobro`.
+- [x] **Métricas en la plataforma (Tarea 30 de datos)**: `/metricas/…` lee las 7 vistas de la Etapa 5.
+- [x] **Lo que piden las pantallas de UX**: `/operaciones/` (ventas y gastos en una lista), ventas por canal en el resumen, orden por total de venta y por deuda, y listas livianas para los selectores con el último precio de cada producto (`/opciones/…`).
+- [x] **Contrato de los formularios (Tareas 34 a 36 de datos)**: campos, obligatorios y validaciones documentados en el endpoint 16 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
+- [x] **Lo que pide el dashboard**: agrupación semanal (`semanal` y `semanas_mes`) y productos más vendidos (`/productos/?ordering=-total_vendido`, con unidades e ingresos por período).
+- [x] **Flujo de caja como en el diseño**: `flujo_caja` en los resúmenes = ventas al contado + cobros − gastos en insumos.
+
+### 🤝 Decisiones que tomamos entre todos
+
+- [x] **Base de datos**: Neon (PostgreSQL) del equipo de datos. El backend se adapta a su esquema, no al revés.
+- [ ] ¿Qué servicio usaremos para publicar la app?
+- [x] ¿Cómo se marca una deuda como **vencida**? El equipo de datos la guarda como `VENCIDA`; además, la API muestra como vencida (`estado_actual`) toda cuenta pendiente cuya fecha límite ya pasó.
+- [x] **Lo que no existe en el esquema de datos se quitó del backend**: anular ventas, ventas sin cliente, precio de catálogo, y tipo/categoría/proveedor de los gastos. Si se necesita algo de eso, el equipo de datos agrega la columna primero.
+- [ ] **Validar este supuesto**: los pagos son **completos** (una cuenta pasa de pendiente a pagada de una vez, sin abonos parciales).
+- [ ] ¿El gráfico principal será semanal o mensual?
+- [ ] Licencia del proyecto.
+- [x] **Un solo negocio por ahora**: todos los usuarios ven los datos del mismo negocio. El login solo protege el acceso a la API.
+
+---
+
+## 🌐 Publicar el backend
+
+El proyecto ya trae lo necesario para servicios como **Render** o **Railway** (cualquier servicio que ejecute Python sirve):
+
+| Archivo           | Para qué sirve                                                                                  |
+| :---------------- | :---------------------------------------------------------------------------------------------- |
+| `build.sh`        | Instala las dependencias y junta los archivos estáticos (`collectstatic`).                       |
+| `Procfile`        | Comando para iniciar: `gunicorn cajaclara.wsgi` en el puerto que entrega el servicio (`$PORT`). |
+| `.python-version` | Versión de Python (3.13).                                                                       |
+
+**En el servicio:**
+
+1. Crear un servicio web desde el repositorio, rama **`backend`**.
+2. **Build command:** `./build.sh` · **Start command:** el del `Procfile` (Render y Railway lo leen solos; si no, copiarlo).
+3. **Variables de entorno** (en el panel del servicio, nunca en el repositorio):
+
+| Variable                | Valor                                                                    |
+| :---------------------- | :----------------------------------------------------------------------- |
+| `DJANGO_DEBUG`          | `False`                                                                  |
+| `DJANGO_SECRET_KEY`     | Una clave nueva y larga (no la de desarrollo)                            |
+| `DJANGO_ALLOWED_HOSTS`  | El dominio del servicio (Render y Railway lo agregan solos)              |
+| `CORS_ALLOWED_ORIGINS`  | La dirección donde se publique el frontend, ej. `https://cajaclara.vercel.app` |
+| `CSRF_TRUSTED_ORIGINS`  | La dirección del backend con `https://` (para entrar al `/admin/`)       |
+| `DB_*` y `DB_SSLMODE`   | Los de Neon, con el usuario `cajaclara_app_rw` (ver `.env.example`)      |
+
+4. **No hace falta correr migraciones al publicar**: en Neon las tablas de datos son del equipo de datos y las de usuarios se crean una sola vez (paso 1.4 de [`ACOPLAMIENTO.md`](./ACOPLAMIENTO.md)).
+5. Probar `https://<dominio>/api/` y `https://<dominio>/admin/`.
+
+> Con `DJANGO_DEBUG=False` el backend redirige `http` a `https`. Si el servicio ya lo hace y aparece un bucle de redirecciones, definir `DJANGO_SSL_REDIRECT=False`.
+>
+> HSTS (`SECURE_HSTS_SECONDS`) se deja sin activar a propósito: obliga a los navegadores a usar siempre HTTPS en ese dominio y no se puede deshacer fácilmente. Se activa cuando el dominio final esté decidido.
+
+---
+
+## 🔮 Mejoras futuras
+
+### Varios negocios en el mismo sistema (multi-pyme)
+
+Hoy Caja Clara maneja **un solo negocio**. Si más adelante cada usuario debe ver **solo los datos de su negocio**, hay que modificar la base de datos:
+
+- [ ] **Crear la tabla `Negocio`** (nombre, RUT, dirección, etc.) y relacionar cada usuario con su negocio.
+- [ ] **Agregar la columna `id_negocio`** (acordada con el equipo de datos) a `cliente`, `producto`, `venta`, `cuenta_por_cobrar` y `gastos_insumo`. `detalle_venta` la hereda a través de su venta.
+- [ ] **Filtrar todas las consultas** de la API por el negocio del usuario que inició sesión, para que nadie vea datos de otro negocio.
+- [ ] **Revisar los identificadores**: hoy el código de producto (ej. `P100055`) es único en todo el sistema. Con varios negocios, dos almacenes podrían usar el mismo código, así que debe ser único **por negocio**.
+- [ ] **Migrar los datos actuales** con una migración que cree un negocio "por defecto" y le asigne todo lo existente.
+- [ ] **Agregar pruebas** que verifiquen que un usuario no puede ver ni modificar datos de otro negocio.
+
+---
+
+- **Mensajes de commit claros**, por ejemplo: `feat: agregar login`, `fix: corregir cálculo de margen`, `docs: actualizar README`.
+
+---
+
+## 🛠️ Tecnologías
+
+**Python** · **Django** (estructura del backend) · **Django REST Framework** (la API) · **Simple JWT** (login con tokens) · **SQLite** en desarrollo y **PostgreSQL** (Neon) en producción · **pandas** (exportación a Excel) · **gunicorn** y **whitenoise** (publicación) · **GitHub Actions** (pruebas automáticas).
+
+---
+
+_Hecho por el equipo de Caja Clara en el Bootcamp Talento Digital._
