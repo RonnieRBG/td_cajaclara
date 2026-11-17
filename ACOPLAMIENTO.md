@@ -420,10 +420,13 @@ prototipo Vue con la API del backend, reemplazando los datos simulados (mocks) p
   te lo piden), y SOLO dentro de `ux/` (sobre todo `ux/prototype/cajaclara-ui/src`).
 - Para traer novedades del backend: `git merge origin/backend` (no cambies sus archivos).
 - NO modifiques, ni hagas commits o push en, las ramas `backend`, `datos` ni `main`.
-- En la raíz de la rama `ux` hay una copia ANTIGUA de Django (`manage.py`, `cajaclara/`, `finanzas/`).
-  NO la uses ni la modifiques: está desactualizada. El backend real está en la rama `backend`.
-- `ux/INTEGRACION-BACKEND.md` está DESACTUALIZADO (habla de `Movimiento`, `Categoria` y de un solo
-  endpoint). No lo uses como referencia. Al final, actualízalo para que apunte a los documentos del punto 3.
+- Los archivos de Django en la raíz (`manage.py`, `cajaclara/`, `finanzas/`, `requirements.txt`) son
+  del equipo backend. En `integration/ux-backend` son el backend real (vienen de la rama `backend`);
+  en la rama `ux` son una copia ANTIGUA. En ambos casos: NO los modifiques. Si necesitas algo del
+  backend, anótalo en "Pedidos al backend".
+- `ux/INTEGRACION-BACKEND.md`: en `integration/ux-backend` ya está actualizado y sirve como resumen del
+  estado; en la rama `ux` es una versión ANTIGUA (habla de `Movimiento` y `Categoria`): no la uses.
+  Si choca con los documentos del punto 3, mandan los del punto 3. Mantenlo al día al terminar.
 - No inventes campos ni endpoints. Si una pantalla necesita algo que la API no entrega, NO lo simules:
   anótalo en una lista "Pedidos al backend" y sigue con lo demás.
 - Haz commits chicos y descriptivos en español (una pantalla o pieza por commit).
@@ -503,7 +506,7 @@ Como `VITE_API_BASE_URL` ya termina en `/api`, las rutas se piden así:
 7. Exportar a Excel: GET finanzas/exportar-excel/ devuelve un archivo, no JSON, así que no sirve
    apiRequest(). Descárgalo con fetch + `Authorization: Bearer ${tokenStore.access}` (ejemplo en
    ACOPLAMIENTO.md, paso 3.9).
-8. Actualiza `ux/INTEGRACION-BACKEND.md` y el README del prototipo con cómo correr ambos proyectos.
+8. Mantén al día `ux/INTEGRACION-BACKEND.md` y el README del prototipo (qué pantallas están conectadas).
 
 ## 7. Reglas de datos (no las cambies)
 - Los nombres de campo son los de la base: id_factura, id_cliente (número), id_producto (ej. P100055),
