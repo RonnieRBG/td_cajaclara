@@ -108,7 +108,7 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 | Usuarios, login (JWT) y configuración segura con `.env`          | ✅ Listo                             |
 | Registrar ventas, pagos y gastos desde la API                    | ✅ Listo                             |
 | Flujo de caja (entradas, salidas y saldo)                        | ✅ Listo                             |
-| Listo para publicar (`gunicorn`, `whitenoise`, `build.sh`, `Procfile`) | ✅ Listo (falta elegir el servicio) |
+| Listo para publicar (`gunicorn`, `whitenoise`, `build.sh`, `Procfile`) | ✅ Publicado en Render (`cajaclara-api.onrender.com`) |
 | Pruebas automáticas en GitHub (cada push a `backend`)            | ✅ Listo                             |
 | Pruebas automáticas                                              | 🟡 Login, registros, flujo de caja, semanas, productos, esquema, importación, alertas, métricas y operaciones (51 pruebas) |
 
@@ -143,7 +143,8 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 - [x] **Seguridad**: clave secreta, modo depuración, dominios y CORS se configuran en `.env` (ver `.env.example`); `.env` está en el `.gitignore`.
 - [x] **Preparado para publicar**: `gunicorn` (servidor), `whitenoise` (estáticos del `/admin/`), `build.sh`, `Procfile` y redirección a HTTPS. Ver [Publicar el backend](#-publicar-el-backend).
 - [x] **Pruebas en GitHub**: `.github/workflows/pruebas-backend.yml` corre las pruebas en SQLite y PostgreSQL, y revisa la configuración de producción, en cada push o pull request a `backend`.
-- [ ] **Publicar**: elegir el servicio (Render, Railway u otro) y cargar las variables de entorno.
+- [x] **Publicado en Render** (17/11/2026): **`https://cajaclara-api.onrender.com/api`**, conectado a Neon, desde la rama `backend`. Cada push a `backend` lo vuelve a publicar.
+- [ ] **Usuarios en producción**: crear el administrador y el usuario `demo` cuando el equipo de datos haga el paso 1.4 de [`ACOPLAMIENTO.md`](./ACOPLAMIENTO.md).
 - [x] **Hora de Chile**: el sistema ahora usa `America/Santiago`, así los cortes de día y de mes calzan.
 - [x] **Completar dependencias**: `pandas` y `openpyxl` ya están en `requirements.txt`.
 - [ ] **Completar las pruebas automáticas**: ya hay 51 (login, registro de ventas, pagos, gastos, flujo de caja, agrupación semanal, productos más vendidos, esquema de datos, importación, alertas de cobro, métricas y operaciones). Faltan más de listados y filtros. Se ejecutan con `python manage.py test`.
@@ -171,7 +172,9 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 
 ## 🌐 Publicar el backend
 
-El proyecto ya trae lo necesario para servicios como **Render** o **Railway** (cualquier servicio que ejecute Python sirve):
+✅ **Publicado en Render:** **`https://cajaclara-api.onrender.com/api`** (servicio `cajaclara-api`, rama `backend`). En el plan gratuito se duerme tras 15 minutos sin uso: la primera visita puede tardar cerca de un minuto.
+
+El proyecto trae lo necesario para Render, Railway u otro servicio que ejecute Python:
 
 | Archivo           | Para qué sirve                                                                                  |
 | :---------------- | :---------------------------------------------------------------------------------------------- |

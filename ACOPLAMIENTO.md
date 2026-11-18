@@ -16,14 +16,14 @@ Guía paso a paso para juntar las tres ramas del proyecto en una sola aplicació
 
 ## 📅 Orden de trabajo
 
-| Paso | Equipo   | Qué se hace                                                        | Depende de | Estado (17/11/2026)                                   |
+| Paso | Equipo   | Qué se hace                                                        | Depende de | Estado (18/11/2026)                                   |
 | :--: | :------- | :----------------------------------------------------------------- | :--------: | :---------------------------------------------------- |
-|  1   | Datos    | Dejar Neon listo y entregar las credenciales del backend           |     —      | 🟡 Neon cargado; faltan claves nuevas y entregarlas   |
-|  2   | Datos    | Crear (una sola vez) las tablas de usuarios de Django en Neon      |     1      | ⏳ Pendiente                                          |
-|  3   | Backend  | Conectar la API a Neon y comprobar el esquema                      |    1, 2    | 🟡 Backend listo; espera las credenciales             |
-|  4   | Frontend | Conectar el prototipo a la API (login, lecturas y formularios)     |     3      | 🟡 Login, Dashboard y Resumen conectados (rama `integration/ux-backend`); faltan Operaciones, Cobros y formularios |
-|  5   | Todos    | Prueba de integración completa (checklist final)                   |  1 al 4    | ⏳ Pendiente                                          |
-|  6   | Backend + Frontend | Publicar: backend en un servicio + frontend en Vercel (Parte 5) | 3, 5 | ⏳ Falta elegir dónde publicar el backend |
+|  1   | Datos    | Dejar Neon listo y entregar las credenciales del backend           |     —      | ✅ Neon cargado y credenciales entregadas (el equipo decidió mantener las claves actuales) |
+|  2   | Datos    | Crear (una sola vez) las tablas de usuarios de Django en Neon      |     1      | ⏳ **Pendiente: es lo que destraba el resto**         |
+|  3   | Backend  | Conectar la API a Neon y comprobar el esquema                      |    1, 2    | ✅ Conectado a Neon (`verificar_esquema` OK) y publicado en Render: `https://cajaclara-api.onrender.com/api` |
+|  4   | Frontend | Conectar el prototipo a la API (login, lecturas y formularios)     |     3      | 🟡 Todas las pantallas y formularios funcionan contra la API (`integration/ux-backend`); quedan los ajustes de la **Parte 3C** |
+|  5   | Todos    | Prueba de integración completa (checklist final)                   |  1 al 4    | ⏳ Pendiente (necesita el paso 2 y el usuario `demo`) |
+|  6   | Backend + Frontend | Publicar: backend en Render + frontend en Vercel (Parte 5) | 2, 4 | 🟡 Backend publicado; falta pasar Vercel a la API real |
 
 > El frontend **no necesita esperar a Neon**: puede avanzar desde el día 1 contra el backend en local con SQLite (ver 3.1).
 >
@@ -226,18 +226,9 @@ Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entre
 
 El prototipo está en `ux/prototype/cajaclara-ui`.
 
-> **Estado al 17/11/2026**
+> **Estado al 18/11/2026:** el trabajo de integración está en la rama **`integration/ux-backend`** (Jorge). Login, Dashboard, Resumen, Operaciones, Cobros, formularios y pago/reversión **ya funcionan contra la API**. Lo que falta, con su orden y un prompt para la IA de UX, está en la **[Parte 3C](#-parte-3c--lo-que-le-falta-a-ux-al-17112026)**. Todavía **no está en `main`**.
 >
-> El trabajo de integración está en la rama **`integration/ux-backend`** (Jorge, commit `1463e4e`). Es `ux` + `backend` unidos; el merge no cambió el código del backend y se puede volver a unir con la rama `backend` actual sin conflictos. Todavía **no está en `main`**.
->
-> - ✅ **Login** listo y compatible con el backend (login, perfil, renovación del token, cierre de sesión, errores y CORS).
-> - ✅ **Dashboard y Resumen mensual** conectados a la API, con modo de datos simulados opcional (`VITE_USE_MOCKS=true`). Se probaron sus adaptadores con las respuestas reales de la API (datos 2010-2022): los 10 funcionan sin errores y el saldo de agosto 2022 da **-$164.348**, igual que `vw_flujo_caja_mensual`.
-> - ✅ `node_modules/` y `dist/` fuera del repositorio.
-> - 🔧 **Dos ajustes pendientes** (enviados a Jorge):
->   1. **Cobros prioritarios:** usar `tipo_alerta` (`VENCIDA` o `POR_VENCER`) en vez de `estado`. Hay cuentas guardadas como `PENDIENTE` que ya vencieron (2 de 8) y se verían como "Pendiente" siendo críticas.
->   2. **Resumen mensual:** "ventas" (lo vendido, agosto: $16.057) menos gastos ($188.863) no da el saldo (-$164.348), porque el saldo incluye cobros de fiados de meses anteriores. Mostrar "Entradas de caja" (`flujo_caja.entradas.total` = $24.515) o agregar la línea "Cobros de fiados" (`flujo_caja.entradas.cobros`).
-> - 🟡 **Faltan:** pantallas de **Operaciones** y **Cobros**, los **formularios** (venta, gasto, pago, cliente) y **Exportar a Excel** (pasos 3.5 a 3.9).
-> - 🌐 El sitio en Vercel (`https://tdcajaclara-cajaclara-ui-omega.vercel.app`) todavía muestra datos simulados: falta publicar el backend (Parte 5).
+> Los pasos 3.1 a 3.9 de abajo quedan como referencia de cómo se hace cada parte.
 
 ### Paso 3.1 — Tener el backend corriendo en local (sin esperar a Neon)
 
@@ -656,16 +647,16 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 
 ## 🌐 Parte 5 — Publicar: backend + frontend en Vercel
 
-**Vercel publica solo el frontend.** El backend Django se publica aparte (Render, Railway u otro). Sin el backend publicado, el sitio de Vercel no tiene una API a la cual conectarse: `127.0.0.1` es el computador de cada uno.
+**Vercel publica solo el frontend.** El backend Django está publicado aparte, en **Render**: **`https://cajaclara-api.onrender.com/api`** (servicio `cajaclara-api`, desde la rama `backend`; cada push a `backend` lo vuelve a publicar).
 
 | Paso | Equipo   | Qué se hace                                                                                                   |
 | :--: | :------- | :------------------------------------------------------------------------------------------------------------ |
-|  1   | Datos    | Neon listo: claves nuevas, credenciales entregadas y paso 1.4 hecho.                                          |
-|  2   | Backend  | Publicar el backend conectado a Neon (sección *Publicar el backend* del README) y crear los usuarios (2.4).  |
-|  3   | Backend  | Agregar el dominio de Vercel en las variables del servicio del backend: `CORS_ALLOWED_ORIGINS=https://tdcajaclara-cajaclara-ui-omega.vercel.app` |
-|  4   | Todos    | Pasar la integración a `main` (unir `integration/ux-backend` y la rama `backend` actual).                     |
-|  5   | Frontend | En Vercel → **Settings → Environment Variables**: `VITE_API_BASE_URL=https://<dirección-del-backend>/api` y `VITE_USE_MOCKS=false`. Luego **Redeploy**. |
-|  6   | Todos    | Entrar al sitio de Vercel con el usuario `demo` y repetir la prueba de la Parte 4.                            |
+|  1   | Datos    | Neon listo y paso 1.4 hecho (`migrate --fake-initial`). ⏳ **Falta el paso 1.4.**                            |
+|  2   | Backend  | ✅ Backend publicado en Render y conectado a Neon. ⏳ Después del paso 1.4: crear el administrador y el usuario `demo` en `https://cajaclara-api.onrender.com/admin/` (2.4). |
+|  3   | Backend  | En Render → **Environment**: `CORS_ALLOWED_ORIGINS=https://tdcajaclara-cajaclara-ui-omega.vercel.app` y `CSRF_TRUSTED_ORIGINS=https://cajaclara-api.onrender.com` (este último, para entrar al `/admin/`). |
+|  4   | Todos    | Jorge termina la Parte 3C y abre el pull request de `integration/ux-backend` a `main`; se revisa y se une.  |
+|  5   | Frontend | En Vercel → **Settings → Environment Variables**: `VITE_API_BASE_URL=https://cajaclara-api.onrender.com/api` y `VITE_USE_MOCKS=false`. Luego **Redeploy**. Solo después de que funcione el usuario `demo`. |
+|  6   | Todos    | Entrar al sitio de Vercel con el usuario `demo` y repetir la prueba de la Parte 4. En el plan gratuito, abrir `https://cajaclara-api.onrender.com/api/` un rato antes: si estaba dormido, la primera carga tarda cerca de un minuto. |
 
 **Configuración del proyecto en Vercel:**
 
@@ -715,5 +706,5 @@ Respuesta a la sección *"Información requerida de Backend para el deploy final
 - [ ] **Gastos que no son insumos** (arriendo, flete, servicios): hoy la base no los permite. Si se quieren, datos tiene que agregar una tabla o columnas y avisar al backend.
 - [ ] **Anular ventas:** la base no lo permite. Si se necesita, acordar cómo marcarlo (por ejemplo, una columna `anulada` en `venta`).
 - [ ] **Pagos parciales (abonos):** hoy un pago es siempre completo.
-- [ ] **Dónde se publica el backend** para la presentación final (Render, Railway u otro). El frontend ya está en Vercel; el backend está preparado (sección *Publicar el backend* del README). Con eso se completan los pasos de la Parte 5.
+- [x] **Dónde se publica el backend:** en **Render** (`https://cajaclara-api.onrender.com`), publicado el 17/11/2026. El frontend sigue en Vercel.
 - [ ] **Qué mes muestra la demo:** con los datos en Neon, el mes inicial es noviembre 2022, que tiene muy pocas ventas (1 venta y 102 gastos). Elegir un mes con más movimiento o desplazar las fechas.
