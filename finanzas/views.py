@@ -578,6 +578,8 @@ class ProductoListView(generics.ListAPIView):
       - fecha_inicio, fecha_fin: período para calcular total_vendido y total_ingresos
         (sin fechas = todas las ventas).
       - tipo_compra: Física o En Línea (para los mismos totales).
+      - con_ventas=true: solo productos con al menos una unidad vendida en ese período/canal
+        (para el "Top productos" del dashboard, así no aparecen productos en 0).
       - ordering: producto (por defecto), total_vendido, total_ingresos o id_producto;
         con "-" adelante es de mayor a menor. Productos más vendidos: ?ordering=-total_vendido
       - page, page_size: Paginación.
@@ -618,6 +620,12 @@ class ProductoListView(generics.ListAPIView):
         unidad = params.get("unidad_negocio")
         if unidad:
             qs = qs.filter(unidad_negocio__iexact=unidad.strip())
+
+        con_ventas = (params.get("con_ventas") or "").strip().lower()
+        if con_ventas in ("1", "true", "si", "sí"):
+            qs = qs.filter(total_vendido__gt=0)
+        elif con_ventas not in ("", "0", "false", "no"):
+            raise ValidationError({"error": "'con_ventas' inválido. Usa true o false."})
 
         orden = (params.get("ordering") or "producto").strip()
         if orden.lstrip("-") not in ORDEN_PRODUCTOS:

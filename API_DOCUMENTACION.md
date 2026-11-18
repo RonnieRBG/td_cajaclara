@@ -466,10 +466,13 @@ Los endpoints 9, 10, 12 y 14 agregan una clave `resumen` con totales que **no de
 | `unidad_negocio`            | Por ejemplo, `Supermercado`                                                                |
 | `fecha_inicio`, `fecha_fin` | Período para calcular `total_vendido` y `total_ingresos` (sin fechas = todo el historial)  |
 | `tipo_compra`               | `Física` o `En Línea` (para los mismos totales)                                            |
+| `con_ventas`                | `true`: solo productos con al menos 1 unidad vendida en ese período y canal (usar en "Top productos") |
 | `ordering`                  | `producto` (por defecto), `total_vendido`, `total_ingresos`, `id_producto`. Con `-` adelante, de mayor a menor. |
 | `page`, `page_size`         | Paginación                                                                                 |
 
-**Productos más vendidos del mes:** `?ordering=-total_vendido&fecha_inicio=01/10/2026&fecha_fin=31/10/2026&page_size=4`
+**Productos más vendidos del mes:** `?ordering=-total_vendido&con_ventas=true&fecha_inicio=01/10/2026&fecha_fin=31/10/2026&page_size=4`
+
+> Sin `con_ventas=true` la lista incluye todo el catálogo (7.488 productos), también los que no se vendieron en el período (con `total_vendido: 0`).
 
 ```json
 {

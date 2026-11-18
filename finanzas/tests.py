@@ -367,7 +367,16 @@ class ProductosMasVendidosTests(BaseAPITest):
         self.assertEqual(datos["P1"]["total_vendido"], 3)
         self.assertEqual(datos["P2"]["total_vendido"], 0)
 
+    def test_con_ventas_quita_productos_sin_unidades_en_el_periodo(self):
+        _, orden = self.productos(f"ordering=-total_vendido&tipo_compra=En Línea&fecha_inicio={self.d}&con_ventas=true")
+        self.assertEqual(orden, ["P1"])  # P2 no se vendió en línea en el período
+        _, orden = self.productos(f"fecha_inicio={self.d + timedelta(days=1)}&con_ventas=true")
+        self.assertEqual(orden, [])
+        _, orden = self.productos("con_ventas=false")
+        self.assertIn("P2", orden)
+
     def test_parametros_invalidos(self):
+        self.assertEqual(self.client.get("/api/finanzas/productos/?con_ventas=quizas").status_code, 400)
         self.assertEqual(self.client.get("/api/finanzas/productos/?ordering=-ventas").status_code, 400)
         self.assertEqual(self.client.get("/api/finanzas/productos/?fecha_inicio=ayer").status_code, 400)
         self.assertEqual(self.client.get("/api/finanzas/productos/?tipo_compra=telefono").status_code, 400)
