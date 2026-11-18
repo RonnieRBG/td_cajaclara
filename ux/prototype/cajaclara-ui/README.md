@@ -11,6 +11,7 @@ Documentación técnica del prototipo frontend de alta fidelidad. Para la invest
 - Layout responsive y design tokens compartidos.
 - Login JWT, restauración de sesión, refresh automático, perfil y logout.
 - Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar conectados a los endpoints financieros con JWT, estados de carga/error/vacío y reintento.
+- Resumen mensual permite exportar ventas a Excel con sus filtros activos, exclusivamente en modo API.
 - Modo mock explícito e independiente para Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar.
 - Cuentas por cobrar permite consultar facturas, registrar pagos completos y revertirlos; sus indicadores usan el resumen global de la API.
 
@@ -222,11 +223,14 @@ Dashboard y Resumen mensual llaman, a través de servicios y `apiClient`, a:
 | `GET /api/finanzas/opciones-filtros/` | Rango de fechas disponible y canales `Física` / `En Línea`; determina el periodo inicial. |
 | `GET /api/finanzas/resumen-mensual/` | Indicadores, flujo de caja, ventas por estado y canal. |
 | `GET /api/finanzas/resumen-agrupado/` con `agrupacion=semanas_mes` | Flujo semanal y etiquetas entregadas por Backend. |
+| `GET /api/finanzas/exportar-excel/` | Descarga autenticada del Excel con filtros de fecha y canal activos. |
 | `GET /api/finanzas/operaciones/` | Operaciones recientes y del periodo, fechas ISO y montos. |
 | `GET /api/finanzas/alertas-cobro/` | Alertas prioritarias operativas vigentes a la fecha actual. |
 | `GET /api/finanzas/productos/` | Productos más vendidos del periodo/canal, ordenados por unidades vendidas. |
 
 `src/services/apiAdapters.js` valida y adapta las respuestas sin deducir el contrato de los mocks. `dashboardService.js`, `summaryService.js` y `optionsService.js` separan consultas y selección de fuente. Las peticiones protegidas reutilizan JWT y refresh automático del `apiClient`.
+
+`exportService.js` solicita `/api/finanzas/exportar-excel/` como Blob mediante `apiClient`, enviando `fecha_inicio`, `fecha_fin` y `tipo_compra` cuando hay un canal seleccionado. Descarga el archivo con el nombre de `Content-Disposition` o `reporte_ventas.xlsx` si falta, y revoca la URL temporal. En modo mock el botón está deshabilitado y se muestra “Exportación disponible con datos reales”.
 
 Compras y ventas usa `operationsService.js` y estos endpoints con JWT y refresh: `GET /api/finanzas/operaciones/` (paginación, filtros, orden y resumen global de resultados), `GET /api/finanzas/facturas/{id}/` (detalle), `GET /api/finanzas/opciones/clientes/`, `GET /api/finanzas/opciones/productos/`, `POST /api/finanzas/clientes/`, `POST /api/finanzas/facturas/` y `POST /api/finanzas/gastos/`. El formulario registra ventas al contado o a crédito y gastos asociados a producto; los errores `400` del alta de cliente aparecen junto a sus campos. No se implementan eliminación, anulación ni pagos parciales.
 

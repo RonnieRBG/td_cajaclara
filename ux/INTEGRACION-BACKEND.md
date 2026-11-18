@@ -37,11 +37,14 @@ Las peticiones pasan por `src/services/apiClient.js` con Bearer JWT y refresh au
 | `GET /api/finanzas/opciones-filtros/` | Rango disponible y canales; fija el periodo inicial desde `rango_fechas_disponible.max`. |
 | `GET /api/finanzas/resumen-mensual/` | KPIs, flujo de caja, ventas por estado y canal; acepta fechas y `tipo_compra`. |
 | `GET /api/finanzas/resumen-agrupado/?agrupacion=semanas_mes` | Flujo semanal; conserva las etiquetas de `periodo` de Backend. |
+| `GET /api/finanzas/exportar-excel/` | Archivo `.xlsx` del detalle de ventas, con los filtros de `resumen-mensual`. |
 | `GET /api/finanzas/operaciones/` | Operaciones recientes, sus fechas/montos y conteos agregados; el resumen mensual muestra las primeras cinco. |
 | `GET /api/finanzas/alertas-cobro/` | Cobros prioritarios operativos a la fecha actual (primeros tres); no dependen del periodo/canal del resumen. |
 | `GET /api/finanzas/productos/` | Productos más vendidos del periodo (`fecha_inicio`, `fecha_fin`, `tipo_compra`, `ordering=-total_vendido`, `page_size=4`). |
 
 `src/services/apiAdapters.js` valida la forma documentada, convierte montos a `Number` y adapta las respuestas a las propiedades de los componentes. Los montos permanecen enteros en CLP y las fechas ISO se conservan. `optionsService.js` controla la fuente y las opciones; `dashboardService.js` y `summaryService.js` realizan las consultas con `apiRequest`.
+
+El botón Exportar Excel de Resumen mensual usa `exportService.js` y envía `fecha_inicio`, `fecha_fin` y, si está seleccionado, `tipo_compra`, iguales a los filtros activos del periodo. `apiClient.js` admite `responseType: 'blob'` para este endpoint y conserva el refresh JWT con un único reintento; las peticiones JSON existentes no cambian. El archivo se descarga usando `Content-Disposition` o `reporte_ventas.xlsx` como nombre alternativo, y se revoca la URL temporal. En modo mock, la exportación se deshabilita y se indica que está disponible con datos reales.
 
 No existe en el contrato un desglose de gastos por categoría: Resumen mensual muestra el total de `gastos_insumo`, sin crear categorías. Alertas son operativas y de hoy, no históricas del periodo seleccionado. Los productos se consultan mediante `GET /productos/`, que sí admite periodo y canal; la métrica histórica `ranking-productos` no se usa en estas vistas. Las operaciones y los resúmenes filtrados respetan el canal; Backend documenta que los gastos no tienen canal.
 

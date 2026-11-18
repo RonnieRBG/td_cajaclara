@@ -7,6 +7,7 @@ import StatCard from '@/components/common/StatCard.vue'
 import { ApiError } from '@/services/apiClient'
 import { getFilterOptions, getPeriodRange, USE_MOCKS } from '@/services/optionsService'
 import { getMonthlySummaryData } from '@/services/summaryService'
+import { exportMonthlySummary } from '@/services/exportService'
 import { formatCLP, formatDate } from '@/utils/formatters'
 
 const filterOptions = ref(null)
@@ -17,6 +18,9 @@ const periodData = ref(null)
 const loading = ref(false)
 const error = ref(null)
 const periodAnnouncement = ref('')
+const exporting = ref(false)
+const exportStatus = ref('')
+const exportError = ref('')
 const numberFormatter = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 })
 let requestSequence = 0
 
@@ -54,10 +58,31 @@ const errorMessage = computed(() => {
   return error.value?.message || 'No se pudo cargar el resumen mensual.'
 })
 
+const handleExport = async () => {
+  if (USE_MOCKS || !selectedRange.value || exporting.value) return
+  exporting.value = true
+  exportStatus.value = ''
+  exportError.value = ''
+
+  try {
+    await exportMonthlySummary({
+      ...selectedRange.value,
+      channel: selectedChannel.value
+    })
+    exportStatus.value = 'Archivo Excel descargado correctamente.'
+  } catch (requestError) {
+    exportError.value = requestError.message || 'No se pudo exportar el archivo Excel.'
+  } finally {
+    exporting.value = false
+  }
+}
+
 const loadSummary = async () => {
   const sequence = ++requestSequence
   loading.value = true
   error.value = null
+  exportStatus.value = ''
+  exportError.value = ''
 
   try {
     if (!filterOptions.value) filterOptions.value = await getFilterOptions()
@@ -119,7 +144,7 @@ onMounted(loadSummary)
         <div class="period-selectors" role="group" aria-label="Seleccionar periodo">
           <div class="period-field">
             <label for="summary-month">Mes</label>
-            <select id="summary-month" v-model="selectedMonth" :disabled="loading" @change="loadSummary">
+            <select id="summary-month" v-model="selectedMonth" :disabled="loading || exporting" @change="loadSummary">
               <option v-for="month in monthOptions" :key="month.value" :value="month.month">
                 {{ month.label }}
               </option>
@@ -127,7 +152,7 @@ onMounted(loadSummary)
           </div>
           <div class="period-field period-field--year">
             <label for="summary-year">Año</label>
-            <select id="summary-year" v-model.number="selectedYear" :disabled="loading" @change="handleYearChange">
+            <select id="summary-year" v-model.number="selectedYear" :disabled="loading || exporting" @change="handleYearChange">
               <option v-for="year in availableYears" :key="year" :value="year">
                 {{ year }}
               </option>
@@ -135,7 +160,7 @@ onMounted(loadSummary)
           </div>
           <div v-if="!USE_MOCKS" class="period-field period-field--channel">
             <label for="summary-channel">Canal</label>
-            <select id="summary-channel" v-model="selectedChannel" :disabled="loading" @change="loadSummary">
+            <select id="summary-channel" v-model="selectedChannel" :disabled="loading || exporting" @change="loadSummary">
               <option value="">Todos los canales</option>
               <option v-for="type in filterOptions?.types ?? []" :key="type.value" :value="type.value">
                 {{ type.label }}
@@ -146,6 +171,28 @@ onMounted(loadSummary)
         <RouterLink class="btn btn-primary summary-action" to="/operaciones">
           Ver operaciones
         </RouterLink>
+        <div class="summary-export">
+          <button
+            type="button"
+            class="btn btn-secondary summary-export__button"
+            :disabled="USE_MOCKS || loading || exporting || !selectedRange"
+            @click="handleExport"
+          >
+            {{ exporting ? 'Exportando…' : 'Exportar Excel' }}
+          </button>
+          <p v-if="USE_MOCKS" class="summary-export__message" role="note">
+            Exportación disponible con datos reales
+          </p>
+          <p v-else-if="exporting" class="summary-export__message" role="status" aria-live="polite">
+            Descargando archivo Excel…
+          </p>
+          <p v-else-if="exportStatus" class="summary-export__message" role="status" aria-live="polite">
+            {{ exportStatus }}
+          </p>
+          <p v-else-if="exportError" class="summary-export__message summary-export__message--error" role="alert">
+            {{ exportError }}
+          </p>
+        </div>
       </div>
 
       <p v-if="selectedChannel" class="period-announcement">
@@ -409,6 +456,28 @@ onMounted(loadSummary)
   display: flex;
   align-items: flex-end;
   gap: var(--space-3);
+}
+
+.summary-export {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.summary-export__button {
+  white-space: nowrap;
+}
+
+.summary-export__message {
+  max-width: 15rem;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.summary-export__message--error {
+  color: var(--color-danger);
 }
 
 .period-selectors {
@@ -786,6 +855,14 @@ onMounted(loadSummary)
   .period-field select {
     width: 100%;
     min-width: 0;
+  }
+
+  .summary-export {
+    width: 100%;
+  }
+
+  .summary-export__button {
+    width: 100%;
   }
 
   .summary-action {

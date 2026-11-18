@@ -83,8 +83,9 @@ function createResponseError(status, payload) {
   })
 }
 
-async function readResponse(response) {
+async function readResponse(response, responseType = 'json') {
   if (response.status === 204 || response.status === 205) return null
+  if (responseType === 'blob' && response.ok) return response.blob()
 
   const text = await response.text()
   if (!text.trim()) return null
@@ -99,9 +100,14 @@ async function readResponse(response) {
   }
 }
 
-function requestOptions({ method = 'GET', body, headers = {}, accessToken } = {}) {
+function requestOptions({ method = 'GET', body, headers = {}, accessToken, responseType = 'json' } = {}) {
   const requestHeaders = new Headers(headers)
-  requestHeaders.set('Accept', 'application/json')
+  requestHeaders.set(
+    'Accept',
+    responseType === 'blob'
+      ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      : 'application/json'
+  )
 
   const options = { method, headers: requestHeaders }
   if (body !== undefined) {
@@ -152,12 +158,14 @@ async function renewTokens() {
   return refreshPromise
 }
 
-async function send(path, options, { authenticated, retryAfterRefresh }) {
+async function send(path, options, { authenticated, retryAfterRefresh, responseType }) {
   const accessToken = authenticated ? tokenStore.access : null
   let response
+  let payload
 
   try {
-    response = await fetch(apiUrl(path), requestOptions({ ...options, accessToken }))
+    response = await fetch(apiUrl(path), requestOptions({ ...options, accessToken, responseType }))
+    payload = await readResponse(response, responseType)
   } catch (error) {
     if (error instanceof TypeError) {
       throw new ApiError('No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.', {
@@ -167,11 +175,9 @@ async function send(path, options, { authenticated, retryAfterRefresh }) {
     throw error
   }
 
-  const payload = await readResponse(response)
-
   if (response.status === 401 && authenticated && retryAfterRefresh) {
     if (await renewTokens()) {
-      return send(path, options, { authenticated, retryAfterRefresh: false })
+      return send(path, options, { authenticated, retryAfterRefresh: false, responseType })
     }
 
     tokenStore.clear()
@@ -183,10 +189,16 @@ async function send(path, options, { authenticated, retryAfterRefresh }) {
   }
 
   if (!response.ok) throw createResponseError(response.status, payload)
+  if (responseType === 'blob') return { blob: payload, headers: response.headers }
   return payload
 }
 
 export function apiRequest(path, options = {}) {
-  const { authenticated = false, retryAfterRefresh = false, ...request } = options
-  return send(path, request, { authenticated, retryAfterRefresh })
+  const {
+    authenticated = false,
+    retryAfterRefresh = false,
+    responseType = 'json',
+    ...request
+  } = options
+  return send(path, request, { authenticated, retryAfterRefresh, responseType })
 }
