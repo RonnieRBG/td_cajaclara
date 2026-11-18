@@ -4,6 +4,8 @@ import { apiRequest } from './apiClient'
 import { adaptFilterOptions } from './apiAdapters'
 
 export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
+// TODO: eliminar acceso demo temporal.
+export const DEMO_ACCESS_ENABLED = import.meta.env.VITE_DEMO_ACCESS === 'true' && USE_MOCKS
 
 function periodsBetween(min, max) {
   const [minYear, minMonth] = min.split('-').map(Number)

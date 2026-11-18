@@ -6,12 +6,15 @@ import AppSidebar from '@/components/common/AppSidebar.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
 import AppBottomNav from '@/components/common/AppBottomNav.vue'
 import { useAuth } from '@/composables/useAuth'
+import { DEMO_ACCESS_ENABLED } from '@/services/optionsService'
 
 const isSidebarOpen = ref(false)
 const route = useRoute()
 const router = useRouter()
 const { user, logout } = useAuth()
 const isAuthLayout = computed(() => route.meta.layout === 'auth')
+// TODO: eliminar acceso demo temporal.
+const isDemoSession = computed(() => DEMO_ACCESS_ENABLED && user.value?.isDemo === true)
 const profileName = computed(() => user.value?.nombre || user.value?.username || 'Usuario')
 const profileInitials = computed(() => (
   profileName.value
@@ -70,6 +73,10 @@ const handleLogout = async () => {
         @logout="handleLogout"
       />
 
+      <div v-if="isDemoSession" class="demo-banner" role="status">
+        Modo demostración: datos simulados
+      </div>
+
       <!-- Main Page Content -->
       <main id="main-content" class="app-main" tabindex="-1">
         <router-view />
@@ -125,9 +132,22 @@ const handleLogout = async () => {
   margin: 0 auto;
 }
 
+.demo-banner {
+  padding: var(--space-2) var(--layout-gutter-desktop);
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (max-width: 1200px) {
   .app-main {
     padding: var(--layout-gutter-tablet) var(--layout-gutter-tablet) var(--space-12);
+  }
+
+  .demo-banner {
+    padding-inline: var(--layout-gutter-tablet);
   }
 }
 
@@ -144,6 +164,10 @@ const handleLogout = async () => {
 @media (max-width: 640px) {
   .app-main {
     padding: var(--layout-gutter-mobile) var(--layout-gutter-mobile) calc(var(--space-10) + var(--layout-bottom-nav-height));
+  }
+
+  .demo-banner {
+    padding-inline: var(--layout-gutter-mobile);
   }
 }
 </style>
