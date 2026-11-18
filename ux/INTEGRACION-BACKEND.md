@@ -5,8 +5,8 @@
 - El proyecto Django está en la raíz (`manage.py`, `cajaclara/`, `finanzas/`, `usuarios/`); la aplicación Vue 3/Vite permanece en `ux/prototype/cajaclara-ui/`.
 - Backend de referencia: `upstream/backend`, commit `ce68c3c1835fbfef96ffb6bc1deff3fd5dfaf9ef`. Contratos y procedimientos: [`API_DOCUMENTACION.md`](../API_DOCUMENTACION.md) y [`ACOPLAMIENTO.md`](../ACOPLAMIENTO.md).
 - El login JWT, refresh, perfil, logout y protección de rutas ya están conectados en Vue. No existe registro público.
-- Dashboard y Resumen mensual consumen los endpoints financieros documentados cuando `VITE_USE_MOCKS=false`; ambos conservan los mocks, seleccionados explícitamente con `VITE_USE_MOCKS=true`.
-- Compras y ventas y Cuentas por cobrar siguen usando mocks. Este cambio no escribe ni modifica contratos, modelos, endpoints o pruebas de Django.
+- Dashboard, Resumen mensual y Compras y ventas consumen los endpoints financieros documentados cuando `VITE_USE_MOCKS=false`; cada vista conserva mocks seleccionados explícitamente con `VITE_USE_MOCKS=true`.
+- Cuentas por cobrar sigue usando mocks. Este cambio no escribe ni modifica contratos, modelos, endpoints o pruebas de Django.
 - El esquema real contiene `cliente`, `producto`, `venta`, `detalle_venta`, `cuenta_por_cobrar` y `gastos_insumo`. No usar los modelos de un contrato anterior (`Categoria`, `Movimiento`) como fuente.
 
 ## Endpoints disponibles
@@ -44,6 +44,19 @@ Las peticiones pasan por `src/services/apiClient.js` con Bearer JWT y refresh au
 `src/services/apiAdapters.js` valida la forma documentada, convierte montos a `Number` y adapta las respuestas a las propiedades de los componentes. Los montos permanecen enteros en CLP y las fechas ISO se conservan. `optionsService.js` controla la fuente y las opciones; `dashboardService.js` y `summaryService.js` realizan las consultas con `apiRequest`.
 
 No existe en el contrato un desglose de gastos por categoría: Resumen mensual muestra el total de `gastos_insumo`, sin crear categorías. Alertas son operativas y de hoy, no históricas del periodo seleccionado. Los productos se consultan mediante `GET /productos/`, que sí admite periodo y canal; la métrica histórica `ranking-productos` no se usa en estas vistas. Las operaciones y los resúmenes filtrados respetan el canal; Backend documenta que los gastos no tienen canal.
+
+### Integración de Compras y ventas
+
+`operationsService.js` selecciona una sola fuente según `VITE_USE_MOCKS`. En modo API reutiliza `apiRequest` (JWT y refresh) y `apiAdapters.js` para:
+
+| Acción | Endpoint |
+| --- | --- |
+| Listar operaciones, filtros, orden y páginas; resumen independiente de la página | `GET /operaciones/` |
+| Ver detalle de una venta | `GET /facturas/{id_factura}/` |
+| Buscar clientes y productos | `GET /opciones/clientes/`, `GET /opciones/productos/` |
+| Crear cliente, venta al contado/crédito o gasto en insumos | `POST /clientes/`, `POST /facturas/`, `POST /gastos/` |
+
+El formulario envía `fecha_vencimiento` solo para ventas a crédito y usa `ultimo_precio_venta` / `ultimo_costo_venta` como sugerencias; solicita ambos si no hay valores anteriores. Un error de API permanece visible con opción de reintento, sin alternar a mocks. No se implementan edición, eliminación, anulación ni pagos parciales.
 
 ### Fuente explícita
 

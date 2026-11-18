@@ -16,12 +16,12 @@ export const suppliers = [
 ]
 
 export const productCatalog = [
-  { id: 'prod-001', name: 'Aceite vegetal de 1 litro', category: 'Abarrotes', unitPrice: 3000 },
-  { id: 'prod-002', name: 'Arroz grado 1 de 1 kilo', category: 'Abarrotes', unitPrice: 1500 },
-  { id: 'prod-003', name: 'Azúcar blanca de 1 kilo', category: 'Abarrotes', unitPrice: 1200 },
-  { id: 'prod-004', name: 'Fideos tallarines 400 gramos', category: 'Pastas', unitPrice: 900 },
-  { id: 'prod-005', name: 'Harina sin preparar 1 kilo', category: 'Abarrotes', unitPrice: 1100 },
-  { id: 'prod-006', name: 'Detergente líquido 1 litro', category: 'Limpieza', unitPrice: 2800 },
+  { id: 'prod-001', name: 'Aceite vegetal de 1 litro', category: 'Abarrotes', unitPrice: 3000, unitCost: 2000 },
+  { id: 'prod-002', name: 'Arroz grado 1 de 1 kilo', category: 'Abarrotes', unitPrice: 1500, unitCost: 1000 },
+  { id: 'prod-003', name: 'Azúcar blanca de 1 kilo', category: 'Abarrotes', unitPrice: 1200, unitCost: 800 },
+  { id: 'prod-004', name: 'Fideos tallarines 400 gramos', category: 'Pastas', unitPrice: 900, unitCost: 600 },
+  { id: 'prod-005', name: 'Harina sin preparar 1 kilo', category: 'Abarrotes', unitPrice: 1100, unitCost: 750 },
+  { id: 'prod-006', name: 'Detergente líquido 1 litro', category: 'Limpieza', unitPrice: 2800, unitCost: 1800 },
 ]
 
 export const expenseCategories = [

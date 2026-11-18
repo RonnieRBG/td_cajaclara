@@ -4,10 +4,12 @@ import { formatCLP, formatDate } from '@/utils/formatters'
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
-  operation: { type: Object, default: null }
+  operation: { type: Object, default: null },
+  isLoading: { type: Boolean, default: false },
+  error: { type: String, default: '' }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'retry'])
 const dialog = ref(null)
 let previouslyFocusedElement = null
 
@@ -63,33 +65,41 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
         <button type="button" class="detail-close" aria-label="Cerrar detalle" @click="close">×</button>
       </header>
 
-      <dl class="detail-facts">
+      <p v-if="isLoading" class="detail-status" role="status">Cargando detalle…</p>
+      <div v-else-if="error" class="detail-error" role="alert">
+        <p>{{ error }}</p>
+        <button type="button" class="text-action" @click="emit('retry')">Reintentar</button>
+      </div>
+
+      <template v-else>
+        <dl class="detail-facts">
         <div><dt>Fecha</dt><dd>{{ formatDate(operation.date) }}<template v-if="operation.time"> · {{ operation.time }}</template></dd></div>
-        <div><dt>Cliente o proveedor</dt><dd>{{ operation.customerOrSupplier || 'No informado' }}</dd></div>
+        <div><dt>Cliente o producto</dt><dd>{{ operation.customerOrSupplier || 'No informado' }}</dd></div>
         <div><dt>Canal</dt><dd>{{ operation.channel || 'No aplica' }}</dd></div>
         <div><dt>Estado</dt><dd>{{ operation.displayStatus || operation.paymentStatus }}</dd></div>
         <div v-if="operation.paymentDueDate"><dt>Fecha esperada de pago</dt><dd>{{ formatDate(operation.paymentDueDate) }}</dd></div>
-      </dl>
+        </dl>
 
-      <section v-if="operation.products?.length" class="detail-products" aria-labelledby="detail-products-title">
-        <h3 id="detail-products-title">Productos</h3>
-        <ul>
-          <li v-for="(product, index) in operation.products" :key="`${product.name}-${index}`">
-            <div>
-              <strong>{{ product.name }}</strong>
-              <span v-if="product.quantity != null">{{ product.quantity }} × {{ formatCLP(product.unitPrice) }}</span>
-              <span v-else>Detalle de cantidad y precio unitario no informado</span>
-            </div>
-            <strong>{{ formatCLP(product.subtotal ?? operation.amount) }}</strong>
-          </li>
-        </ul>
-      </section>
-      <p v-else class="detail-description">{{ operation.description }}</p>
+        <section v-if="operation.products?.length" class="detail-products" aria-labelledby="detail-products-title">
+          <h3 id="detail-products-title">Productos</h3>
+          <ul>
+            <li v-for="(product, index) in operation.products" :key="`${product.name}-${index}`">
+              <div>
+                <strong>{{ product.name }}</strong>
+                <span v-if="product.quantity != null">{{ product.quantity }} × {{ formatCLP(product.unitPrice) }}</span>
+                <span v-else>Detalle de cantidad y precio unitario no informado</span>
+              </div>
+              <strong>{{ formatCLP(product.subtotal ?? operation.amount) }}</strong>
+            </li>
+          </ul>
+        </section>
+        <p v-else class="detail-description">{{ operation.description }}</p>
 
-      <footer class="detail-total">
-        <span>Total</span>
-        <strong>{{ formatCLP(operation.amount) }}</strong>
-      </footer>
+        <footer class="detail-total">
+          <span>Total</span>
+          <strong>{{ formatCLP(operation.amount) }}</strong>
+        </footer>
+      </template>
     </section>
   </div>
 </template>
@@ -117,5 +127,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 .detail-total { display: flex; min-width: var(--content-min-width); justify-content: space-between; gap: var(--layout-control-gap); margin-top: var(--layout-control-gap); padding: var(--layout-control-gap); border-radius: var(--radius-md); background: var(--color-bg-subtle); }
 .detail-total span { color: var(--color-text-secondary); }
 .detail-total strong { color: var(--color-text); font-size: 1.1rem; }
+.detail-status, .detail-error { margin-top: var(--layout-control-gap); padding: var(--layout-control-gap); border-radius: var(--radius-md); background: var(--color-bg-subtle); color: var(--color-text-secondary); font-size: .88rem; }
+.detail-error { display: flex; align-items: center; justify-content: space-between; gap: var(--layout-control-gap); background: #fef2f2; color: #991b1b; }
+.text-action { min-height: var(--control-min-height); padding: var(--space-2) var(--layout-control-gap); color: var(--color-brand-primary); font-size: .82rem; font-weight: 800; }
 @media (max-width: 540px) { .detail-dialog { padding: var(--layout-control-gap); } .detail-facts { grid-template-columns: 1fr; gap: var(--layout-control-gap); } }
 </style>

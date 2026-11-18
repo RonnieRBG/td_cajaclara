@@ -115,7 +115,21 @@ export function adaptGroupedSummary(payload) {
 export function adaptOperations(payload) {
   const results = requiredArray(payload?.results, 'results').map((item) => {
     const operation = requiredRecord(item, 'results[]')
+    if (
+      typeof operation.id !== 'string' &&
+      !(typeof operation.id === 'number' && Number.isFinite(operation.id))
+    ) invalidResponse('results[].id')
     if (typeof operation.fecha !== 'string') invalidResponse('results[].fecha')
+    if (!['VENTA', 'GASTO'].includes(operation.tipo)) invalidResponse('results[].tipo')
+    if (typeof operation.detalle !== 'string') invalidResponse('results[].detalle')
+    if (!['PAGADO', 'PENDIENTE'].includes(operation.estado_pago)) invalidResponse('results[].estado_pago')
+    if (typeof operation.por_cobrar !== 'boolean') invalidResponse('results[].por_cobrar')
+    if (operation.tipo_compra !== null && typeof operation.tipo_compra !== 'string') {
+      invalidResponse('results[].tipo_compra')
+    }
+    if (operation.fecha_vencimiento !== null && typeof operation.fecha_vencimiento !== 'string') {
+      invalidResponse('results[].fecha_vencimiento')
+    }
 
     return {
       type: operation.tipo,
@@ -124,20 +138,134 @@ export function adaptOperations(payload) {
       detail: operation.detalle,
       amount: requiredNumber(operation.monto, 'results[].monto'),
       channel: operation.tipo_compra,
-      status: operation.estado_pago
+      status: operation.estado_pago,
+      itemsCount: requiredNumber(operation.items_count, 'results[].items_count'),
+      isCredit: operation.por_cobrar,
+      paymentDueDate: operation.fecha_vencimiento,
+      clientId: operation.id_cliente,
+      productId: operation.id_producto
     }
   })
   const summary = requiredRecord(payload?.resumen, 'resumen')
   const sales = requiredRecord(summary.ventas, 'resumen.ventas')
   const expenses = requiredRecord(summary.gastos, 'resumen.gastos')
+  const pendingSales = requiredRecord(summary.ventas_pendientes, 'resumen.ventas_pendientes')
 
   return {
     count: requiredNumber(payload.count, 'count'),
+    next: payload.next,
+    previous: payload.previous,
     results,
     summary: {
       salesCount: requiredNumber(sales.cantidad, 'resumen.ventas.cantidad'),
-      expensesCount: requiredNumber(expenses.cantidad, 'resumen.gastos.cantidad')
+      salesAmount: requiredNumber(sales.monto, 'resumen.ventas.monto'),
+      expensesCount: requiredNumber(expenses.cantidad, 'resumen.gastos.cantidad'),
+      expensesAmount: requiredNumber(expenses.monto, 'resumen.gastos.monto'),
+      pendingSalesAmount: requiredNumber(pendingSales.monto, 'resumen.ventas_pendientes.monto')
     }
+  }
+}
+
+export function adaptClientOptions(payload) {
+  return requiredArray(payload?.results, 'results').map((item) => {
+    const client = requiredRecord(item, 'results[]')
+    if (typeof client.nombre !== 'string') invalidResponse('results[].nombre')
+    if (typeof client.contacto !== 'string') invalidResponse('results[].contacto')
+
+    return {
+      id: client.id_cliente,
+      name: client.nombre,
+      contact: client.contacto
+    }
+  })
+}
+
+export function adaptProductOptions(payload) {
+  return requiredArray(payload?.results, 'results').map((item) => {
+    const product = requiredRecord(item, 'results[]')
+    if (typeof product.producto !== 'string') invalidResponse('results[].producto')
+    if (typeof product.categoria !== 'string') invalidResponse('results[].categoria')
+
+    return {
+      id: product.id_producto,
+      name: product.producto,
+      category: product.categoria,
+      suggestedPrice: product.ultimo_precio_venta === null
+        ? null
+        : requiredNumber(product.ultimo_precio_venta, 'results[].ultimo_precio_venta'),
+      suggestedCost: product.ultimo_costo_venta === null
+        ? null
+        : requiredNumber(product.ultimo_costo_venta, 'results[].ultimo_costo_venta')
+    }
+  })
+}
+
+export function adaptInvoiceDetail(payload) {
+  const invoice = requiredRecord(payload, 'factura')
+  if (typeof invoice.id_factura !== 'string') invalidResponse('id_factura')
+  if (typeof invoice.fecha !== 'string') invalidResponse('fecha')
+  if (typeof invoice.cliente_nombre !== 'string') invalidResponse('cliente_nombre')
+  if (typeof invoice.tipo_compra !== 'string') invalidResponse('tipo_compra')
+  if (typeof invoice.por_cobrar !== 'boolean') invalidResponse('por_cobrar')
+  if (!['PAGADO', 'PENDIENTE'].includes(invoice.estado_pago)) invalidResponse('estado_pago')
+  if (invoice.fecha_vencimiento !== null && typeof invoice.fecha_vencimiento !== 'string') {
+    invalidResponse('fecha_vencimiento')
+  }
+
+  const products = requiredArray(invoice.detalles, 'detalles').map((item) => {
+    const product = requiredRecord(item, 'detalles[]')
+    if (typeof product.producto_nombre !== 'string') invalidResponse('detalles[].producto_nombre')
+
+    return {
+      id: product.id_producto,
+      name: product.producto_nombre,
+      quantity: requiredNumber(product.cantidad, 'detalles[].cantidad'),
+      unitPrice: requiredNumber(product.precio_venta, 'detalles[].precio_venta'),
+      unitCost: requiredNumber(product.costo_venta, 'detalles[].costo_venta'),
+      subtotal: requiredNumber(product.total_venta, 'detalles[].total_venta')
+    }
+  })
+
+  return {
+    id: invoice.id_factura,
+    invoiceId: invoice.id_factura,
+    type: 'Venta',
+    date: invoice.fecha,
+    customerOrSupplier: invoice.cliente_nombre,
+    clientId: invoice.id_cliente,
+    channel: invoice.tipo_compra,
+    paymentStatus: invoice.estado_pago === 'PENDIENTE' ? 'Pendiente' : 'Pagada',
+    paymentDueDate: invoice.fecha_vencimiento,
+    isCredit: invoice.por_cobrar,
+    amount: requiredNumber(invoice.total_venta, 'total_venta'),
+    description: products.map((product) => product.name).join(', '),
+    products
+  }
+}
+
+export function adaptCreatedClient(payload) {
+  const client = requiredRecord(payload, 'cliente')
+  if (typeof client.nombre !== 'string') invalidResponse('nombre')
+  if (typeof client.contacto !== 'string') invalidResponse('contacto')
+
+  return {
+    id: client.id_cliente,
+    name: client.nombre,
+    contact: client.contacto
+  }
+}
+
+export function adaptCreatedExpense(payload) {
+  const expense = requiredRecord(payload, 'gasto')
+  if (expense.id_gasto === null || expense.id_gasto === undefined) invalidResponse('id_gasto')
+  if (expense.id_producto === null || expense.id_producto === undefined) invalidResponse('id_producto')
+  if (typeof expense.fecha !== 'string') invalidResponse('fecha')
+
+  return {
+    id: expense.id_gasto,
+    productId: expense.id_producto,
+    date: expense.fecha,
+    amount: requiredNumber(expense.monto, 'monto')
   }
 }
 

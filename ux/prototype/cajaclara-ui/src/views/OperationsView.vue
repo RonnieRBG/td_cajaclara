@@ -1,100 +1,106 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import StatCard from '@/components/common/StatCard.vue'
-import NewOperationModal from '@/components/dashboard/NewOperationModal.vue'
+import OperationFormModal from '@/components/operations/OperationFormModal.vue'
 import OperationDetailModal from '@/components/operations/OperationDetailModal.vue'
-import { operations as mockOperations } from '@/data/operationsMock'
+import { getDefaultOperationMonth, getOperationDetail, getOperations } from '@/services/operationsService'
 import { formatCLP, formatDate, getLocalDateString } from '@/utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
-const localOperations = ref(mockOperations.map(operation => ({
-  ...operation,
-  products: operation.products.map(product => ({ ...product }))
-})))
-const activeFilter = ref('todas')
+const activeFilter = ref('all')
+const channelFilter = ref('')
 const searchQuery = ref('')
-const periodFilter = ref('2026-10')
-const sortOrder = ref('recent')
+const periodFilter = ref(getDefaultOperationMonth())
+const sortOrder = ref('-fecha')
+const currentPage = ref(1)
+const pageSize = 10
+const operationPage = ref({
+  count: 0,
+  page: 1,
+  pageSize,
+  hasNext: false,
+  hasPrevious: false,
+  summary: { salesAmount: 0, expensesAmount: 0, totalCount: 0, pendingSalesAmount: 0 },
+  results: []
+})
+const isLoading = ref(false)
+const loadError = ref('')
 const isFormOpen = ref(false)
 const formMode = ref('venta')
 const selectedOperation = ref(null)
+const detailLoading = ref(false)
+const detailError = ref('')
 const toastMessage = ref('')
 const showToast = ref(false)
 let toastTimeout
+let loadTimeout
+let loadSequence = 0
+let detailSequence = 0
 
 const tabs = [
-  { id: 'todas', label: 'Todas' },
-  { id: 'ventas', label: 'Ventas' },
-  { id: 'gastos', label: 'Compras y gastos' },
-  { id: 'pendientes', label: 'Pendientes de pago' }
+  { id: 'all', label: 'Todas' },
+  { id: 'venta', label: 'Ventas' },
+  { id: 'gasto', label: 'Gastos en insumos' },
+  { id: 'pendiente', label: 'Pendientes de pago' }
 ]
 
-const periodOptions = computed(() => {
-  const currentMonth = getLocalDateString().slice(0, 7)
-  const periods = new Set(['2026-10', currentMonth, ...localOperations.value.map(operation => operation.date.slice(0, 7))])
-  return [...periods].sort((a, b) => b.localeCompare(a)).map(value => ({
-    value,
-    label: new Date(`${value}-01T12:00:00`).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
-      .replace(/^\p{L}/u, letter => letter.toLocaleUpperCase('es-CL'))
-  }))
-})
-
-const getPaymentStatus = (operation) => {
-  if (operation.paymentStatus === 'Vencida') return 'Vencida'
-  if (
-    operation.type === 'Venta' &&
+const summary = computed(() => operationPage.value.summary)
+const filteredOperations = computed(() => operationPage.value.results.map((operation) => ({
+  ...operation,
+  displayStatus: operation.type === 'Venta' &&
     operation.paymentStatus === 'Pendiente' &&
     operation.paymentDueDate &&
     operation.paymentDueDate < getLocalDateString()
-  ) return 'Vencida'
-  return operation.paymentStatus
-}
+    ? 'Vencida'
+    : operation.paymentStatus
+})))
+const totalPages = computed(() => Math.max(1, Math.ceil(operationPage.value.count / pageSize)))
 
-const periodOperations = computed(() => localOperations.value.filter(operation => (
-  periodFilter.value === 'all' || operation.date.startsWith(periodFilter.value)
-)))
-
-const summary = computed(() => {
-  const sales = periodOperations.value.filter(operation => operation.type === 'Venta')
-  const expenses = periodOperations.value.filter(operation => operation.type === 'Compra' || operation.type === 'Otro gasto')
-  const pendingSales = sales.filter(operation => ['Pendiente', 'Vencida'].includes(getPaymentStatus(operation)))
-  return {
-    sales: sales.reduce((total, operation) => total + Number(operation.amount || 0), 0),
-    expenses: expenses.reduce((total, operation) => total + Number(operation.amount || 0), 0),
-    count: periodOperations.value.length,
-    pending: pendingSales.reduce((total, operation) => total + Number(operation.amount || 0), 0)
+async function loadOperations() {
+  const requestSequence = ++loadSequence
+  isLoading.value = true
+  loadError.value = ''
+  try {
+    const result = await getOperations({
+      month: periodFilter.value,
+      type: ['venta', 'gasto'].includes(activeFilter.value) ? activeFilter.value : 'all',
+      status: activeFilter.value === 'pendiente' ? 'pendiente' : '',
+      channel: channelFilter.value,
+      search: searchQuery.value,
+      ordering: sortOrder.value,
+      page: currentPage.value,
+      pageSize
+    })
+    if (requestSequence !== loadSequence) return false
+    operationPage.value = result
+    return true
+  } catch (error) {
+    if (requestSequence === loadSequence) {
+      loadError.value = error instanceof Error ? error.message : 'No se pudieron cargar las operaciones.'
+    }
+    return false
+  } finally {
+    if (requestSequence === loadSequence) isLoading.value = false
   }
-})
-
-const filteredOperations = computed(() => {
-  const query = searchQuery.value.trim().toLocaleLowerCase('es-CL')
-  return periodOperations.value
-    .filter(operation => {
-      if (activeFilter.value === 'ventas' && operation.type !== 'Venta') return false
-      if (activeFilter.value === 'gastos' && operation.type === 'Venta') return false
-      if (activeFilter.value === 'pendientes' && !['Pendiente', 'Vencida'].includes(getPaymentStatus(operation))) return false
-      if (!query) return true
-      const searchableText = [
-        operation.invoiceId,
-        operation.description,
-        operation.customerOrSupplier,
-        operation.type,
-        ...operation.products.map(product => product.name)
-      ].join(' ').toLocaleLowerCase('es-CL')
-      return searchableText.includes(query)
-    })
-    .sort((a, b) => {
-      const dateComparison = `${a.date} ${a.time || ''}`.localeCompare(`${b.date} ${b.time || ''}`)
-      return sortOrder.value === 'recent' ? -dateComparison : dateComparison
-    })
-    .map(operation => ({ ...operation, displayStatus: getPaymentStatus(operation) }))
-})
-
-const syncPeriodSelectors = (value) => {
-  periodFilter.value = value
 }
+
+function scheduleLoad(delay = 0) {
+  window.clearTimeout(loadTimeout)
+  loadTimeout = window.setTimeout(loadOperations, delay)
+}
+
+watch([activeFilter, channelFilter, periodFilter, sortOrder], () => {
+  currentPage.value = 1
+  scheduleLoad()
+})
+watch(searchQuery, () => {
+  currentPage.value = 1
+  scheduleLoad(250)
+})
+watch(currentPage, () => scheduleLoad())
+scheduleLoad()
 
 const openForm = (mode = 'venta') => {
   formMode.value = mode
@@ -119,7 +125,7 @@ watch(() => route.query.nueva, (value) => {
   }
 }, { immediate: true })
 
-const notify = (message) => {
+function notify(message) {
   toastMessage.value = message
   showToast.value = true
   window.clearTimeout(toastTimeout)
@@ -128,32 +134,47 @@ const notify = (message) => {
   }, 3500)
 }
 
-const handleSaveOperation = (operation) => {
-  const nextNumber = String(localOperations.value.length + 1).padStart(4, '0')
-  const prefix = operation.type === 'Venta'
-    ? operation.paymentStatus === 'Pendiente' ? 'INV' : 'VTA'
-    : operation.type === 'Compra' ? 'CMP' : 'GST'
-  const savedOperation = {
-    ...operation,
-    id: `op-local-${Date.now()}`,
-    invoiceId: `${prefix}-${nextNumber}`,
-    time: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false }),
-    products: operation.products.map(product => ({ ...product }))
+async function handleOperationSaved({ type }) {
+  const refreshed = await loadOperations()
+  notify(refreshed
+    ? type === 'sale' ? 'Venta registrada correctamente.' : 'Gasto registrado correctamente.'
+    : 'La operación se guardó, pero no se pudo actualizar el listado. Reintenta la carga.')
+}
+
+async function openOperationDetail(operation) {
+  selectedOperation.value = operation
+  detailError.value = ''
+  detailLoading.value = true
+  const requestSequence = ++detailSequence
+  try {
+    const detail = await getOperationDetail(operation)
+    if (requestSequence === detailSequence) selectedOperation.value = detail
+  } catch (error) {
+    if (requestSequence === detailSequence) {
+      detailError.value = error instanceof Error ? error.message : 'No se pudo cargar el detalle.'
+    }
+  } finally {
+    if (requestSequence === detailSequence) detailLoading.value = false
   }
-  localOperations.value = [savedOperation, ...localOperations.value]
-  periodFilter.value = savedOperation.date.slice(0, 7)
-  closeForm()
-  notify('Operación registrada correctamente.')
 }
 
-const simulateEdit = () => notify('La edición de operaciones es una simulación del prototipo.')
-
-const registerPayment = (operation) => {
-  localOperations.value = localOperations.value.map(item => item.id === operation.id
-    ? { ...item, paymentStatus: 'Pagada', paymentDueDate: null }
-    : item)
-  notify('Pago registrado correctamente.')
+function closeOperationDetail() {
+  detailSequence += 1
+  selectedOperation.value = null
+  detailError.value = ''
+  detailLoading.value = false
 }
+
+function retryOperationDetail() {
+  if (selectedOperation.value) openOperationDetail(selectedOperation.value)
+}
+
+onBeforeUnmount(() => {
+  window.clearTimeout(loadTimeout)
+  window.clearTimeout(toastTimeout)
+  loadSequence += 1
+  detailSequence += 1
+})
 </script>
 
 <template>
@@ -172,10 +193,13 @@ const registerPayment = (operation) => {
       <div class="page-heading__actions">
         <label class="period-control">
           <span>Periodo</span>
-          <select :value="periodFilter" aria-label="Periodo de operaciones" @change="syncPeriodSelectors($event.target.value)">
-            <option value="all">Todos los periodos</option>
-            <option v-for="period in periodOptions" :key="period.value" :value="period.value">{{ period.label }}</option>
-          </select>
+          <input
+            v-model="periodFilter"
+            type="month"
+            required
+            aria-label="Periodo de operaciones"
+            @change="periodFilter = $event.target.value || getDefaultOperationMonth()"
+          />
         </label>
         <button type="button" class="btn btn-primary action-button" @click="openForm('venta')">
           <span aria-hidden="true">＋</span> Nueva venta
@@ -188,10 +212,10 @@ const registerPayment = (operation) => {
     </header>
 
     <section class="summary-grid" aria-label="Resumen de operaciones del periodo">
-      <StatCard title="Ventas del periodo" :amount="summary.sales" subtitle="Ventas registradas, pagadas o pendientes" variant="income" />
-      <StatCard title="Compras y gastos" :amount="summary.expenses" subtitle="Salidas registradas en el periodo" variant="expense" />
-      <StatCard title="Operaciones registradas" :amount="summary.count" subtitle="Ventas, compras y otros gastos" variant="balance" :format-as-currency="false" />
-      <StatCard title="Ventas pendientes de pago" :amount="summary.pending" subtitle="Incluye cuentas vencidas" variant="pending" />
+      <StatCard title="Ventas del periodo" :amount="summary.salesAmount" subtitle="Ventas registradas, pagadas o pendientes" variant="income" />
+      <StatCard title="Gastos en insumos" :amount="summary.expensesAmount" subtitle="Salidas registradas en el periodo" variant="expense" />
+      <StatCard title="Operaciones registradas" :amount="summary.totalCount" subtitle="Ventas y gastos del periodo" variant="balance" :format-as-currency="false" />
+      <StatCard title="Ventas pendientes de pago" :amount="summary.pendingSalesAmount" subtitle="Incluye cuentas vencidas" variant="pending" />
     </section>
 
     <section class="operations-panel" aria-labelledby="operations-list-title">
@@ -200,7 +224,7 @@ const registerPayment = (operation) => {
           <span class="page-eyebrow">Actividad del negocio</span>
           <h2 id="operations-list-title">Listado de operaciones</h2>
         </div>
-        <span class="result-count">{{ filteredOperations.length }} {{ filteredOperations.length === 1 ? 'resultado' : 'resultados' }}</span>
+        <span class="result-count">{{ operationPage.count }} {{ operationPage.count === 1 ? 'resultado' : 'resultados' }}</span>
       </div>
 
       <div class="filter-tabs" role="tablist" aria-label="Filtrar operaciones por tipo">
@@ -217,39 +241,48 @@ const registerPayment = (operation) => {
 
       <div class="filter-controls">
         <label class="search-control">
-          <span class="sr-only">Buscar por producto, cliente, descripción o factura</span>
+          <span class="sr-only">Buscar por cliente, producto o factura</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
           <input
             v-model="searchQuery"
             type="search"
-            aria-label="Buscar por producto, cliente, descripción o factura"
-            placeholder="Producto, cliente, descripción o factura"
+            aria-label="Buscar por cliente, producto o factura"
+            placeholder="Cliente, producto o factura"
           />
         </label>
         <label class="select-control">
-          <span>Periodo</span>
-          <select :value="periodFilter" @change="syncPeriodSelectors($event.target.value)">
-            <option value="all">Todos los periodos</option>
-            <option v-for="period in periodOptions" :key="period.value" :value="period.value">{{ period.label }}</option>
+          <span>Canal</span>
+          <select v-model="channelFilter">
+            <option value="">Todos los canales</option>
+            <option value="Física">Física</option>
+            <option value="En Línea">En Línea</option>
           </select>
         </label>
         <label class="select-control">
           <span>Ordenar por</span>
           <select v-model="sortOrder">
-            <option value="recent">Fecha más reciente</option>
-            <option value="oldest">Fecha más antigua</option>
+            <option value="-fecha">Fecha más reciente</option>
+            <option value="fecha">Fecha más antigua</option>
+            <option value="-monto">Mayor monto</option>
+            <option value="monto">Menor monto</option>
           </select>
         </label>
       </div>
 
-      <div v-if="filteredOperations.length" class="operations-table-wrap">
+      <p v-if="isLoading" class="list-status" role="status">Cargando operaciones…</p>
+      <div v-if="loadError" class="list-error" role="alert">
+        <span>{{ loadError }}</span>
+        <button type="button" class="text-action" @click="loadOperations">Reintentar</button>
+      </div>
+
+      <div v-if="filteredOperations.length && !loadError" class="operations-table-wrap">
         <table class="operations-table">
           <caption class="sr-only">Operaciones del negocio con fecha, contraparte, detalle, canal, monto, estado y acciones</caption>
           <thead>
             <tr>
               <th scope="col">Fecha</th>
               <th scope="col">Operación</th>
-              <th scope="col">Cliente o proveedor</th>
+              <th scope="col">Cliente o producto</th>
               <th scope="col">Detalle</th>
               <th scope="col">Canal</th>
               <th scope="col" class="amount-heading">Monto</th>
@@ -259,7 +292,10 @@ const registerPayment = (operation) => {
           </thead>
           <tbody>
             <tr v-for="operation in filteredOperations" :key="operation.id">
-              <td class="date-cell">{{ formatDate(operation.date) }}<small>{{ operation.time }}</small></td>
+              <td class="date-cell">
+                {{ formatDate(operation.date) }}
+                <small v-if="operation.time">{{ operation.time }}</small>
+              </td>
               <td>
                 <span :class="['operation-type', operation.type === 'Venta' ? 'type-sale' : 'type-expense']">
                   <svg v-if="operation.type === 'Venta'" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10" /></svg>
@@ -287,14 +323,7 @@ const registerPayment = (operation) => {
               </td>
               <td>
                 <div class="row-actions">
-                  <button type="button" aria-label="Ver detalle" @click="selectedOperation = operation">Ver</button>
-                  <button type="button" aria-label="Editar (simulación)" @click="simulateEdit">Editar</button>
-                  <button
-                    v-if="operation.type === 'Venta' && ['Pendiente', 'Vencida'].includes(operation.displayStatus)"
-                    type="button"
-                    class="pay-action"
-                    @click="registerPayment(operation)"
-                  >Registrar pago</button>
+                  <button type="button" aria-label="Ver detalle" @click="openOperationDetail(operation)">Ver</button>
                 </div>
               </td>
             </tr>
@@ -302,7 +331,7 @@ const registerPayment = (operation) => {
         </table>
       </div>
 
-      <div v-if="filteredOperations.length" class="operation-cards">
+      <div v-if="filteredOperations.length && !loadError" class="operation-cards">
         <article v-for="operation in filteredOperations" :key="operation.id" class="operation-card">
           <div class="operation-card__top">
             <span :class="['operation-type', operation.type === 'Venta' ? 'type-sale' : 'type-expense']">{{ operation.type }}</span>
@@ -321,22 +350,26 @@ const registerPayment = (operation) => {
             </strong>
           </div>
           <dl class="operation-card__meta">
-            <div><dt>Cliente o proveedor</dt><dd>{{ operation.customerOrSupplier || 'No informado' }}</dd></div>
+            <div><dt>Cliente o producto</dt><dd>{{ operation.customerOrSupplier || 'No informado' }}</dd></div>
             <div><dt>Canal</dt><dd>{{ operation.channel === '—' ? 'No aplica' : operation.channel }}</dd></div>
           </dl>
           <div class="operation-card__actions">
-            <button type="button" @click="selectedOperation = operation">Ver detalle</button>
-            <button type="button" @click="simulateEdit">Editar</button>
-            <button
-              v-if="operation.type === 'Venta' && ['Pendiente', 'Vencida'].includes(operation.displayStatus)"
-              type="button"
-              @click="registerPayment(operation)"
-            >Registrar pago</button>
+            <button type="button" @click="openOperationDetail(operation)">Ver detalle</button>
           </div>
         </article>
       </div>
 
-      <div v-if="!filteredOperations.length" class="empty-state" role="status">
+      <nav v-if="operationPage.count > pageSize && !loadError" class="pagination" aria-label="Paginación de operaciones">
+        <button type="button" class="btn btn-secondary" :disabled="!operationPage.hasPrevious || isLoading" @click="currentPage -= 1">
+          Anterior
+        </button>
+        <span aria-live="polite">Página {{ currentPage }} de {{ totalPages }}</span>
+        <button type="button" class="btn btn-secondary" :disabled="!operationPage.hasNext || isLoading" @click="currentPage += 1">
+          Siguiente
+        </button>
+      </nav>
+
+      <div v-if="!isLoading && !loadError && !filteredOperations.length" class="empty-state" role="status">
         <span class="empty-state__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8m-8 4h5" /></svg>
         </span>
@@ -345,8 +378,20 @@ const registerPayment = (operation) => {
       </div>
     </section>
 
-    <NewOperationModal :is-open="isFormOpen" :initial-mode="formMode" @close="closeForm" @save="handleSaveOperation" />
-    <OperationDetailModal :is-open="Boolean(selectedOperation)" :operation="selectedOperation" @close="selectedOperation = null" />
+    <OperationFormModal
+      :is-open="isFormOpen"
+      :initial-mode="formMode"
+      @close="closeForm"
+      @saved="handleOperationSaved"
+    />
+    <OperationDetailModal
+      :is-open="Boolean(selectedOperation)"
+      :operation="selectedOperation"
+      :is-loading="detailLoading"
+      :error="detailError"
+      @close="closeOperationDetail"
+      @retry="retryOperationDetail"
+    />
   </div>
 </template>
 
@@ -359,7 +404,7 @@ const registerPayment = (operation) => {
 .page-heading p { max-width: 560px; color: var(--color-text-secondary); font-size: .95rem; }
 .page-heading__actions { display: flex; min-width: var(--content-min-width); flex-wrap: wrap; align-items: flex-end; justify-content: flex-end; gap: var(--layout-control-gap); }
 .period-control, .select-control { display: flex; min-width: 0; flex: 1 1 10rem; flex-direction: column; gap: var(--space-1); color: var(--color-text-secondary); font-size: .7rem; font-weight: 700; }
-.period-control select, .select-control select { width: 100%; max-width: 100%; min-width: 0; min-height: var(--control-min-height); padding: 8px 30px 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: .8rem; }
+.period-control input, .period-control select, .select-control select { width: 100%; max-width: 100%; min-width: 0; min-height: var(--control-min-height); padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: .8rem; }
 .action-button { min-width: 0; min-height: var(--control-min-height); }
 .action-button svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .summary-grid { display: grid; min-width: var(--content-min-width); grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--layout-control-gap); }
@@ -408,6 +453,10 @@ const registerPayment = (operation) => {
 .empty-state p { max-width: 380px; color: var(--color-text-secondary); font-size: .9rem; }
 .empty-state__icon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 50%; background: var(--color-brand-primary-light); color: var(--color-brand-primary); }
 .empty-state__icon svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.list-status, .list-error { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: var(--layout-control-gap); padding: var(--layout-card-gap); border-radius: var(--radius-md); background: var(--color-bg-subtle); color: var(--color-text-secondary); font-size: .88rem; }
+.list-error { background: #fef2f2; color: #991b1b; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: var(--layout-control-gap); margin-top: var(--layout-card-gap); color: var(--color-text-secondary); font-size: .84rem; }
+.pagination .btn { min-height: var(--control-min-height); }
 .operations-toast { position: fixed; right: var(--layout-gutter-tablet); bottom: var(--layout-control-gap); z-index: 1200; display: flex; min-width: var(--content-min-width); align-items: center; gap: var(--layout-control-gap); max-width: min(27.5rem, calc(100vw - var(--space-8))); padding: var(--layout-control-gap) var(--layout-card-gap); border: 1px solid #a7f3d0; border-radius: var(--radius-md); background: #ecfdf5; color: #065f46; box-shadow: var(--shadow-lg); font-size: .86rem; font-weight: 700; }
 .operations-toast svg { width: 20px; height: 20px; flex: 0 0 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 1200px) {
@@ -453,5 +502,6 @@ const registerPayment = (operation) => {
   .operation-card__meta { grid-template-columns: 1fr; }
   .operation-card__actions button { flex: 1 1 auto; }
   .operations-toast { right: var(--layout-gutter-mobile); bottom: calc(var(--layout-bottom-nav-height) + var(--layout-control-gap)); left: var(--layout-gutter-mobile); max-width: none; }
+  .pagination { flex-wrap: wrap; }
 }
 </style>

@@ -1,99 +1,229 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { clients, expenseCategories, productCatalog } from '@/data/operationsMock'
+import {
+  createClient,
+  createExpense,
+  createSale,
+  getClientOptions,
+  getProductOptions
+} from '@/services/operationsService'
 import { formatCLP, getLocalDateString } from '@/utils/formatters'
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
-  initialMode: { type: String, default: 'venta' },
-  initialData: { type: Object, default: null }
+  initialMode: { type: String, default: 'venta' }
 })
 
-const emit = defineEmits(['close', 'save'])
+const emit = defineEmits(['close', 'saved'])
 
 const dialog = ref(null)
 const activeMode = ref('venta')
+const clients = ref([])
+const products = ref([])
 const selectedClient = ref('')
+const clientSearch = ref('')
+const productSearch = ref('')
 const channel = ref('Física')
-const paymentStatus = ref('Pagada')
+const isCredit = ref(false)
 const paymentDueDate = ref('')
 const operationDate = ref('')
 const productLines = ref([])
-const expenseKind = ref('insumo')
 const expenseProductId = ref('')
-const expenseCategory = ref(expenseCategories[0])
 const expenseAmount = ref(null)
-const expenseDescription = ref('')
 const isDirty = ref(false)
 const lineSequence = ref(0)
+const isOptionsLoading = ref(false)
+const optionsError = ref('')
+const isSubmitting = ref(false)
+const submitError = ref('')
+const isClientFormOpen = ref(false)
+const clientName = ref('')
+const clientContact = ref('')
+const isClientSaving = ref(false)
+const clientFormError = ref('')
+const clientSavedMessage = ref('')
+const clientFieldErrors = ref({ name: '', contact: '' })
 let previouslyFocusedElement = null
+let clientSearchTimeout
+let productSearchTimeout
+let clientRequestSequence = 0
+let productRequestSequence = 0
+let pendingOptionRequests = 0
 
 const saleTotal = computed(() => productLines.value.reduce(
   (sum, line) => sum + Math.max(0, Number(line.quantity) || 0) * Math.max(0, Number(line.unitPrice) || 0),
   0
 ))
 const isSale = computed(() => activeMode.value === 'venta')
-const formTitle = computed(() => {
-  if (isSale.value) return 'Nueva venta'
-  return expenseKind.value === 'insumo' ? 'Registrar compra o gasto de insumo' : 'Registrar otro gasto'
+const formTitle = computed(() => isSale.value ? 'Nueva venta' : 'Registrar gasto en insumos')
+const visibleClients = computed(() => {
+  const query = clientSearch.value.trim().toLocaleLowerCase('es-CL')
+  return clients.value.filter((client) => (
+    String(client.id) === String(selectedClient.value) ||
+    !query ||
+    `${client.name} ${client.contact || client.phone || ''}`.toLocaleLowerCase('es-CL').includes(query)
+  ))
 })
+const visibleProducts = computed(() => {
+  const query = productSearch.value.trim().toLocaleLowerCase('es-CL')
+  return products.value.filter((product) => (
+    productLines.value.some((line) => String(line.productId) === String(product.id)) ||
+    String(expenseProductId.value) === String(product.id) ||
+    !query ||
+    `${product.name} ${product.category}`.toLocaleLowerCase('es-CL').includes(query)
+  ))
+})
+const selectedExpenseProduct = computed(() => (
+  products.value.find((product) => String(product.id) === String(expenseProductId.value))
+))
 const canSubmit = computed(() => {
   if (isSale.value) {
     return selectedClient.value &&
       productLines.value.length > 0 &&
-      productLines.value.every(line => line.productId && Number(line.quantity) > 0 && Number(line.unitPrice) >= 0) &&
+      productLines.value.every(line => (
+        line.productId &&
+        Number.isInteger(Number(line.quantity)) &&
+        Number(line.quantity) > 0 &&
+        Number(line.quantity) <= 100000 &&
+        Number.isInteger(Number(line.unitPrice)) &&
+        Number(line.unitPrice) > 0 &&
+        Number.isInteger(Number(line.unitCost)) &&
+        Number(line.unitCost) > 0
+      )) &&
+      productLines.value.length <= 200 &&
+      Boolean(operationDate.value) &&
       saleTotal.value > 0 &&
-      (paymentStatus.value !== 'Pendiente' || paymentDueDate.value)
+      (!isCredit.value || (
+        paymentDueDate.value &&
+        paymentDueDate.value >= operationDate.value
+      ))
   }
-  return Boolean(operationDate.value) &&
-    Number(expenseAmount.value) > 0 &&
-    (expenseKind.value === 'insumo' ? Boolean(expenseProductId.value) : Boolean(expenseCategory.value && expenseDescription.value.trim()))
+  return Boolean(expenseProductId.value) &&
+    Number.isInteger(Number(expenseAmount.value)) &&
+    Number(expenseAmount.value) > 0
+})
+
+function mergeOptions(current, incoming) {
+  const optionsById = new Map(current.map((option) => [String(option.id), option]))
+  incoming.forEach((option) => optionsById.set(String(option.id), option))
+  return [...optionsById.values()]
+}
+
+async function loadOptions() {
+  const clientSequence = ++clientRequestSequence
+  const productSequence = ++productRequestSequence
+  pendingOptionRequests += 1
+  isOptionsLoading.value = true
+  optionsError.value = ''
+
+  try {
+    const [clientOptions, productOptions] = await Promise.all([
+      getClientOptions(),
+      getProductOptions()
+    ])
+    if (clientSequence === clientRequestSequence) {
+      clients.value = mergeOptions(clients.value, clientOptions)
+    }
+    if (productSequence === productRequestSequence) {
+      products.value = mergeOptions(products.value, productOptions)
+    }
+  } catch (error) {
+    optionsError.value = error instanceof Error ? error.message : 'No se pudieron cargar las opciones.'
+  } finally {
+    pendingOptionRequests = Math.max(0, pendingOptionRequests - 1)
+    isOptionsLoading.value = pendingOptionRequests > 0
+  }
+}
+
+async function searchClients() {
+  const requestSequence = ++clientRequestSequence
+  pendingOptionRequests += 1
+  isOptionsLoading.value = true
+  optionsError.value = ''
+  try {
+    const result = await getClientOptions(clientSearch.value)
+    if (requestSequence === clientRequestSequence) clients.value = mergeOptions(clients.value, result)
+  } catch (error) {
+    if (requestSequence === clientRequestSequence) {
+      optionsError.value = error instanceof Error ? error.message : 'No se pudieron buscar clientes.'
+    }
+  } finally {
+    pendingOptionRequests = Math.max(0, pendingOptionRequests - 1)
+    isOptionsLoading.value = pendingOptionRequests > 0
+  }
+}
+
+async function searchProducts() {
+  const requestSequence = ++productRequestSequence
+  pendingOptionRequests += 1
+  isOptionsLoading.value = true
+  optionsError.value = ''
+  try {
+    const result = await getProductOptions(productSearch.value)
+    if (requestSequence === productRequestSequence) products.value = mergeOptions(products.value, result)
+  } catch (error) {
+    if (requestSequence === productRequestSequence) {
+      optionsError.value = error instanceof Error ? error.message : 'No se pudieron buscar productos.'
+    }
+  } finally {
+    pendingOptionRequests = Math.max(0, pendingOptionRequests - 1)
+    isOptionsLoading.value = pendingOptionRequests > 0
+  }
+}
+
+watch(clientSearch, () => {
+  window.clearTimeout(clientSearchTimeout)
+  clientSearchTimeout = window.setTimeout(searchClients, 250)
+})
+
+watch(productSearch, () => {
+  window.clearTimeout(productSearchTimeout)
+  productSearchTimeout = window.setTimeout(searchProducts, 250)
 })
 
 const addProductLine = () => {
   lineSequence.value += 1
-  const firstProduct = productCatalog[0]
   productLines.value.push({
     key: lineSequence.value,
-    productId: firstProduct.id,
+    productId: '',
     quantity: 1,
-    unitPrice: firstProduct.unitPrice
+    unitPrice: '',
+    unitCost: ''
   })
   isDirty.value = true
 }
 
 const updateLineProduct = (line) => {
-  const product = productCatalog.find(item => item.id === line.productId)
-  if (product) line.unitPrice = product.unitPrice
+  const product = products.value.find((item) => String(item.id) === String(line.productId))
+  line.unitPrice = product?.suggestedPrice ?? ''
+  line.unitCost = product?.suggestedCost ?? ''
+  isDirty.value = true
 }
+
+const getProduct = (line) => products.value.find((item) => String(item.id) === String(line.productId))
 
 const resetForm = () => {
   activeMode.value = ['gasto', 'compra', 'otro-gasto'].includes(props.initialMode) ? 'gasto' : 'venta'
-  const initialClient = props.initialData?.cliente || props.initialData?.contraparte || ''
-  selectedClient.value = clients.find(client => client.name === initialClient)?.id || clients[0]?.id || ''
+  selectedClient.value = ''
+  clientSearch.value = ''
+  productSearch.value = ''
   channel.value = 'Física'
-  paymentStatus.value = props.initialMode === 'venta-pendiente' ? 'Pendiente' : 'Pagada'
+  isCredit.value = props.initialMode === 'venta-pendiente'
   paymentDueDate.value = ''
-  operationDate.value = props.initialData?.date || getLocalDateString()
-  const initialProductName = props.initialData?.detalle || props.initialData?.concepto || ''
-  const initialProduct = productCatalog.find(product => (
-    initialProductName.toLocaleLowerCase('es-CL').includes(product.name.toLocaleLowerCase('es-CL'))
-  )) || productCatalog.find(product => (
-    product.name.toLocaleLowerCase('es-CL').includes(initialProductName.toLocaleLowerCase('es-CL'))
-  )) || productCatalog[0]
+  operationDate.value = getLocalDateString()
   lineSequence.value = 0
-  productLines.value = [{
-    key: ++lineSequence.value,
-    productId: initialProduct?.id || '',
-    quantity: Number(props.initialData?.cantidad) || 1,
-    unitPrice: Number(props.initialData?.monto) || initialProduct?.unitPrice || 0
-  }]
-  expenseKind.value = props.initialMode === 'otro-gasto' ? 'otro' : 'insumo'
-  expenseProductId.value = productCatalog[0]?.id || ''
-  expenseCategory.value = expenseCategories[0]
+  productLines.value = []
+  expenseProductId.value = ''
   expenseAmount.value = null
-  expenseDescription.value = ''
+  submitError.value = ''
+  isClientFormOpen.value = false
+  clientName.value = ''
+  clientContact.value = ''
+  clientFormError.value = ''
+  clientSavedMessage.value = ''
+  clientFieldErrors.value = { name: '', contact: '' }
   isDirty.value = false
+  void loadOptions()
 }
 
 const focusFirstControl = async () => {
@@ -144,68 +274,98 @@ watch(() => props.isOpen, async (open) => {
 watch(() => props.initialMode, (mode) => {
   if (props.isOpen) {
     activeMode.value = ['gasto', 'compra', 'otro-gasto'].includes(mode) ? 'gasto' : 'venta'
-    paymentStatus.value = mode === 'venta-pendiente' ? 'Pendiente' : 'Pagada'
-    expenseKind.value = mode === 'otro-gasto' ? 'otro' : 'insumo'
+    isCredit.value = mode === 'venta-pendiente'
   }
 })
 
-watch(paymentStatus, (status) => {
-  if (status !== 'Pendiente') paymentDueDate.value = ''
+watch(isCredit, (credit) => {
+  if (!credit) paymentDueDate.value = ''
 })
 
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleKeydown)
-})
-
-const submit = () => {
-  if (!canSubmit.value) return
-
-  if (isSale.value) {
-    const client = clients.find(item => item.id === selectedClient.value)
-    const products = productLines.value.map(line => {
-      const product = productCatalog.find(item => item.id === line.productId)
-      const quantity = Number(line.quantity)
-      const unitPrice = Number(line.unitPrice)
-      return {
-        name: product?.name || 'Producto',
-        quantity,
-        unitPrice,
-        subtotal: quantity * unitPrice
-      }
-    })
-    emit('save', {
-      date: operationDate.value,
-      type: 'Venta',
-      customerOrSupplier: client?.name || '',
-      description: products.map(product => product.name).join(', '),
-      products,
-      channel: channel.value,
-      amount: saleTotal.value,
-      paymentStatus: paymentStatus.value,
-      paymentDueDate: paymentStatus.value === 'Pendiente' ? paymentDueDate.value : null
-    })
+async function saveClient() {
+  clientFormError.value = ''
+  clientSavedMessage.value = ''
+  clientFieldErrors.value = { name: '', contact: '' }
+  if (!clientName.value.trim() || !clientContact.value.trim()) {
+    clientFieldErrors.value = {
+      name: clientName.value.trim() ? '' : 'Ingresa el nombre del cliente.',
+      contact: clientContact.value.trim() ? '' : 'Ingresa un contacto.'
+    }
     return
   }
 
-  const purchase = expenseKind.value === 'insumo'
-  const selectedProduct = productCatalog.find(item => item.id === expenseProductId.value)
-  emit('save', {
-    date: operationDate.value,
-    type: purchase ? 'Compra' : 'Otro gasto',
-    customerOrSupplier: purchase ? 'Proveedor no indicado' : expenseCategory.value,
-    description: expenseDescription.value.trim() || (purchase ? 'Compra de insumo' : expenseCategory.value),
-    products: purchase ? [{
-      name: selectedProduct?.name || 'Insumo',
-      quantity: null,
-      unitPrice: null,
-      subtotal: Number(expenseAmount.value)
-    }] : [],
-    channel: '—',
-    amount: Number(expenseAmount.value),
-    paymentStatus: 'Registrada',
-    paymentDueDate: null
-  })
+  try {
+    isClientSaving.value = true
+    const savedClient = await createClient({
+      name: clientName.value,
+      contact: clientContact.value
+    })
+    clients.value = mergeOptions(clients.value, [savedClient])
+    selectedClient.value = savedClient.id
+    clientName.value = ''
+    clientContact.value = ''
+    isClientFormOpen.value = false
+    clientSavedMessage.value = 'Cliente guardado y seleccionado.'
+    isDirty.value = true
+  } catch (error) {
+    clientSavedMessage.value = ''
+    const fieldErrors = error?.validationErrors || {}
+    clientFieldErrors.value = {
+      name: fieldErrors.nombre || fieldErrors.name || '',
+      contact: fieldErrors.contacto || fieldErrors.contact || ''
+    }
+    clientFormError.value = error instanceof Error ? error.message : 'No se pudo guardar el cliente.'
+  } finally {
+    isClientSaving.value = false
+  }
 }
+
+async function submit() {
+  if (!canSubmit.value) return
+  submitError.value = ''
+  isSubmitting.value = true
+
+  try {
+    if (isSale.value) {
+      const payload = {
+        id_cliente: selectedClient.value,
+        fecha: operationDate.value,
+        tipo_compra: channel.value,
+        items: productLines.value.map((line) => ({
+          id_producto: line.productId,
+          cantidad: Number(line.quantity),
+          precio_venta: Number(line.unitPrice),
+          costo_venta: Number(line.unitCost)
+        }))
+      }
+      if (isCredit.value) {
+        payload.por_cobrar = true
+        payload.fecha_vencimiento = paymentDueDate.value
+      }
+      const savedOperation = await createSale(payload)
+      emit('saved', { type: 'sale', operation: savedOperation })
+    } else {
+      const payload = {
+        id_producto: expenseProductId.value,
+        monto: Number(expenseAmount.value)
+      }
+      if (operationDate.value) payload.fecha = operationDate.value
+      const savedOperation = await createExpense(payload)
+      emit('saved', { type: 'expense', operation: savedOperation })
+    }
+    emit('close')
+  } catch (error) {
+    submitError.value = error instanceof Error ? error.message : 'No se pudo guardar la operación.'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeydown)
+  window.clearTimeout(clientSearchTimeout)
+  window.clearTimeout(productSearchTimeout)
+})
 </script>
 
 <template>
@@ -222,7 +382,7 @@ const submit = () => {
         <div>
           <span class="operation-modal__eyebrow">Almacén La Esquina</span>
           <h2 id="operation-form-title">{{ formTitle }}</h2>
-          <p id="operation-form-help">Completa los datos para revisar la operación antes de confirmarla.</p>
+          <p id="operation-form-help">Completa los datos requeridos para registrar la operación.</p>
         </div>
         <button type="button" class="icon-button" aria-label="Cerrar formulario" @click="close">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12" /></svg>
@@ -235,32 +395,113 @@ const submit = () => {
           :class="{ 'is-active': isSale }"
           :aria-pressed="isSale"
           @click="activeMode = 'venta'; isDirty = true"
-        >Venta</button>
+        >Registrar venta</button>
         <button
           type="button"
           :class="{ 'is-active': !isSale }"
           :aria-pressed="!isSale"
           @click="activeMode = 'gasto'; isDirty = true"
-        >Compra o gasto</button>
+        >Gasto en insumos</button>
       </div>
+
+      <div v-if="optionsError" class="modal-error" role="alert">
+        <span>{{ optionsError }}</span>
+        <button type="button" class="text-action" @click="loadOptions">Reintentar carga de opciones</button>
+      </div>
+      <p v-else-if="isOptionsLoading" class="modal-status" role="status">Cargando clientes y productos…</p>
 
       <form class="operation-form" @submit.prevent="submit" @input="isDirty = true" @change="isDirty = true">
         <template v-if="isSale">
           <div class="form-grid">
-            <label class="field">
+            <label class="field field--wide">
               <span>Cliente</span>
-              <select v-model="selectedClient" required data-autofocus>
-                <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option>
+              <input
+                v-model="clientSearch"
+                type="search"
+                autocomplete="off"
+                placeholder="Buscar cliente por nombre o contacto"
+                aria-label="Buscar clientes"
+                data-autofocus
+              />
+              <select v-model="selectedClient" required aria-label="Seleccionar cliente">
+                <option value="" disabled>Selecciona un cliente</option>
+                <option v-for="client in visibleClients" :key="client.id" :value="client.id">
+                  {{ client.name }} · {{ client.contact || client.phone }}
+                </option>
               </select>
+              <small v-if="!visibleClients.length && !isOptionsLoading" class="modal-status">
+                No hay clientes para esta búsqueda. Puedes crear uno.
+              </small>
+              <button type="button" class="text-action inline-action" @click="isClientFormOpen = !isClientFormOpen">
+                {{ isClientFormOpen ? 'Cancelar nuevo cliente' : '+ Crear cliente' }}
+              </button>
             </label>
             <label class="field">
               <span>Fecha de la venta</span>
               <input v-model="operationDate" type="date" required />
             </label>
+          </div>
+          <p v-if="clientSavedMessage" class="modal-status" role="status">{{ clientSavedMessage }}</p>
+
+          <section
+            v-if="isClientFormOpen"
+            class="new-client-form"
+            aria-labelledby="new-client-title"
+            @keydown.enter.prevent="saveClient"
+          >
+            <h3 id="new-client-title">Nuevo cliente</h3>
+            <div class="form-grid">
+              <label class="field">
+                <span>Nombre</span>
+                <input
+                  v-model="clientName"
+                  type="text"
+                  maxlength="100"
+                  autocomplete="name"
+                  aria-required="true"
+                  :aria-invalid="Boolean(clientFieldErrors.name)"
+                  :aria-describedby="clientFieldErrors.name ? 'new-client-name-error' : undefined"
+                  @input="clientFieldErrors.name = ''; clientFormError = ''"
+                />
+                <small v-if="clientFieldErrors.name" id="new-client-name-error" class="field-error" role="alert">
+                  {{ clientFieldErrors.name }}
+                </small>
+              </label>
+              <label class="field">
+                <span>Contacto</span>
+                <input
+                  v-model="clientContact"
+                  type="text"
+                  maxlength="100"
+                  autocomplete="tel"
+                  aria-required="true"
+                  :aria-invalid="Boolean(clientFieldErrors.contact)"
+                  :aria-describedby="clientFieldErrors.contact ? 'new-client-contact-error' : undefined"
+                  @input="clientFieldErrors.contact = ''; clientFormError = ''"
+                />
+                <small v-if="clientFieldErrors.contact" id="new-client-contact-error" class="field-error" role="alert">
+                  {{ clientFieldErrors.contact }}
+                </small>
+              </label>
+            </div>
+            <p v-if="clientFormError && !clientFieldErrors.name && !clientFieldErrors.contact" class="modal-error" role="alert">
+              {{ clientFormError }}
+            </p>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              :disabled="isClientSaving || !clientName.trim() || !clientContact.trim()"
+              @click="saveClient"
+            >
+              {{ isClientSaving ? 'Guardando cliente…' : 'Guardar cliente' }}
+            </button>
+          </section>
+
+          <div class="form-grid">
             <fieldset class="field field--wide channel-field">
               <legend>Canal de venta</legend>
               <label><input v-model="channel" type="radio" value="Física" /> Física</label>
-              <label><input v-model="channel" type="radio" value="En línea" /> En línea</label>
+              <label><input v-model="channel" type="radio" value="En Línea" /> En Línea</label>
             </fieldset>
           </div>
 
@@ -268,25 +509,45 @@ const submit = () => {
             <div class="section-heading">
               <div>
                 <h3 id="sale-products-title">Productos</h3>
-                <p>Añade uno o varios productos a la venta.</p>
+                <p>Los precios anteriores aparecen como sugerencia; complétalos si aún no hay historial.</p>
               </div>
-              <button type="button" class="text-action" @click="addProductLine">+ Añadir producto</button>
+              <button
+                type="button"
+                class="text-action"
+                :disabled="productLines.length >= 200"
+                @click="addProductLine"
+              >+ Añadir producto</button>
             </div>
+            <label class="field product-search">
+              <span>Buscar productos</span>
+              <input v-model="productSearch" type="search" autocomplete="off" placeholder="Nombre o categoría" />
+            </label>
 
             <div v-for="(line, index) in productLines" :key="line.key" class="product-line">
               <label class="field product-line__product">
                 <span>Producto {{ index + 1 }}</span>
-                <select v-model="line.productId" required :data-autofocus="index === 0" @change="updateLineProduct(line)">
-                  <option v-for="product in productCatalog" :key="product.id" :value="product.id">{{ product.name }}</option>
+                <select v-model="line.productId" required @change="updateLineProduct(line)">
+                  <option value="" disabled>Selecciona un producto</option>
+                  <option v-for="product in visibleProducts" :key="product.id" :value="product.id">
+                    {{ product.name }} · {{ product.category }}
+                  </option>
                 </select>
               </label>
               <label class="field">
                 <span>Cantidad</span>
-                <input v-model.number="line.quantity" type="number" min="1" step="1" required />
+                <input v-model.number="line.quantity" type="number" min="1" max="100000" step="1" required />
               </label>
               <label class="field">
                 <span>Precio unitario</span>
-                <input v-model.number="line.unitPrice" type="number" min="0" step="1" required />
+                <input v-model.number="line.unitPrice" type="number" min="1" step="1" required />
+                <small v-if="line.productId && getProduct(line)?.suggestedPrice == null">Sin precio anterior: ingrésalo.</small>
+                <small v-else-if="getProduct(line)?.suggestedPrice != null">Sugerido: {{ formatCLP(getProduct(line).suggestedPrice) }}</small>
+              </label>
+              <label class="field">
+                <span>Costo unitario</span>
+                <input v-model.number="line.unitCost" type="number" min="1" step="1" required />
+                <small v-if="line.productId && getProduct(line)?.suggestedCost == null">Sin costo anterior: ingrésalo.</small>
+                <small v-else-if="getProduct(line)?.suggestedCost != null">Sugerido: {{ formatCLP(getProduct(line).suggestedCost) }}</small>
               </label>
               <div class="line-subtotal">
                 <span>Subtotal</span>
@@ -302,18 +563,27 @@ const submit = () => {
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" /></svg>
               </button>
             </div>
+            <button v-if="!productLines.length" type="button" class="btn btn-secondary" @click="addProductLine">
+              Añadir el primer producto
+            </button>
           </section>
 
           <div class="form-grid">
             <fieldset class="field field--wide channel-field">
-              <legend>Estado de pago</legend>
-              <label><input v-model="paymentStatus" type="radio" value="Pagada" /> Pagada</label>
-              <label><input v-model="paymentStatus" type="radio" value="Pendiente" /> Pendiente</label>
+              <legend>Condición de pago</legend>
+              <label><input v-model="isCredit" type="radio" :value="false" /> Al contado</label>
+              <label><input v-model="isCredit" type="radio" :value="true" /> A crédito</label>
             </fieldset>
-            <label v-if="paymentStatus === 'Pendiente'" class="field">
+            <label v-if="isCredit" class="field">
               <span>Fecha esperada de pago</span>
-              <input v-model="paymentDueDate" type="date" required aria-describedby="payment-date-help" />
-              <small id="payment-date-help">Indica cuándo esperas recibir el pago.</small>
+              <input
+                v-model="paymentDueDate"
+                type="date"
+                :min="operationDate"
+                required
+                aria-describedby="payment-date-help"
+              />
+              <small id="payment-date-help">Debe ser igual o posterior a la fecha de venta.</small>
             </label>
           </div>
 
@@ -330,43 +600,37 @@ const submit = () => {
         </template>
 
         <template v-else>
-          <fieldset class="field channel-field">
-            <legend>¿Qué vas a registrar?</legend>
-            <label><input v-model="expenseKind" type="radio" value="insumo" /> Compra o gasto de insumo</label>
-            <label><input v-model="expenseKind" type="radio" value="otro" /> Otro gasto</label>
-          </fieldset>
-
           <div class="form-grid">
-            <label v-if="expenseKind === 'insumo'" class="field field--wide">
-              <span>Producto o insumo</span>
-              <select v-model="expenseProductId" required data-autofocus>
-                <option v-for="product in productCatalog" :key="product.id" :value="product.id">{{ product.name }}</option>
-              </select>
+            <label class="field field--wide">
+              <span>Buscar producto</span>
+              <input v-model="productSearch" type="search" autocomplete="off" placeholder="Nombre o categoría" data-autofocus />
             </label>
-            <label v-else class="field field--wide">
-              <span>Categoría</span>
-              <select v-model="expenseCategory" required data-autofocus>
-                <option v-for="category in expenseCategories" :key="category" :value="category">{{ category }}</option>
+            <label class="field field--wide">
+              <span>Producto o insumo</span>
+              <select v-model="expenseProductId" required>
+                <option value="" disabled>Selecciona un producto</option>
+                <option v-for="product in visibleProducts" :key="product.id" :value="product.id">
+                  {{ product.name }} · {{ product.category }}
+                </option>
               </select>
+              <small v-if="!visibleProducts.length && !isOptionsLoading" class="modal-status">
+                No hay productos para esta búsqueda.
+              </small>
             </label>
             <label class="field">
-              <span>Fecha</span>
-              <input v-model="operationDate" type="date" required />
+              <span>Fecha (opcional)</span>
+              <input v-model="operationDate" type="date" />
             </label>
             <label class="field">
               <span>Monto (CLP)</span>
               <input v-model.number="expenseAmount" type="number" min="1" step="1" required />
             </label>
-            <label class="field field--wide">
-              <span>Descripción <template v-if="expenseKind === 'otro'">(obligatoria)</template><template v-else>(opcional)</template></span>
-              <textarea v-model="expenseDescription" rows="3" :required="expenseKind === 'otro'"></textarea>
-            </label>
           </div>
 
-          <section class="sale-review" aria-label="Resumen del gasto">
+          <section class="sale-review" aria-label="Resumen del gasto en insumos">
             <div>
-              <span>Tipo</span>
-              <strong>{{ expenseKind === 'insumo' ? 'Compra o gasto de insumo' : expenseCategory }}</strong>
+              <span>Producto</span>
+              <strong>{{ selectedExpenseProduct?.name || 'Sin seleccionar' }}</strong>
             </div>
             <div class="sale-review__total">
               <span>Monto a registrar</span>
@@ -375,9 +639,18 @@ const submit = () => {
           </section>
         </template>
 
+        <div v-if="submitError" class="modal-error" role="alert">
+          <span>{{ submitError }}</span>
+          <button type="button" class="text-action" :disabled="isSubmitting || !canSubmit" @click="submit">
+            Reintentar
+          </button>
+        </div>
+
         <footer class="operation-modal__footer">
           <button type="button" class="btn btn-secondary" @click="close">Cancelar</button>
-          <button type="submit" class="btn btn-primary" :disabled="!canSubmit">Revisar y confirmar</button>
+          <button type="submit" class="btn btn-primary" :disabled="!canSubmit || isSubmitting">
+            {{ isSubmitting ? 'Guardando…' : isSale ? 'Registrar venta' : 'Registrar gasto' }}
+          </button>
         </footer>
       </form>
     </section>
@@ -398,6 +671,14 @@ const submit = () => {
 .operation-mode-switch { display: flex; min-width: var(--content-min-width); flex-wrap: wrap; gap: var(--space-2); padding: var(--layout-control-gap) var(--layout-section-gap) 0; }
 .operation-mode-switch button { min-height: 44px; padding: 8px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); color: var(--color-text-secondary); font-size: .84rem; font-weight: 700; }
 .operation-mode-switch button.is-active { color: var(--color-brand-primary); background: var(--color-brand-primary-light); border-color: var(--color-brand-primary-border); }
+.modal-error, .modal-status { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: var(--layout-control-gap); margin: var(--layout-control-gap) var(--layout-section-gap) 0; padding: var(--layout-control-gap); border-radius: var(--radius-md); font-size: .84rem; }
+.modal-error { border: 1px solid #fecaca; background: #fef2f2; color: #991b1b; }
+.modal-status { background: var(--color-bg-subtle); color: var(--color-text-secondary); }
+.new-client-form { display: flex; min-width: 0; flex-direction: column; gap: var(--layout-control-gap); padding: var(--layout-control-gap); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-subtle); }
+.new-client-form h3 { font-size: .95rem; }
+.field-error { color: #b91c1c !important; }
+.field input[aria-invalid="true"] { border-color: #b91c1c; }
+.inline-action { align-self: flex-start; }
 .operation-form { display: flex; min-width: var(--content-min-width); flex-direction: column; gap: var(--layout-card-gap); padding: var(--layout-card-gap) var(--layout-section-gap); }
 .form-grid { display: grid; min-width: var(--content-min-width); grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--layout-control-gap); }
 .field { display: flex; min-width: 0; flex-direction: column; gap: 7px; color: var(--color-text); font-size: .82rem; font-weight: 700; }
@@ -412,9 +693,11 @@ const submit = () => {
 .section-heading { display: flex; min-width: var(--content-min-width); flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--layout-control-gap); margin-bottom: var(--layout-control-gap); }
 .section-heading > div { min-width: var(--content-min-width); }
 .section-heading h3 { margin-bottom: 2px; font-size: .98rem; }
+.product-search { margin-bottom: var(--layout-control-gap); }
 .text-action { min-height: var(--control-min-height); padding: var(--space-2) var(--layout-control-gap); color: var(--color-brand-primary); font-size: .82rem; font-weight: 800; }
-.product-line { display: grid; min-width: var(--content-min-width); grid-template-columns: minmax(0, 2fr) minmax(0, .7fr) minmax(0, 1fr) minmax(0, auto) var(--control-min-height); gap: var(--layout-control-gap); align-items: end; padding: var(--layout-control-gap) 0; border-top: 1px solid var(--color-border-subtle); }
-.line-subtotal { display: flex; min-width: var(--content-min-width); min-height: var(--control-min-height); flex-direction: column; justify-content: center; gap: var(--space-1); color: var(--color-text-secondary); font-size: .72rem; }
+.product-line { display: grid; min-width: 0; grid-template-columns: minmax(0, 2fr) minmax(4rem, .7fr) minmax(5rem, 1fr) minmax(5rem, 1fr) minmax(5rem, auto) var(--control-min-height); gap: var(--layout-control-gap); align-items: end; padding: var(--layout-control-gap) 0; border-top: 1px solid var(--color-border-subtle); }
+.product-line .field input, .product-line .field select { min-width: 0; }
+.line-subtotal { display: flex; min-width: 0; min-height: var(--control-min-height); flex-direction: column; justify-content: center; gap: var(--space-1); color: var(--color-text-secondary); font-size: .72rem; }
 .line-subtotal strong { color: var(--color-text); font-size: .85rem; }
 .remove-line { color: var(--color-expense); }
 .remove-line:disabled { cursor: not-allowed; opacity: .45; }
@@ -427,17 +710,23 @@ const submit = () => {
 .operation-modal__footer { display: flex; min-width: var(--content-min-width); flex-wrap: wrap; justify-content: flex-end; gap: var(--layout-control-gap); padding-top: var(--layout-control-gap); border-top: 1px solid var(--color-border); }
 .operation-modal__footer .btn { min-width: 0; min-height: var(--control-min-height); }
 .operation-modal__footer .btn:disabled { cursor: not-allowed; opacity: .55; }
+@media (max-width: 900px) {
+  .product-line { grid-template-columns: minmax(0, 2fr) minmax(4rem, .7fr) minmax(5rem, 1fr) minmax(5rem, 1fr); }
+  .line-subtotal { grid-column: 1 / -2; }
+  .remove-line { grid-column: -2 / -1; grid-row: 2; justify-self: end; }
+}
 @media (max-width: 640px) {
   .operation-modal-backdrop { padding: 0; align-items: end; }
   .operation-modal { max-height: 96dvh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
   .operation-modal__header, .operation-form { padding-left: var(--layout-control-gap); padding-right: var(--layout-control-gap); }
   .operation-mode-switch { padding-left: var(--layout-control-gap); padding-right: var(--layout-control-gap); }
+  .modal-error, .modal-status { margin-right: var(--layout-control-gap); margin-left: var(--layout-control-gap); }
   .form-grid { grid-template-columns: 1fr; }
   .field--wide { grid-column: auto; }
-  .product-line { grid-template-columns: minmax(0, 1fr) var(--control-min-height); gap: var(--layout-control-gap); }
-  .product-line .field:first-child { grid-column: 1 / -1; }
+  .product-line { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--layout-control-gap); }
+  .product-line__product { grid-column: 1 / -1; }
   .line-subtotal { grid-column: 1; }
-  .remove-line { grid-column: 2; grid-row: 2; }
+  .remove-line { grid-column: 2; grid-row: auto; justify-self: end; }
   .sale-review { align-items: flex-start; }
   .operation-modal__footer { flex-direction: column-reverse; }
   .operation-modal__footer .btn { width: 100%; }
