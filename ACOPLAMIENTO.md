@@ -602,6 +602,32 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 
 > **Seguridad:** en Vercel solo van la dirección del backend y `VITE_USE_MOCKS`. Ninguna clave (ni de Neon ni de usuarios) va en las variables de Vercel: todo lo que empieza con `VITE_` queda visible en el código que descarga el navegador.
 
+### Respuestas de Backend a la lista de UX para el deploy final
+
+Respuesta a la sección *"Información requerida de Backend para el deploy final"* de [`ux/README.md`](./ux/README.md) (rama `integration/ux-backend`). Estado al 17/11/2026.
+
+| #  | Pregunta de UX | Respuesta de Backend |
+| :-: | :------------- | :------------------- |
+| 1  | URL pública definitiva de la API | ⏳ **Pendiente.** Existe recién al publicar el backend. Será del tipo `https://<nombre-del-servicio>.onrender.com/api`. Backend la avisa apenas esté. |
+| 2  | ¿Django en Vercel o en otra plataforma? | **En otra plataforma (propuesta: Render; Railway también sirve).** Vercel queda **solo** para el frontend Vue. Django no se publica como función serverless de Vercel. |
+| 3  | Archivos WSGI/ASGI o de inicio | Ya están en el repositorio: `Procfile` (`gunicorn cajaclara.wsgi`), `build.sh` (dependencias + `collectstatic`), `cajaclara/wsgi.py` y `.python-version` (3.13). **No se necesita `vercel.json` para el backend.** (El frontend sí puede necesitar uno para recargar rutas internas: ver arriba.) |
+| 4  | Variables de entorno | **Backend (en el panel del servicio):** `DJANGO_DEBUG=False`, `DJANGO_SECRET_KEY`, `CORS_ALLOWED_ORIGINS`, `DB_ENGINE`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_SSLMODE`. Opcionales: `DJANGO_ALLOWED_HOSTS` (dominio propio), `CSRF_TRUSTED_ORIGINS`, `JWT_ACCESS_MINUTOS`, `JWT_REFRESH_DIAS`, `LOGIN_RATE`. Detalle en [`.env.example`](./.env.example). **Frontend (en Vercel):** `VITE_API_BASE_URL` y `VITE_USE_MOCKS=false`. |
+| 5  | Parámetros de Neon | ✅ **Confirmados** (17/11): el backend se conectó a Neon con `cajaclara_app_rw` y `verificar_esquema` dio *"El esquema de la base coincide con el backend"* (6 tablas + vistas de métricas). Parámetros: `DB_NAME=neondb`, `DB_USER=cajaclara_app_rw`, `DB_PORT=5432`, `DB_SSLMODE=require`; el host y la clave se entregan por canal privado. |
+| 6  | `DJANGO_ALLOWED_HOSTS` | Render (y Railway) agregan **solos** su dominio público (`RENDER_EXTERNAL_HOSTNAME` / `RAILWAY_PUBLIC_DOMAIN`). Solo hay que listar un dominio propio si se usa uno. |
+| 7  | `CORS_ALLOWED_ORIGINS` | `https://tdcajaclara-cajaclara-ui-omega.vercel.app` (más el dominio propio, si se agrega). El backend ya expone `Content-Disposition`, así que el nombre del Excel se lee bien desde Vercel. |
+| 8  | Migraciones contra Neon | ⏳ **Pendiente del equipo de datos.** Una sola vez, con `neondb_owner`: `python manage.py migrate --fake-initial` (paso 1.4). `--fake-initial` registra las 6 tablas de datos sin tocarlas y crea solo las de Django (usuarios, login). Hoy Neon todavía no tiene esas tablas, por eso nadie puede iniciar sesión contra Neon. **El servicio publicado no corre migraciones**: `build.sh` no las incluye a propósito. |
+| 9  | Usuario demo en producción | Lo crea **backend** después del paso 1.4 (ver paso 2.4): `python manage.py createsuperuser` para el administrador y, desde `/admin/` → Usuarios → Agregar, un usuario `demo` común. La contraseña se entrega por canal privado; **nunca** en el código ni en Vercel. |
+| 10 | Valor de `VITE_API_BASE_URL` | La URL del punto 1 **terminada en `/api`**, sin barra al final. Ej.: `https://<nombre-del-servicio>.onrender.com/api`. Después de cambiarla en Vercel, hacer **Redeploy**. |
+| 11 | Ruta de health check | `GET /api/` responde `200` **sin iniciar sesión** (índice de la API): confirma que Django está arriba. No consulta la base; para confirmar la conexión con Neon, iniciar sesión y abrir `GET /api/finanzas/opciones-filtros/`. |
+| 12 | Plan de rollback | **Base:** antes de conectar la app, el equipo de datos crea un branch de respaldo en Neon (paso 1.5); si algo sale mal, se vuelve a ese punto. **API:** el servicio (Render/Railway) permite volver al deploy anterior desde su panel. **Frontend:** Vercel permite volver a un deployment anterior (*Promote to Production*). La API no borra datos: solo agrega ventas, gastos, clientes y pagos. |
+| 13 | Responsable de validar Backend en producción | El equipo de Backend (RonnieRBG). Valida con la prueba de la Parte 4 contra la URL publicada antes de avisar a UX. |
+
+**Cambios de Backend del 17/11 que UX puede aprovechar** (ya en la rama `backend`):
+
+- `GET /cuentas-por-cobrar/` acepta `search` (cliente, contacto o `id_factura`) y `ordering` (`fecha_vencimiento`, `monto`, `id_cuenta`; con `-` de mayor a menor). La pantalla de Cobros puede pedir **solo la página visible** en vez de descargar las ~15.000 cuentas (hoy son 150 peticiones al abrirla). Los contadores de cada pestaña salen de `resumen.por_estado` con una llamada sin `estado` y `page_size=1`.
+- `GET /productos/` acepta `con_ventas=true`: el "Top productos" ya no muestra productos con 0 unidades.
+- `GET /exportar-excel/` ya no responde `406` cuando el navegador pide el archivo con `Accept` de Excel, y el nombre del archivo (`Content-Disposition`) se puede leer desde otro dominio.
+
 ---
 
 ## 📌 Decisiones pendientes (para conversar entre los tres equipos)
