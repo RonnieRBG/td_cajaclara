@@ -938,7 +938,7 @@ class ApiCatalogView(APIView):
                     "url": f"{host}/api/finanzas/productos/",
                     "metodo": "GET",
                     "descripcion": "Listado paginado de productos con unidades e ingresos vendidos; ?ordering=-total_vendido para los más vendidos.",
-                    "parametros": ["search", "categoria", "unidad_negocio", "fecha_inicio", "fecha_fin", "tipo_compra", "ordering", "page", "page_size"],
+                    "parametros": ["search", "categoria", "unidad_negocio", "fecha_inicio", "fecha_fin", "tipo_compra", "con_ventas", "ordering", "page", "page_size"],
                 },
                 "facturas": {
                     "url": f"{host}/api/finanzas/facturas/",
@@ -956,7 +956,7 @@ class ApiCatalogView(APIView):
                     "url": f"{host}/api/finanzas/cuentas-por-cobrar/",
                     "metodo": "GET",
                     "descripcion": "Listado paginado de cuentas por cobrar con estado (pendiente, vencida, pagada) y totales.",
-                    "parametros": ["cliente", "factura", "estado", "vencidas", "page", "page_size"],
+                    "parametros": ["cliente", "factura", "estado", "vencidas", "search", "ordering", "page", "page_size"],
                 },
                 "gastos": {
                     "url": f"{host}/api/finanzas/gastos/",
