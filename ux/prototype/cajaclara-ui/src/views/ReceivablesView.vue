@@ -1,25 +1,44 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import StatCard from '@/components/common/StatCard.vue'
 import BadgeStatus from '@/components/common/BadgeStatus.vue'
 import ReceivableDetailModal from '@/components/receivables/ReceivableDetailModal.vue'
 import PaymentModal from '@/components/receivables/PaymentModal.vue'
-import { receivables as mockReceivables } from '@/data/receivablesMock'
 import { formatCLP, formatDate, getLocalDateString } from '@/utils/formatters'
+import {
+  getCollectionAlerts,
+  getReceivableDetail,
+  getReceivables,
+  payReceivable,
+  revertReceivablePayment
+} from '@/services/receivablesService'
 
-const localAccounts = ref(mockReceivables.map(account => ({
-  ...account,
-  products: account.products.map(product => ({ ...product }))
-})))
+const accounts = ref([])
+const summary = ref({ pendingAmount: 0, overdueAmount: 0, pendingCount: 0, paidCount: 0 })
+const isLoading = ref(false)
+const loadError = ref('')
+const alerts = ref([])
+const alertsLoading = ref(false)
+const alertsError = ref('')
 const activeFilter = ref('all')
 const searchQuery = ref('')
 const sortOrder = ref('earliest')
+const currentPage = ref(1)
+const pageSize = 10
 const selectedAccount = ref(null)
+const detailLoading = ref(false)
+const detailError = ref('')
 const paymentAccount = ref(null)
+const paymentMode = ref('pay')
+const paymentSaving = ref(false)
+const paymentError = ref('')
 const showToast = ref(false)
 const toastMessage = ref('')
 let toastTimeout
 
+const alertByAccount = computed(() => Object.fromEntries(
+  alerts.value.map((alert) => [String(alert.id), alert])
+))
 const tabs = [
   { id: 'all', label: 'Todas' },
   { id: 'pending', label: 'Pendientes' },
@@ -32,32 +51,25 @@ const statusByFilter = {
   paid: 'PAGADA'
 }
 
-const getStatus = (account) => {
-  if (account.status === 'PAGADA') return 'PAGADA'
-  return account.dueDate < getLocalDateString() ? 'VENCIDA' : 'PENDIENTE'
-}
-
-const summary = computed(() => {
-  const unpaid = localAccounts.value.filter(account => getStatus(account) !== 'PAGADA')
-  const overdue = unpaid.filter(account => getStatus(account) === 'VENCIDA')
-  return {
-    pendingAmount: unpaid.reduce((total, account) => total + account.amount, 0),
-    overdueAmount: overdue.reduce((total, account) => total + account.amount, 0),
-    pendingCount: unpaid.length,
-    paidCount: localAccounts.value.filter(account => getStatus(account) === 'PAGADA').length
-  }
-})
-
 const filteredAccounts = computed(() => {
   const query = searchQuery.value.trim().toLocaleLowerCase('es-CL')
-  return localAccounts.value
-    .filter(account => activeFilter.value === 'all' || getStatus(account) === statusByFilter[activeFilter.value])
+  return accounts.value
+    .filter(account => activeFilter.value === 'all' || account.displayStatus === statusByFilter[activeFilter.value])
     .filter(account => !query || `${account.clientName} ${account.invoiceId}`.toLocaleLowerCase('es-CL').includes(query))
     .sort((a, b) => {
       const result = a.dueDate.localeCompare(b.dueDate)
       return sortOrder.value === 'earliest' ? result : -result
     })
-    .map(account => ({ ...account, displayStatus: getStatus(account) }))
+})
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredAccounts.value.length / pageSize)))
+const pageAccounts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredAccounts.value.slice(start, start + pageSize)
+})
+
+watch([activeFilter, searchQuery, sortOrder], () => { currentPage.value = 1 })
+watch(totalPages, (pages) => {
+  if (currentPage.value > pages) currentPage.value = pages
 })
 
 const daysUntilDue = (date) => {
@@ -75,6 +87,64 @@ const dueAlert = (account) => {
   return ''
 }
 
+async function loadAccounts() {
+  isLoading.value = true
+  loadError.value = ''
+  try {
+    const data = await getReceivables()
+    accounts.value = data.results
+    summary.value = data.summary
+  } catch (error) {
+    loadError.value = error.message || 'No se pudieron cargar las cuentas por cobrar.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function loadAlerts() {
+  alertsLoading.value = true
+  alertsError.value = ''
+  try {
+    alerts.value = await getCollectionAlerts()
+    if (selectedAccount.value) {
+      selectedAccount.value = {
+        ...selectedAccount.value,
+        suggestedMessage: alertByAccount.value[String(selectedAccount.value.id)]?.suggestedMessage || null
+      }
+    }
+  } catch (error) {
+    alertsError.value = error.message || 'No se pudieron cargar los recordatorios sugeridos.'
+  } finally {
+    alertsLoading.value = false
+  }
+}
+
+async function openDetail(account) {
+  selectedAccount.value = {
+    ...account,
+    suggestedMessage: alertByAccount.value[String(account.id)]?.suggestedMessage || null
+  }
+  detailError.value = ''
+  detailLoading.value = true
+  try {
+    const detail = await getReceivableDetail(account)
+    if (String(selectedAccount.value?.id) === String(account.id)) {
+      selectedAccount.value = {
+        ...detail,
+        suggestedMessage: alertByAccount.value[String(account.id)]?.suggestedMessage || null
+      }
+    }
+  } catch (error) {
+    detailError.value = error.message || 'No se pudo cargar el detalle de la cuenta.'
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function retryDetail() {
+  if (selectedAccount.value) openDetail(selectedAccount.value)
+}
+
 const notify = (message) => {
   toastMessage.value = message
   showToast.value = true
@@ -84,22 +154,56 @@ const notify = (message) => {
   }, 3500)
 }
 
-const openPayment = (account) => {
+function openPayment(account, mode) {
   paymentAccount.value = account
+  paymentMode.value = mode
+  paymentError.value = ''
 }
 
-const registerPayment = (payment) => {
-  const paidAccount = localAccounts.value.find(account => account.id === paymentAccount.value.id)
-  if (!paidAccount) return
-  paidAccount.status = 'PAGADA'
-  paidAccount.paymentDate = payment.date
-  paidAccount.paymentMethod = payment.method
-  paidAccount.paymentReference = payment.reference
+async function savePayment({ date }) {
+  if (!paymentAccount.value) return
+  paymentSaving.value = true
+  paymentError.value = ''
+  const savedMode = paymentMode.value
+  const accountId = paymentAccount.value.id
+  try {
+    if (savedMode === 'pay') {
+      await payReceivable(accountId, date)
+    } else {
+      await revertReceivablePayment(accountId)
+    }
+  } catch (error) {
+    paymentError.value = error.message || 'No se pudo guardar el cambio.'
+    paymentSaving.value = false
+    return
+  }
+
   paymentAccount.value = null
-  notify('Pago registrado correctamente')
+  paymentSaving.value = false
+  notify(savedMode === 'pay' ? 'Pago completo registrado.' : 'Pago revertido.')
+  await Promise.all([loadAccounts(), loadAlerts()])
+  await nextTick()
+  document.querySelector('#receivables-list-title')?.focus()
 }
 
-const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una simulación del prototipo.')
+async function copyReminder(account) {
+  const message = account.suggestedMessage ||
+    alertByAccount.value[String(account.id)]?.suggestedMessage
+  if (!message) return
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('El navegador no permite copiar al portapapeles.')
+    await navigator.clipboard.writeText(message)
+    notify('Recordatorio sugerido copiado.')
+  } catch {
+    notify('No se pudo copiar el recordatorio. Puedes copiar el texto desde el detalle de la cuenta.')
+  }
+}
+
+onMounted(() => {
+  loadAccounts()
+  loadAlerts()
+})
+onBeforeUnmount(() => window.clearTimeout(toastTimeout))
 </script>
 
 <template>
@@ -115,9 +219,6 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
         <h1>Cuentas por cobrar</h1>
         <p>Controla las ventas pendientes y registra los pagos de tus clientes</p>
       </div>
-      <button type="button" class="btn btn-primary new-account-button" @click="simulateNewAccount">
-        <span aria-hidden="true">＋</span> Nueva cuenta por cobrar
-      </button>
     </header>
 
     <section class="summary-grid" aria-label="Resumen de cuentas por cobrar">
@@ -127,11 +228,19 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
       <StatCard title="Cuentas pagadas" :value="summary.paidCount" subtitle="Cuentas completamente pagadas" variant="income" :format-as-currency="false" />
     </section>
 
+    <div v-if="alertsLoading" class="receivables-feedback" role="status" aria-live="polite">
+      Cargando recordatorios sugeridos…
+    </div>
+    <div v-else-if="alertsError" class="receivables-feedback receivables-feedback--error" role="alert">
+      <span>{{ alertsError }}</span>
+      <button type="button" class="btn btn-secondary" @click="loadAlerts">Reintentar recordatorios</button>
+    </div>
+
     <section class="receivables-panel" aria-labelledby="receivables-list-title">
       <div class="panel-heading">
         <div>
           <span class="page-eyebrow">Seguimiento de clientes</span>
-          <h2 id="receivables-list-title">Listado de cuentas</h2>
+          <h2 id="receivables-list-title" tabindex="-1">Listado de cuentas</h2>
         </div>
         <span class="result-count">{{ filteredAccounts.length }} {{ filteredAccounts.length === 1 ? 'cuenta' : 'cuentas' }}</span>
       </div>
@@ -164,7 +273,15 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
         </label>
       </div>
 
-      <div v-if="localAccounts.length === 0" class="empty-state">
+      <div v-if="isLoading" class="empty-state" role="status" aria-live="polite">
+        <h3>Cargando cuentas por cobrar…</h3>
+      </div>
+      <div v-else-if="loadError" class="empty-state" role="alert">
+        <h3>No se pudieron cargar las cuentas</h3>
+        <p>{{ loadError }}</p>
+        <button type="button" class="btn btn-secondary" @click="loadAccounts">Reintentar</button>
+      </div>
+      <div v-else-if="accounts.length === 0" class="empty-state">
         <span class="empty-icon" aria-hidden="true">◇</span>
         <h3>Aún no tienes cuentas por cobrar</h3>
         <p>Las ventas pendientes aparecerán aquí.</p>
@@ -175,7 +292,7 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
         <p>Prueba con otros filtros o busca por nombre de cliente o factura.</p>
       </div>
 
-      <template v-else>
+      <template v-else-if="filteredAccounts.length > 0">
         <div class="table-wrap">
           <table class="receivables-table">
             <caption class="sr-only">Cuentas por cobrar con cliente, factura, descripción, fechas, monto, estado y acciones</caption>
@@ -192,12 +309,12 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
               </tr>
             </thead>
             <tbody>
-              <tr v-for="account in filteredAccounts" :key="account.id">
+              <tr v-for="account in pageAccounts" :key="account.id">
                 <td class="client-cell">{{ account.clientName }}<small>{{ account.contact }}</small></td>
                 <td class="invoice-cell">{{ account.invoiceId }}</td>
                 <td class="description-cell">
-                  <strong>{{ account.description }}</strong>
-                  <small>{{ account.products.map(product => product.name).join(', ') }}</small>
+                  <strong>{{ account.description || 'Detalle disponible en la factura' }}</strong>
+                  <small>{{ account.products?.map(product => product.name).join(', ') }}</small>
                 </td>
                 <td>{{ formatDate(account.issuedDate) }}</td>
                 <td class="due-cell">{{ formatDate(account.dueDate) }}<small v-if="dueAlert(account)">{{ dueAlert(account) }}</small></td>
@@ -212,8 +329,14 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
                 </td>
                 <td>
                   <div class="row-actions">
-                    <button type="button" @click="selectedAccount = account">Ver detalle</button>
-                    <button v-if="account.displayStatus !== 'PAGADA'" type="button" @click="openPayment(account)">Registrar pago</button>
+                    <button type="button" @click="openDetail(account)">Ver detalle</button>
+                    <button
+                      v-if="alertByAccount[String(account.id)]?.suggestedMessage"
+                      type="button"
+                      @click="copyReminder({ ...account, suggestedMessage: alertByAccount[String(account.id)].suggestedMessage })"
+                    >Copiar recordatorio</button>
+                    <button v-if="account.displayStatus !== 'PAGADA'" type="button" @click="openPayment(account, 'pay')">Registrar pago completo</button>
+                    <button v-else type="button" @click="openPayment(account, 'revert')">Revertir pago</button>
                     <router-link class="row-action-link" to="/operaciones">Ver operación</router-link>
                   </div>
                 </td>
@@ -223,7 +346,7 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
         </div>
 
         <div class="account-cards">
-          <article v-for="account in filteredAccounts" :key="account.id" class="account-card">
+          <article v-for="account in pageAccounts" :key="account.id" class="account-card">
             <div class="account-card__header">
               <div class="account-card__identity">
                 <h3>{{ account.clientName }}</h3>
@@ -236,24 +359,60 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
                 {{ account.displayStatus }}
               </BadgeStatus>
             </div>
-            <p class="account-card__description">{{ account.description }}<span v-if="account.products.length"> · {{ account.products.map(product => product.name).join(', ') }}</span></p>
+            <p class="account-card__description">
+              {{ account.description || 'Detalle disponible en la factura' }}
+              <span v-if="account.products?.length"> · {{ account.products.map(product => product.name).join(', ') }}</span>
+            </p>
             <dl class="account-card__facts">
               <div><dt>Fecha de emisión</dt><dd>{{ formatDate(account.issuedDate) }}</dd></div>
               <div><dt>Fecha de vencimiento</dt><dd>{{ formatDate(account.dueDate) }}<small v-if="dueAlert(account)">{{ dueAlert(account) }}</small></dd></div>
               <div><dt>Monto</dt><dd>{{ formatCLP(account.amount) }}</dd></div>
             </dl>
             <div class="card-actions">
-              <button type="button" class="btn btn-secondary" @click="selectedAccount = account">Ver detalle</button>
-              <button v-if="account.displayStatus !== 'PAGADA'" type="button" class="btn btn-primary" @click="openPayment(account)">Registrar pago</button>
+              <button type="button" class="btn btn-secondary" @click="openDetail(account)">Ver detalle</button>
+              <button
+                v-if="alertByAccount[String(account.id)]?.suggestedMessage"
+                type="button"
+                class="btn btn-secondary"
+                @click="copyReminder({ ...account, suggestedMessage: alertByAccount[String(account.id)].suggestedMessage })"
+              >Copiar recordatorio</button>
+              <button v-if="account.displayStatus !== 'PAGADA'" type="button" class="btn btn-primary" @click="openPayment(account, 'pay')">Registrar pago completo</button>
+              <button v-else type="button" class="btn btn-primary" @click="openPayment(account, 'revert')">Revertir pago</button>
               <router-link class="btn btn-secondary" to="/operaciones">Ver operación</router-link>
             </div>
           </article>
         </div>
+
+        <nav v-if="filteredAccounts.length > pageSize" class="pagination" aria-label="Paginación de cuentas por cobrar">
+          <button type="button" class="btn btn-secondary" :disabled="currentPage === 1" @click="currentPage -= 1">
+            Página anterior
+          </button>
+          <span aria-live="polite">Página {{ currentPage }} de {{ totalPages }}</span>
+          <button type="button" class="btn btn-secondary" :disabled="currentPage === totalPages" @click="currentPage += 1">
+            Página siguiente
+          </button>
+        </nav>
       </template>
     </section>
 
-    <ReceivableDetailModal :is-open="Boolean(selectedAccount)" :account="selectedAccount" @close="selectedAccount = null" />
-    <PaymentModal :is-open="Boolean(paymentAccount)" :account="paymentAccount" @close="paymentAccount = null" @confirm="registerPayment" />
+    <ReceivableDetailModal
+      :is-open="Boolean(selectedAccount)"
+      :account="selectedAccount"
+      :is-loading="detailLoading"
+      :error="detailError"
+      @close="selectedAccount = null"
+      @retry="retryDetail"
+      @copy-reminder="copyReminder(selectedAccount)"
+    />
+    <PaymentModal
+      :is-open="Boolean(paymentAccount)"
+      :account="paymentAccount"
+      :mode="paymentMode"
+      :is-saving="paymentSaving"
+      :error="paymentError"
+      @close="paymentAccount = null"
+      @confirm="savePayment"
+    />
   </div>
 </template>
 
@@ -264,7 +423,8 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
 .page-eyebrow { color: var(--color-brand-primary); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .page-heading h1 { margin: var(--space-1) 0 var(--space-2); color: var(--color-text); font-size: clamp(1.65rem, 3vw, 2rem); font-weight: 800; letter-spacing: -.04em; line-height: 1.15; }
 .page-heading p { max-width: 38rem; color: var(--color-text-secondary); font-size: .95rem; }
-.new-account-button { flex: 0 0 auto; }
+.receivables-feedback { display: flex; min-width: var(--content-min-width); align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--layout-control-gap); padding: var(--layout-control-gap); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: .82rem; }
+.receivables-feedback--error { border-color: var(--color-danger); color: var(--color-danger); }
 .summary-grid { display: grid; min-width: var(--content-min-width); grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--layout-control-gap); }
 .receivables-panel { min-width: var(--content-min-width); padding: var(--layout-card-gap); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-card); }
 .panel-heading { display: flex; min-width: var(--content-min-width); align-items: center; justify-content: space-between; gap: var(--layout-control-gap); }
@@ -303,13 +463,14 @@ const simulateNewAccount = () => notify('La nueva cuenta por cobrar es solo una 
 .empty-state h3 { color: var(--color-text); font-size: 1rem; }
 .empty-state p { color: var(--color-text-secondary); font-size: .85rem; }
 .empty-icon { display: grid; width: 3rem; height: 3rem; place-items: center; border-radius: 50%; background: var(--color-brand-primary-light); color: var(--color-brand-primary); font-size: 1.5rem; }
+.pagination { display: flex; min-width: var(--content-min-width); align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--layout-control-gap); margin-top: var(--layout-card-gap); }
+.pagination span { color: var(--color-text-secondary); font-size: .82rem; font-weight: 700; }
 .receivables-toast { position: fixed; right: var(--layout-gutter-tablet); bottom: var(--layout-control-gap); z-index: 1200; display: flex; min-width: var(--content-min-width); align-items: center; gap: var(--layout-control-gap); max-width: min(27.5rem, calc(100vw - var(--space-8))); padding: var(--layout-control-gap) var(--layout-card-gap); border: 1px solid var(--color-brand-primary-border); border-radius: var(--radius-md); background: var(--color-brand-primary-light); color: var(--color-brand-primary); box-shadow: var(--shadow-lg); font-size: .86rem; font-weight: 700; }
 .receivables-toast svg { width: 20px; height: 20px; flex: 0 0 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .card:focus-within, .receivables-panel:focus-within { outline: 0; }
 @media (max-width: 1200px) {
   .page-heading { align-items: flex-start; flex-direction: column; }
-  .new-account-button { width: 100%; }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 900px) {

@@ -273,6 +273,19 @@ export function adaptCollectionAlerts(payload) {
   const summary = requiredRecord(payload?.resumen, 'resumen')
   const results = requiredArray(payload?.results, 'results').map((item) => {
     const alert = requiredRecord(item, 'results[]')
+    if (alert.id_cuenta === null || alert.id_cuenta === undefined) invalidResponse('results[].id_cuenta')
+    if (typeof alert.cliente_nombre !== 'string') invalidResponse('results[].cliente_nombre')
+    if (typeof alert.id_factura !== 'string') invalidResponse('results[].id_factura')
+    if (typeof alert.fecha_vencimiento !== 'string') invalidResponse('results[].fecha_vencimiento')
+    if (typeof alert.fecha_emision !== 'string') invalidResponse('results[].fecha_emision')
+    if (typeof alert.ventana_alerta !== 'string') invalidResponse('results[].ventana_alerta')
+    if (!['PENDIENTE', 'VENCIDA', 'PAGADA'].includes(alert.estado)) {
+      invalidResponse('results[].estado')
+    }
+    if (alert.mensaje_sugerido !== undefined && alert.mensaje_sugerido !== null &&
+      typeof alert.mensaje_sugerido !== 'string') {
+      invalidResponse('results[].mensaje_sugerido')
+    }
     return {
       id: alert.id_cuenta,
       client: alert.cliente_nombre,
@@ -282,14 +295,68 @@ export function adaptCollectionAlerts(payload) {
       issueDate: alert.fecha_emision,
       dueLabel: alert.ventana_alerta,
       status: alert.estado,
-      suggestedMessage: alert.mensaje_sugerido
+      suggestedMessage: alert.mensaje_sugerido ?? null
     }
   })
 
   return {
     count: requiredNumber(summary.total_alertas, 'resumen.total_alertas'),
     amount: requiredNumber(summary.monto_total, 'resumen.monto_total'),
+    next: payload.next,
+    previous: payload.previous,
     results
+  }
+}
+
+export function adaptReceivables(payload) {
+  const summary = requiredRecord(payload?.resumen, 'resumen')
+  const byStatus = requiredRecord(summary.por_estado, 'resumen.por_estado')
+  const pending = requiredRecord(byStatus.PENDIENTE, 'resumen.por_estado.PENDIENTE')
+  const overdue = requiredRecord(byStatus.VENCIDA, 'resumen.por_estado.VENCIDA')
+  const paid = requiredRecord(byStatus.PAGADA, 'resumen.por_estado.PAGADA')
+  const results = requiredArray(payload?.results, 'results').map((item) => {
+    const account = requiredRecord(item, 'results[]')
+    if (account.id_cuenta === null || account.id_cuenta === undefined) invalidResponse('results[].id_cuenta')
+    if (typeof account.id_factura !== 'string') invalidResponse('results[].id_factura')
+    if (typeof account.fecha_emision !== 'string') invalidResponse('results[].fecha_emision')
+    if (typeof account.cliente_nombre !== 'string') invalidResponse('results[].cliente_nombre')
+    if (typeof account.cliente_contacto !== 'string') invalidResponse('results[].cliente_contacto')
+    if (typeof account.fecha_vencimiento !== 'string') invalidResponse('results[].fecha_vencimiento')
+    if (!['PENDIENTE', 'VENCIDA', 'PAGADA'].includes(account.estado_actual)) {
+      invalidResponse('results[].estado_actual')
+    }
+    if (account.fecha_pago !== null && typeof account.fecha_pago !== 'string') {
+      invalidResponse('results[].fecha_pago')
+    }
+
+    return {
+      id: account.id_cuenta,
+      invoiceId: account.id_factura,
+      clientName: account.cliente_nombre,
+      contact: account.cliente_contacto,
+      issuedDate: account.fecha_emision,
+      dueDate: account.fecha_vencimiento,
+      amount: requiredNumber(account.monto, 'results[].monto'),
+      status: account.estado_actual,
+      paymentDate: account.fecha_pago,
+      products: null,
+      description: ''
+    }
+  })
+
+  return {
+    count: requiredNumber(payload.count, 'count'),
+    next: payload.next,
+    previous: payload.previous,
+    results,
+    summary: {
+      pendingAmount: requiredNumber(pending.monto, 'resumen.por_estado.PENDIENTE.monto') +
+        requiredNumber(overdue.monto, 'resumen.por_estado.VENCIDA.monto'),
+      overdueAmount: requiredNumber(overdue.monto, 'resumen.por_estado.VENCIDA.monto'),
+      pendingCount: requiredNumber(pending.cantidad, 'resumen.por_estado.PENDIENTE.cantidad') +
+        requiredNumber(overdue.cantidad, 'resumen.por_estado.VENCIDA.cantidad'),
+      paidCount: requiredNumber(paid.cantidad, 'resumen.por_estado.PAGADA.cantidad')
+    }
   }
 }
 

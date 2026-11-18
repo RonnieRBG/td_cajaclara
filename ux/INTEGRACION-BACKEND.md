@@ -5,8 +5,8 @@
 - El proyecto Django está en la raíz (`manage.py`, `cajaclara/`, `finanzas/`, `usuarios/`); la aplicación Vue 3/Vite permanece en `ux/prototype/cajaclara-ui/`.
 - Backend de referencia: `upstream/backend`, commit `ce68c3c1835fbfef96ffb6bc1deff3fd5dfaf9ef`. Contratos y procedimientos: [`API_DOCUMENTACION.md`](../API_DOCUMENTACION.md) y [`ACOPLAMIENTO.md`](../ACOPLAMIENTO.md).
 - El login JWT, refresh, perfil, logout y protección de rutas ya están conectados en Vue. No existe registro público.
-- Dashboard, Resumen mensual y Compras y ventas consumen los endpoints financieros documentados cuando `VITE_USE_MOCKS=false`; cada vista conserva mocks seleccionados explícitamente con `VITE_USE_MOCKS=true`.
-- Cuentas por cobrar sigue usando mocks. Este cambio no escribe ni modifica contratos, modelos, endpoints o pruebas de Django.
+- Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar consumen los endpoints financieros documentados cuando `VITE_USE_MOCKS=false`; cada vista conserva mocks seleccionados explícitamente con `VITE_USE_MOCKS=true`.
+- Este cambio no escribe ni modifica contratos, modelos, endpoints o pruebas de Django.
 - El esquema real contiene `cliente`, `producto`, `venta`, `detalle_venta`, `cuenta_por_cobrar` y `gastos_insumo`. No usar los modelos de un contrato anterior (`Categoria`, `Movimiento`) como fuente.
 
 ## Endpoints disponibles
@@ -58,6 +58,22 @@ No existe en el contrato un desglose de gastos por categoría: Resumen mensual m
 
 El formulario envía `fecha_vencimiento` solo para ventas a crédito y usa `ultimo_precio_venta` / `ultimo_costo_venta` como sugerencias; solicita ambos si no hay valores anteriores. Un error de API permanece visible con opción de reintento, sin alternar a mocks. No se implementan edición, eliminación, anulación ni pagos parciales.
 
+### Integración de Cuentas por cobrar
+
+`receivablesService.js` selecciona una sola fuente según `VITE_USE_MOCKS`. En modo API reutiliza `apiRequest` (JWT y refresh) y los adaptadores compartidos:
+
+| Acción | Endpoint |
+| --- | --- |
+| Listar cuentas y obtener indicadores globales | `GET /cuentas-por-cobrar/` |
+| Obtener recordatorios y el texto sugerido por Backend | `GET /alertas-cobro/` |
+| Consultar productos y líneas de factura al abrir el detalle | `GET /facturas/{id_factura}/` |
+| Registrar un pago completo | `POST /cuentas-por-cobrar/{id_cuenta}/pagar/` |
+| Revertir un pago | `POST /cuentas-por-cobrar/{id_cuenta}/revertir-pago/` |
+
+El listado y las alertas consumen las páginas documentadas. La interfaz busca por cliente/factura, filtra los tres estados y ordena por vencimiento en el cliente porque esos parámetros no están documentados para estos endpoints. Los indicadores usan `resumen` del listado sin filtro, no los registros visibles. El detalle consulta la factura únicamente al abrirse, ya que el listado no incluye productos.
+
+El pago es completo y acepta `fecha_pago` opcional; al omitirla no se envía body. La reversión es un POST sin body. No se registran método ni referencia de pago, no se permiten abonos ni crear cuentas manualmente. El recordatorio solo muestra/copia `mensaje_sugerido` devuelto por la API; no hay envío de mensajes documentado. Después de pagar o revertir se actualizan cuentas e indicadores sin recargar la aplicación. Dashboard y Resumen vuelven a obtener los totales vigentes en su próxima carga.
+
 ### Fuente explícita
 
 Crear `ux/prototype/cajaclara-ui/.env.local` desde `.env.example`:
@@ -67,7 +83,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_USE_MOCKS=true
 ```
 
-- `VITE_USE_MOCKS=true`: solo mocks para cada una de las vistas conectadas.
+- `VITE_USE_MOCKS=true`: solo mocks para cada una de las vistas conectadas (Cuentas por cobrar usa exclusivamente `receivablesMock.js`).
 - `VITE_USE_MOCKS=false`: solo API para cada vista; requiere login y Backend accesible.
 - Un error de API se muestra con opción de reintentar; no cambia automáticamente a mocks.
 - Al cambiar variables `VITE_*`, reiniciar Vite. `.env.local` no se versiona.
@@ -77,6 +93,7 @@ VITE_USE_MOCKS=true
 - Venta: requiere `id_cliente` y al menos un item con `id_producto` y `cantidad`; admite `precio_venta` y `costo_venta`. `tipo_compra` acepta `Física` o `En Línea`. Crédito usa `por_cobrar: true` y `fecha_vencimiento`; al contado no envía vencimiento.
 - Gasto: es un gasto de insumo asociado a `id_producto`, con `monto` entero positivo. No hay proveedor, categoría de gasto ni gastos operativos genéricos.
 - Pago: solo pago completo; `fecha_pago` es opcional. Reversión sin body. No existen pagos parciales ni anulación de ventas.
+- Cuentas por cobrar: el listado incluye `estado_actual` y `resumen`; las alertas operativas incluyen `mensaje_sugerido` cuando Backend lo entrega. No hay un endpoint documentado para crear cuentas ni enviar recordatorios.
 - No existe precio de catálogo; el selector puede sugerir `ultimo_precio_venta` y `ultimo_costo_venta` de la última venta.
 - Todos los usuarios autenticados acceden actualmente al mismo negocio.
 - Las alertas operativas se calculan a la fecha actual por defecto; no confundirlas con métricas SQL históricas de corte fijo.
@@ -85,7 +102,7 @@ VITE_USE_MOCKS=true
 
 El frontend lee `VITE_API_BASE_URL` desde Vite; su ejemplo local es `http://127.0.0.1:8000/api`. No guardar URLs de producción, secretos, tokens ni archivos `.env` en componentes o Git. Django permite por defecto los orígenes locales de Vite en los puertos `localhost:5173` y `127.0.0.1:5173`; producción se configura mediante `CORS_ALLOWED_ORIGINS`.
 
-La integración restante debe realizarse por servicios/adaptadores dentro de `ux/prototype/cajaclara-ui/src/`, manteniendo por separado la investigación, user flows y wireframes. Cada vista selecciona una sola fuente (mock o API), muestra carga/error/vacío y permite reintentar sin fallback silencioso.
+Las vistas financieras conectadas seleccionan una sola fuente (mock o API), muestran carga/error/vacío y permiten reintentar sin fallback silencioso.
 
 Para validar la estructura fusionada:
 

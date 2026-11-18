@@ -4,10 +4,12 @@ import { formatCLP, formatDate } from '@/utils/formatters'
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
-  account: { type: Object, default: null }
+  account: { type: Object, default: null },
+  isLoading: { type: Boolean, default: false },
+  error: { type: String, default: '' }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'retry', 'copy-reminder'])
 const dialog = ref(null)
 const status = computed(() => props.account?.displayStatus || props.account?.status)
 let previouslyFocusedElement = null
@@ -77,9 +79,16 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
         <div><dt>Monto pendiente</dt><dd>{{ formatCLP(status === 'PAGADA' ? 0 : account.amount) }}</dd></div>
       </dl>
 
-      <section class="detail-products" aria-labelledby="receivable-products-title">
+      <p v-if="isLoading" class="detail-message" role="status" aria-live="polite">
+        Cargando los productos de la factura…
+      </p>
+      <div v-else-if="error" class="detail-message detail-message--error" role="alert">
+        <p>{{ error }}</p>
+        <button type="button" class="btn btn-secondary" @click="emit('retry')">Reintentar</button>
+      </div>
+      <section v-else class="detail-products" aria-labelledby="receivable-products-title">
         <h3 id="receivable-products-title">Productos</h3>
-        <ul v-if="account.products.length">
+        <ul v-if="account.products?.length">
           <li v-for="(product, index) in account.products" :key="`${product.name}-${index}`">
             <div>
               <strong>{{ product.name }}</strong>
@@ -89,6 +98,14 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
           </li>
         </ul>
         <p v-else>{{ account.description }}</p>
+      </section>
+
+      <section v-if="account.suggestedMessage" class="suggested-reminder" aria-labelledby="reminder-title">
+        <h3 id="reminder-title">Recordatorio sugerido por la API</h3>
+        <p>{{ account.suggestedMessage }}</p>
+        <button type="button" class="btn btn-secondary" @click="emit('copy-reminder')">
+          Copiar recordatorio
+        </button>
       </section>
 
       <footer class="dialog-footer">
@@ -122,6 +139,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 .detail-products li strong { color: var(--color-text); font-size: .84rem; }
 .detail-products li span, .detail-products p { color: var(--color-text-secondary); font-size: .8rem; }
 .detail-products li > strong { flex: 0 0 auto; }
+.detail-message { display: flex; flex-direction: column; align-items: flex-start; gap: var(--layout-control-gap); padding: var(--layout-card-gap) 0; color: var(--color-text-secondary); font-size: .86rem; }
+.detail-message--error { color: var(--color-danger); }
+.suggested-reminder { display: flex; flex-direction: column; align-items: flex-start; gap: var(--layout-control-gap); padding: var(--layout-control-gap); border-radius: var(--radius-md); background: var(--color-bg-subtle); }
+.suggested-reminder h3 { color: var(--color-text); font-size: .85rem; }
+.suggested-reminder p { color: var(--color-text-secondary); font-size: .82rem; overflow-wrap: anywhere; }
 .dialog-footer { display: flex; min-width: var(--content-min-width); justify-content: space-between; gap: var(--layout-control-gap); margin-top: var(--layout-control-gap); padding: var(--layout-control-gap); border-radius: var(--radius-md); background: var(--color-bg-subtle); }
 .dialog-footer span { color: var(--color-text-secondary); }
 .dialog-footer strong { color: var(--color-text); }

@@ -4,17 +4,20 @@ import { formatCLP, getLocalDateString } from '@/utils/formatters'
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
-  account: { type: Object, default: null }
+  account: { type: Object, default: null },
+  mode: { type: String, default: 'pay' },
+  isSaving: { type: Boolean, default: false },
+  error: { type: String, default: '' }
 })
 
 const emit = defineEmits(['close', 'confirm'])
 const dialog = ref(null)
-const paymentDate = ref(getLocalDateString())
-const paymentMethod = ref('Efectivo')
-const reference = ref('')
+const paymentDate = ref('')
 let previouslyFocusedElement = null
 
-const close = () => emit('close')
+const close = () => {
+  if (!props.isSaving) emit('close')
+}
 
 const handleKeydown = (event) => {
   if (event.key === 'Escape') {
@@ -36,19 +39,13 @@ const handleKeydown = (event) => {
 }
 
 const confirmPayment = () => {
-  emit('confirm', {
-    date: paymentDate.value,
-    method: paymentMethod.value,
-    reference: reference.value.trim()
-  })
+  emit('confirm', { date: paymentDate.value })
 }
 
 watch(() => props.isOpen, async (open) => {
   if (open) {
     previouslyFocusedElement = document.activeElement
-    paymentDate.value = getLocalDateString()
-    paymentMethod.value = 'Efectivo'
-    reference.value = ''
+    paymentDate.value = ''
     await nextTick()
     dialog.value?.querySelector('button')?.focus()
     document.addEventListener('keydown', handleKeydown)
@@ -73,43 +70,41 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
     >
       <header class="dialog-header">
         <div>
-          <span class="dialog-eyebrow">Confirmación de pago</span>
-          <h2 id="payment-title">Registrar pago completo</h2>
-          <p id="payment-help">El pago cancelará el total pendiente de la cuenta.</p>
+          <span class="dialog-eyebrow">{{ mode === 'pay' ? 'Confirmación de pago' : 'Reversión de pago' }}</span>
+          <h2 id="payment-title">{{ mode === 'pay' ? 'Registrar pago completo' : 'Revertir pago registrado' }}</h2>
+          <p id="payment-help">
+            {{ mode === 'pay'
+              ? 'El pago cancelará el total pendiente. La fecha es opcional; si se omite, la API usa hoy.'
+              : 'La cuenta volverá a pendiente o vencida según su fecha de vencimiento.' }}
+          </p>
         </div>
-        <button type="button" class="dialog-close" aria-label="Cerrar registro de pago" @click="close">×</button>
+        <button type="button" class="dialog-close" aria-label="Cerrar registro de pago" :disabled="isSaving" @click="close">×</button>
       </header>
 
-      <form class="payment-form" @submit.prevent="confirmPayment">
+      <form class="payment-form" :aria-busy="isSaving" @submit.prevent="confirmPayment">
         <dl class="payment-summary">
           <div><dt>Cliente</dt><dd>{{ account.clientName }}</dd></div>
           <div><dt>Factura</dt><dd>{{ account.invoiceId }}</dd></div>
-          <div><dt>Monto pendiente</dt><dd>{{ formatCLP(account.amount) }}</dd></div>
+          <div><dt>{{ mode === 'pay' ? 'Monto pendiente' : 'Monto de la cuenta' }}</dt><dd>{{ formatCLP(account.amount) }}</dd></div>
         </dl>
 
-        <label class="form-field">
-          <span>Fecha de pago</span>
-          <input v-model="paymentDate" type="date" required />
+        <label v-if="mode === 'pay'" class="form-field">
+          <span>Fecha de pago <small>(opcional)</small></span>
+          <input
+            v-model="paymentDate"
+            type="date"
+            :min="account.issuedDate"
+            :max="getLocalDateString()"
+          />
         </label>
 
-        <label class="form-field">
-          <span>Método de pago</span>
-          <select v-model="paymentMethod" required>
-            <option>Efectivo</option>
-            <option>Transferencia</option>
-            <option>Tarjeta</option>
-            <option>Otro</option>
-          </select>
-        </label>
-
-        <label class="form-field">
-          <span>Referencia <small>(opcional)</small></span>
-          <input v-model="reference" type="text" maxlength="80" />
-        </label>
+        <p v-if="error" class="form-error" role="alert">{{ error }}</p>
 
         <footer class="dialog-actions">
-          <button type="button" class="btn btn-secondary" @click="close">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Confirmar pago</button>
+          <button type="button" class="btn btn-secondary" :disabled="isSaving" @click="close">Cancelar</button>
+          <button type="submit" class="btn btn-primary" :disabled="isSaving">
+            {{ isSaving ? 'Guardando…' : mode === 'pay' ? 'Confirmar pago completo' : 'Confirmar reversión' }}
+          </button>
         </footer>
       </form>
     </section>
@@ -133,7 +128,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 .payment-summary > div:last-child { grid-column: 1 / -1; }
 .form-field { display: flex; min-width: var(--content-min-width); flex-direction: column; gap: var(--space-1); color: var(--color-text-secondary); font-size: .8rem; font-weight: 700; }
 .form-field small { font-weight: 500; }
-.form-field input, .form-field select { width: 100%; min-width: var(--content-min-width); min-height: var(--control-min-height); padding: var(--space-2) var(--layout-control-gap); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 500; }
+.form-field input { width: 100%; min-width: var(--content-min-width); min-height: var(--control-min-height); padding: var(--space-2) var(--layout-control-gap); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-weight: 500; }
+.form-error { padding: var(--layout-control-gap); border-radius: var(--radius-sm); background: var(--color-danger-light); color: var(--color-danger); font-size: .82rem; }
 .dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--layout-control-gap); margin-top: var(--space-2); padding-top: var(--layout-control-gap); border-top: 1px solid var(--color-border); }
 .dialog-actions .btn { min-width: 0; }
 @media (max-width: 540px) {

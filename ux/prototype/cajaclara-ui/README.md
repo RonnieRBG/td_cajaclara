@@ -10,24 +10,24 @@ Documentación técnica del prototipo frontend de alta fidelidad. Para la invest
 - Formularios, filtros, búsqueda y detalle; la fuente es mock o API según el módulo y el entorno.
 - Layout responsive y design tokens compartidos.
 - Login JWT, restauración de sesión, refresh automático, perfil y logout.
-- Dashboard, Resumen mensual y Compras y ventas conectados a los endpoints financieros con JWT, estados de carga/error/vacío y reintento.
-- Modo mock explícito e independiente para Dashboard, Resumen mensual y Compras y ventas.
-- Cuentas por cobrar conserva sus mocks y estado local.
+- Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar conectados a los endpoints financieros con JWT, estados de carga/error/vacío y reintento.
+- Modo mock explícito e independiente para Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar.
+- Cuentas por cobrar permite consultar facturas, registrar pagos completos y revertirlos; sus indicadores usan el resumen global de la API.
 
 ### En desarrollo
 
-Integración de Cuentas por cobrar y sincronización de operaciones entre módulos.
+Sincronización automática entre pantallas sin una nueva carga.
 
 ### Pendiente
 
-- Sincronizar operaciones entre módulos.
+- Sincronizar automáticamente otras vistas tras una operación (Dashboard y Resumen recuperan los totales actualizados en su próxima carga).
 - Añadir pruebas automatizadas y completar la validación de accesibilidad.
 
 ### Fuera del alcance actual
 
 Pagos parciales, gestión de usuarios, facturación electrónica, inventario automático y notificaciones reales por WhatsApp o correo.
 
-> La autenticación y, en modo API, Dashboard, Resumen mensual y Compras y ventas se comunican con Backend. Cuentas por cobrar sigue simulada. Cada módulo usa una sola fuente por ejecución.
+> La autenticación y, en modo API, Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar se comunican con Backend. Cada módulo usa una sola fuente por ejecución.
 
 ## Stack y versiones
 
@@ -98,6 +98,7 @@ cajaclara-ui/
     │   ├── apiAdapters.js
     │   ├── dashboardService.js
     │   ├── operationsService.js
+    │   ├── receivablesService.js
     │   ├── authService.js
     │   ├── optionsService.js
     │   └── summaryService.js
@@ -116,7 +117,7 @@ cajaclara-ui/
 | --- | --- |
 | `DashboardView.vue` | Indicadores, acciones rápidas, flujo semanal, cobros prioritarios, movimientos recientes y productos destacados. |
 | `OperationsView.vue` | Compras y ventas, filtros, búsqueda, paginación, detalle y registro mediante API o mock. |
-| `ReceivablesView.vue` | Cuentas por cobrar, estados, filtros, búsqueda, detalle y registro de pago completo simulado. |
+| `ReceivablesView.vue` | Cuentas por cobrar, estados, filtros, búsqueda, paginación, detalle y pago completo/reversión mediante API o mock. |
 | `MonthlySummaryView.vue` | Indicadores del periodo, gráfico semanal, desglose de gastos, ventas y operaciones principales. |
 | `PlaceholderView.vue` | Componente de placeholder existente; no corresponde a una ruta activa del router. |
 
@@ -136,7 +137,7 @@ Definidas en `src/router/index.js` con `createWebHistory`:
 | `/login` | Inicio de sesión | Pública |
 | `/` | Dashboard | Protegida por JWT; datos mock |
 | `/operaciones` | Compras y ventas | Protegida por JWT; mock o API según entorno |
-| `/cobros` | Cuentas por cobrar | Protegida por JWT; datos mock |
+| `/cobros` | Cuentas por cobrar | Protegida por JWT; mock o API según entorno |
 | `/resumen` | Resumen mensual | Protegida por JWT; datos mock |
 | `/dashboard` | Redirección a `/` | Activa |
 | Ruta desconocida | Redirección a `/` | Activa |
@@ -152,7 +153,7 @@ Una visita no autenticada a una ruta protegida se envía a `/login`; después de
 | `src/data/receivablesMock.js` | Cuentas por cobrar y datos de detalle asociados. |
 | `src/data/monthlySummaryMock.js` | Datos del resumen por periodo, incluidos indicadores, desglose y actividad. |
 
-Compras y ventas en modo mock y Cuentas por cobrar mantienen estado local y no persisten entre recargas ni actualizan otros módulos. En modo API, Compras y ventas consulta y guarda exclusivamente mediante servicios y `apiClient`. No hay pagos parciales.
+En modo mock, Compras y ventas y Cuentas por cobrar mantienen estado local y no persisten entre recargas ni actualizan otros módulos. En modo API, ambas vistas consultan y guardan exclusivamente mediante servicios y `apiClient`. No hay pagos parciales.
 
 ## Design tokens y responsive
 
@@ -181,7 +182,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_USE_MOCKS=true
 ```
 
-`VITE_USE_MOCKS=true` usa mocks exclusivamente en Dashboard, Resumen mensual y Compras y ventas. Con `VITE_USE_MOCKS=false` estas vistas usan la API con JWT y no hacen fallback a mocks. La URL base se lee en `src/services/apiClient.js`; los componentes no contienen URLs de Backend. Reinicia Vite después de cambiar variables `VITE_*`. No guardes `.env.local` en Git.
+`VITE_USE_MOCKS=true` usa mocks exclusivamente en Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar; esta última usa solo `receivablesMock.js`. Con `VITE_USE_MOCKS=false` estas vistas usan la API con JWT y no hacen fallback a mocks. La URL base se lee en `src/services/apiClient.js`; los componentes no contienen URLs de Backend. Reinicia Vite después de cambiar variables `VITE_*`. No guardes `.env.local` en Git.
 
 ### Contrato JWT integrado
 
@@ -210,7 +211,7 @@ Backend permite por defecto `http://localhost:5173` y `http://127.0.0.1:5173`. A
 
 [Ver prototipo desplegado en Vercel](https://tdcajaclara-cajaclara-ui-omega.vercel.app/)
 
-El login requiere que `VITE_API_BASE_URL` apunte a un Backend accesible. Configura `VITE_USE_MOCKS=true` para el modo de demostración o `false` para consultar Dashboard, Resumen mensual y Compras y ventas en Backend. Cuentas por cobrar todavía usa datos simulados.
+El login requiere que `VITE_API_BASE_URL` apunte a un Backend accesible. Configura `VITE_USE_MOCKS=true` para el modo de demostración o `false` para consultar Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar en Backend.
 
 ## Integración financiera conectada
 
@@ -229,13 +230,13 @@ Dashboard y Resumen mensual llaman, a través de servicios y `apiClient`, a:
 
 Compras y ventas usa `operationsService.js` y estos endpoints con JWT y refresh: `GET /api/finanzas/operaciones/` (paginación, filtros, orden y resumen global de resultados), `GET /api/finanzas/facturas/{id}/` (detalle), `GET /api/finanzas/opciones/clientes/`, `GET /api/finanzas/opciones/productos/`, `POST /api/finanzas/clientes/`, `POST /api/finanzas/facturas/` y `POST /api/finanzas/gastos/`. El formulario registra ventas al contado o a crédito y gastos asociados a producto; los errores `400` del alta de cliente aparecen junto a sus campos. No se implementan eliminación, anulación ni pagos parciales.
 
-Limitaciones del contrato: no hay desglose de gastos por categoría; se muestra el total de gastos en insumos. Las alertas operativas no corresponden al periodo seleccionado y no tienen filtro por canal. La métrica `ranking-productos` es histórica, por lo que las vistas usan en su lugar el endpoint `/productos/`, que sí permite filtrar por periodo y canal. Los gastos carecen de canal. Cuentas por cobrar sigue en modo mock. Ver [guía de integración UX/Backend](../../INTEGRACION-BACKEND.md). Backend comparte actualmente el mismo negocio entre usuarios autenticados.
+`receivablesService.js` conecta Cuentas por cobrar con JWT y refresh: `GET /api/finanzas/cuentas-por-cobrar/`, `GET /api/finanzas/alertas-cobro/`, `GET /api/finanzas/facturas/{id_factura}/` (solo al abrir detalle), y los POST `/api/finanzas/cuentas-por-cobrar/{id_cuenta}/pagar/` y `/revertir-pago/`. El listado recorre las páginas documentadas para permitir búsqueda, filtro por estado y ordenamiento por vencimiento en el cliente; los indicadores salen de `resumen`, no de la página visible. Pagar acepta fecha opcional y es siempre por el total. La reversión no envía body. Los recordatorios muestran y copian `mensaje_sugerido` de la API, pero no se envían.
 
-Pasos técnicos previstos:
+Limitaciones del contrato: no hay desglose de gastos por categoría; se muestra el total de gastos en insumos. Las alertas operativas no corresponden al periodo seleccionado y no tienen filtro por canal. La métrica `ranking-productos` es histórica, por lo que las vistas usan en su lugar el endpoint `/productos/`, que sí permite filtrar por periodo y canal. Los gastos carecen de canal. Cobros no permite crear cuentas ni registrar pagos parciales. Dashboard y Resumen obtienen los totales actualizados en su próxima carga; no hay sincronización automática de otras vistas. Ver [guía de integración UX/Backend](../../INTEGRACION-BACKEND.md). Backend comparte actualmente el mismo negocio entre usuarios autenticados.
 
-1. Integrar Cuentas por cobrar con sus endpoints.
-2. Sincronizar cambios entre módulos.
-3. Validar formularios y flujos financieros conectados con Backend.
+Paso técnico previsto:
+
+1. Añadir sincronización automática entre vistas sin recargar la aplicación.
 
 ## Pruebas y calidad
 
@@ -247,8 +248,8 @@ npm run build
 
 ## Limitaciones
 
-- Dashboard, Resumen mensual y Compras y ventas usan una sola fuente por ejecución; API fallida produce estado de error y no fallback a mocks.
-- Compras y ventas no implementa edición, eliminación, anulación ni pagos parciales. Cuentas por cobrar sigue simulada y no se sincroniza con Backend.
+- Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar usan una sola fuente por ejecución; API fallida produce estado de error y no fallback a mocks.
+- Compras y ventas no implementa edición, eliminación, anulación ni pagos parciales. Cuentas por cobrar no permite crear cuentas ni registrar pagos parciales.
 - El contrato no proporciona desglose de gastos por categorías ni filtro por canal para las alertas.
 - Las alertas se calculan a la fecha actual, no al periodo histórico seleccionado.
 - Los mocks de cada módulo son independientes y no se sincronizan.
@@ -259,7 +260,6 @@ npm run build
 
 ## Roadmap técnico
 
-1. Conectar Cuentas por cobrar con sus endpoints.
-2. Sincronizar las operaciones entre módulos.
-3. Incorporar pruebas automatizadas para rutas, autenticación y flujos críticos.
-4. Completar validación de accesibilidad y revisar almacenamiento de tokens para producción.
+1. Sincronizar automáticamente los cambios entre vistas.
+2. Incorporar pruebas automatizadas para rutas, autenticación y flujos críticos.
+3. Completar validación de accesibilidad y revisar almacenamiento de tokens para producción.
