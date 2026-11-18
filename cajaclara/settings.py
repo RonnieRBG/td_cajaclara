@@ -220,6 +220,8 @@ CORS_ALLOWED_ORIGINS = _lista(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
 CSRF_TRUSTED_ORIGINS = _lista("CSRF_TRUSTED_ORIGINS")
+# Permite que el frontend lea el nombre del archivo al descargar el Excel (otro dominio).
+CORS_EXPOSE_HEADERS = ["Content-Disposition"]
 
 # Ajustes de producción (se activan solo con DEBUG=False)
 if not DEBUG:

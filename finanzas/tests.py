@@ -170,6 +170,27 @@ class PagosTests(BaseAPITest):
         self.assertEqual(self.pagar(id_cuenta, fecha_pago=str(self.hoy - timedelta(days=30))).status_code, 400)
         self.assertEqual(self.client.post("/api/finanzas/cuentas-por-cobrar/9999/pagar/").status_code, 404)
 
+    def test_cuentas_busqueda_y_orden(self):
+        otro = Cliente.objects.create(id_cliente=2, nombre="Kiosco Don Luis", contacto="+56 9 5587 2216")
+        r1 = self.vender_a_credito(dias=20)
+        r2 = self.vender_a_credito(dias=5, id_cliente=otro.id_cliente)
+        url = "/api/finanzas/cuentas-por-cobrar/"
+        encontradas = self.client.get(f"{url}?search=kiosco").json()
+        self.assertEqual([c["id_cliente"] for c in encontradas["results"]], [2])
+        self.assertEqual(encontradas["resumen"]["total_cuentas"], 1)
+        factura = r1.json()["id_factura"]
+        self.assertEqual([c["id_factura"] for c in self.client.get(f"{url}?search={factura}").json()["results"]], [factura])
+        vencen = [c["id_factura"] for c in self.client.get(url).json()["results"]]
+        self.assertEqual(vencen, [r2.json()["id_factura"], factura])  # por defecto, la que vence antes
+        self.assertEqual([c["id_factura"] for c in self.client.get(f"{url}?ordering=-fecha_vencimiento").json()["results"]],
+                         list(reversed(vencen)))
+        self.assertEqual(self.client.get(f"{url}?ordering=cliente").status_code, 400)
+
+    def test_el_frontend_puede_leer_el_nombre_del_excel(self):
+        r = self.client.get("/api/finanzas/exportar-excel/", HTTP_ORIGIN="http://localhost:5173")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Content-Disposition", r["Access-Control-Expose-Headers"])
+
     def test_estados_de_cuentas(self):
         """VENCIDA puede venir guardada (como la deja el equipo de datos) o calcularse
         desde una PENDIENTE cuya fecha ya pasó."""

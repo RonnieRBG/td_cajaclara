@@ -591,7 +591,11 @@ Los endpoints 9, 10, 12 y 14 agregan una clave `resumen` con totales que **no de
 | `factura`           | `id_factura`                                                                 |
 | `estado`            | `PENDIENTE` (aún no vence) · `VENCIDA` · `PAGADA` (estado a la fecha de hoy) |
 | `vencidas`          | `true` = solo vencidas · `false` = todas menos las vencidas · omitir = todas |
+| `search`            | Busca en el nombre o contacto del cliente y en el `id_factura`               |
+| `ordering`          | `fecha_vencimiento` (por defecto, la que vence antes) · `monto` · `id_cuenta`. Con `-` adelante, de mayor a menor |
 | `page`, `page_size` | Paginación                                                                   |
+
+> **Pantalla de Cobros:** no hace falta descargar todas las cuentas (son ~15.000). Pedir solo la página visible con `estado`, `search`, `ordering`, `page` y `page_size`, y leer los totales de `resumen`. Para los contadores de cada pestaña, una llamada sin `estado` y con `page_size=1` trae `resumen.por_estado` completo.
 
 ```json
 {

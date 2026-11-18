@@ -717,6 +717,9 @@ class DetalleVentaListView(generics.ListAPIView):
         return qs
 
 
+ORDEN_CUENTAS = ("fecha_vencimiento", "monto", "id_cuenta")
+
+
 class CuentaPorCobrarListView(generics.ListAPIView):
     """
     GET /api/finanzas/cuentas-por-cobrar/
@@ -725,6 +728,8 @@ class CuentaPorCobrarListView(generics.ListAPIView):
       - factura: id_factura.
       - estado: PENDIENTE (aún no vence), VENCIDA o PAGADA (estado a la fecha de hoy).
       - vencidas: true para solo vencidas, false para todas menos las vencidas.
+      - search: busca en el nombre o contacto del cliente y en el id_factura.
+      - ordering: fecha_vencimiento (por defecto), monto o id_cuenta; con "-" de mayor a menor.
       - page, page_size: Paginación.
     El bloque "resumen" trae el total por cobrar (pendientes + vencidas) y el detalle por estado.
     """
@@ -762,7 +767,15 @@ class CuentaPorCobrarListView(generics.ListAPIView):
                 qs = qs.filter(estado_actual=CuentaPorCobrar.VENCIDA)
             else:
                 qs = qs.exclude(estado_actual=CuentaPorCobrar.VENCIDA)
-        return qs
+
+        search = (params.get("search") or "").strip()
+        if search:
+            qs = qs.filter(
+                Q(cliente__nombre__icontains=search)
+                | Q(cliente__contacto__icontains=search)
+                | Q(venta__id_factura__icontains=search)
+            )
+        return _ordenar(qs, params, ORDEN_CUENTAS, "fecha_vencimiento", "id_cuenta")
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
