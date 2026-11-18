@@ -405,6 +405,12 @@ class ExportarExcelView(APIView):
         "Precio Venta Unitario", "Costo Venta Unitario", "Total Venta", "Total Costo", "Utilidad",
     ]
 
+    def perform_content_negotiation(self, request, force=False):
+        # El frontend pide el archivo con "Accept: application/vnd.openxmlformats-...sheet".
+        # DRF solo conoce JSON y respondía 406; con force=True usa JSON para los errores
+        # y el Excel sale igual, porque se devuelve como HttpResponse.
+        return super().perform_content_negotiation(request, force=True)
+
     def get(self, request):
         try:
             filtros = _obtener_filtros(request)

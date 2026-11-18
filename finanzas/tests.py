@@ -186,6 +186,15 @@ class PagosTests(BaseAPITest):
                          list(reversed(vencen)))
         self.assertEqual(self.client.get(f"{url}?ordering=cliente").status_code, 400)
 
+    def test_excel_cuando_el_navegador_pide_el_formato_excel(self):
+        xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        r = self.client.get("/api/finanzas/exportar-excel/", HTTP_ACCEPT=xlsx)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], xlsx)
+        error = self.client.get("/api/finanzas/exportar-excel/?fecha_inicio=ayer", HTTP_ACCEPT=xlsx)
+        self.assertEqual(error.status_code, 400)
+        self.assertIn("error", error.json())
+
     def test_el_frontend_puede_leer_el_nombre_del_excel(self):
         r = self.client.get("/api/finanzas/exportar-excel/", HTTP_ORIGIN="http://localhost:5173")
         self.assertEqual(r.status_code, 200)
