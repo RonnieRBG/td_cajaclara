@@ -537,6 +537,84 @@ Como `VITE_API_BASE_URL` ya termina en `/api`, las rutas se piden así:
 
 ---
 
+## 🎯 Parte 3C — Lo que le falta a UX (al 17/11/2026)
+
+Revisión de backend sobre `integration/ux-backend` (commit `b97ebd8`), probando el frontend contra la API en un navegador. Dashboard, Resumen, Operaciones, Cobros, formularios, pago/reversión y login **ya funcionan** contra la API. Quedan estos ajustes, en este orden:
+
+| # | Tarea | Dónde | Cómo se comprueba |
+| :-: | :---- | :---- | :---------------- |
+| 1 | **Traer lo último de `backend`**: `git fetch origin` y `git merge origin/backend` estando en `integration/ux-backend`. Probado: se une **sin conflictos**. | Rama `integration/ux-backend` | `python manage.py test` da OK |
+| 2 | **Cobros: pedir solo la página visible.** Hoy `getReceivables()` recorre todas las páginas (150 peticiones y ~15.000 cuentas al abrir la pantalla); publicado en Render tardaría más de un minuto. Usar `GET /cuentas-por-cobrar/?estado=&search=&ordering=&page=&page_size=` y quitar `getAllPages`, el filtro y el orden hechos en el navegador. | `services/receivablesService.js`, `views/ReceivablesView.vue` | Abrir Cobros hace **3 peticiones o menos** |
+| 3 | **Top productos sin ceros**: agregar `con_ventas: true` a la consulta de productos. | `services/dashboardService.js` y `services/summaryService.js` | En un mes con pocas ventas no aparecen productos con 0 unidades |
+| 4 | **Encabezado y barra lateral con datos reales**: en modo API, `App.vue` todavía usa `mockData` (muestra "Octubre de 2026" y "7" cuentas). El período debe ser el seleccionado y el número, `resumen.total_alertas` de `GET /alertas-cobro/?page_size=1`. En modo mock, dejarlo como está. | `App.vue`, `AppHeader.vue`, `AppSidebar.vue`, `AppBottomNav.vue` | Con `VITE_USE_MOCKS=false`, el número coincide con la pantalla de Cobros |
+| 5 | **Ícono de la pestaña**: hoy da error 404 en la consola. | `index.html` (+ un `public/favicon.svg`) | Consola sin errores 404 |
+| 6 | **Actualizar la documentación de UX**: `INTEGRACION-BACKEND.md` dice que Cobros filtra en el navegador "porque esos parámetros no están documentados"; ya lo están. | `ux/INTEGRACION-BACKEND.md` | — |
+| 7 | **Pasar Vercel a la API real**, **solo después** de que datos haga el paso 1.4 y backend entregue el usuario `demo`: `VITE_API_BASE_URL=https://cajaclara-api.onrender.com/api`, `VITE_USE_MOCKS=false`, quitar `VITE_DEMO_ACCESS` y borrar el acceso demo temporal (buscar `TODO: eliminar acceso demo temporal`). Luego **Redeploy**. Si recargar `/cobros` da 404, agregar el `vercel.json` de la Parte 5. | Panel de Vercel y `src/` | Entrar al sitio de Vercel con `demo` y hacer la Parte 4 |
+| 8 | **Pull request a `main`** según las reglas de `ux/README.md` (sin push directo ni merge sin aprobación). | GitHub | PR aprobado por backend y frontend |
+
+Ya resuelto por backend (no hay que pedirlo): búsqueda y orden en `/cuentas-por-cobrar/`, `con_ventas` en `/productos/`, y el Excel ya no responde `406` y entrega su nombre de archivo a Vercel.
+
+### Prompt para la IA de UX (tareas 1 a 6)
+
+Copiar el bloque completo como primer mensaje, con el repositorio abierto en la rama `integration/ux-backend`:
+
+```text
+Eres el asistente del equipo UX del proyecto Caja Clara (repo RonnieRBG/td_cajaclara).
+Trabajas SOLO en la rama integration/ux-backend y SOLO dentro de ux/ (el frontend Vue está en
+ux/prototype/cajaclara-ui/). No modifiques finanzas/, usuarios/, cajaclara/, manage.py,
+API_DOCUMENTACION.md ni ACOPLAMIENTO.md: son del backend. No hagas push a main.
+
+Antes de escribir código lee: ACOPLAMIENTO.md (Parte 3C), API_DOCUMENTACION.md (secciones 6
+"Productos" y 9 "Cuentas por cobrar") y ux/INTEGRACION-BACKEND.md. No inventes campos: si algo no
+está en API_DOCUMENTACION.md, anótalo en una lista "Pedidos al backend" y no lo implementes.
+
+Tareas, en este orden (un commit por tarea, mensajes en español):
+
+1. Ejecuta `git fetch origin` y `git merge origin/backend`. No debería haber conflictos.
+
+2. Cobros con paginación en el servidor.
+   - En src/services/receivablesService.js reemplaza getAllPages por UNA llamada:
+     GET /finanzas/cuentas-por-cobrar/?estado=<PENDIENTE|VENCIDA|PAGADA, omitir para todas>
+       &search=<texto>&ordering=<fecha_vencimiento | -fecha_vencimiento>&page=<n>&page_size=10
+     y devuelve { count, next, previous, results, summary } usando los adaptadores existentes.
+   - Los contadores de las pestañas y los indicadores salen de `resumen.por_estado` de una llamada
+     SIN estado y con page_size=1 (no dependen de la pestaña elegida).
+   - En src/views/ReceivablesView.vue quita el filtro, la búsqueda y el orden hechos en el navegador:
+     cada cambio de pestaña, búsqueda (con espera de ~300 ms al escribir), orden o página vuelve a
+     pedir a la API. Mantén estados de carga, error con "Reintentar" y vacío.
+   - Después de pagar o revertir, vuelve a pedir la página actual y el resumen.
+   - El modo mock (VITE_USE_MOCKS=true) debe seguir funcionando igual que hoy.
+
+3. En src/services/dashboardService.js y src/services/summaryService.js agrega `con_ventas: true`
+   a los parámetros de GET /finanzas/productos/.
+
+4. En modo API, App.vue no debe usar mockData para el encabezado ni para el número de la barra
+   lateral y la barra inferior:
+   - período: el que está seleccionado en la pantalla (o no mostrarlo si la pantalla no tiene período);
+   - número de cobros: `resumen.total_alertas` de GET /finanzas/alertas-cobro/?page_size=1,
+     cargado una vez al iniciar sesión y actualizado después de pagar o revertir.
+   En modo mock, deja los valores simulados.
+
+5. Agrega un favicon (public/favicon.svg y su <link> en index.html) para quitar el 404 de la consola.
+
+6. Actualiza ux/INTEGRACION-BACKEND.md: Cobros ahora filtra, busca, ordena y pagina en la API.
+
+Verificación antes de terminar:
+- `cd ux/prototype/cajaclara-ui && npm run build` sin errores.
+- Con el backend local (`python manage.py runserver`, datos cargados con importar_csv) y
+  VITE_USE_MOCKS=false: abrir Cobros hace 3 peticiones o menos (revisar la pestaña Red del
+  navegador), buscar por nombre de cliente funciona, cambiar de pestaña cambia los resultados,
+  pagar y revertir actualiza la lista y el número de la barra lateral.
+- Con VITE_USE_MOCKS=true todo sigue funcionando.
+
+Entrega: commits en integration/ux-backend y un resumen corto con lo hecho y la lista
+"Pedidos al backend" (vacía si no hubo).
+```
+
+> La tarea 7 (Vercel) y la 8 (pull request) las hace Jorge a mano: la 7 recién cuando backend avise que el usuario `demo` funciona en https://cajaclara-api.onrender.com/admin/.
+
+---
+
 ## 🤝 Parte 4 — Prueba de integración (todos juntos)
 
 Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `http://localhost:5173`), hacer esta prueba completa. Ideal en una llamada con los tres equipos.
