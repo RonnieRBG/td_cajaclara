@@ -6,7 +6,7 @@
 >
 > 🔗 **¿Cómo se juntan datos, backend y frontend?** Los pasos de cada equipo están en [`ACOPLAMIENTO.md`](./ACOPLAMIENTO.md).
 >
-> 🎨 El frontend Vue 3 se mantiene en [`ux/prototype/cajaclara-ui/`](./ux/prototype/cajaclara-ui/) y su estado de diseño está en [`ux/README.md`](./ux/README.md), [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md) y el [README técnico de Vue](./ux/prototype/cajaclara-ui/README.md). Login JWT y rutas protegidas están implementados; los módulos financieros conservan sus mocks hasta validar cada endpoint.
+> 🎨 El frontend Vue 3 se mantiene en [`ux/prototype/cajaclara-ui/`](./ux/prototype/cajaclara-ui/) y su estado de diseño está en [`ux/README.md`](./ux/README.md), [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md) y el [README técnico de Vue](./ux/prototype/cajaclara-ui/README.md). Login JWT, rutas protegidas y módulos financieros (Dashboard, Resumen, Operaciones y Cuentas por cobrar) están integrados con selección explícita entre mocks y API mediante `VITE_USE_MOCKS`.
 
 ---
 
@@ -106,7 +106,7 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 | Consultas de resumen, evolución y listados                       | ✅ Listo                             |
 | Exportación a Excel                                              | ✅ Listo                             |
 | Conexión con cualquier base de datos (SQLite, PostgreSQL, MySQL) | ✅ Listo                             |
-| Conexión con el frontend                                         | 🟡 Login JWT conectado; módulos financieros aún usan mocks (ver [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md)) |
+| Conexión con el frontend                                         | ✅ Listo (JWT, Dashboard, Resumen, Operaciones y Cobros conectados; exportación Excel y selección entre mocks y API vía `VITE_USE_MOCKS`; ver [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md)) |
 | Usuarios, login (JWT) y configuración segura con `.env`          | ✅ Listo                             |
 | Registrar ventas, pagos y gastos desde la API                    | ✅ Listo                             |
 | Flujo de caja (entradas, salidas y saldo)                        | ✅ Listo                             |
@@ -129,14 +129,15 @@ Luego enciende el servidor con `python manage.py runserver` y abre **http://127.
 
 ### 🎨 Equipo de Frontend / UX
 
-- [ ] **Conectar gradualmente las vistas financieras** a los endpoints confirmados. Los mocks de Dashboard, Operaciones, Cobros y Resumen se conservan hasta validar la respuesta real; la matriz y fases están en [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md).
-- [ ] **Gráfico semanal y formularios financieros**: validar parámetros, respuestas y estados de error antes de reemplazar datos demo. La API ofrece `resumen-agrupado?agrupacion=semanas_mes` y contratos de venta, gasto y pago en la Parte 4 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md).
-- [ ] **Mostrar los montos en pesos chilenos** (ej.: `$1.250.000`). La API ya los entrega como números enteros.
-- [ ] **Usar los nombres de campo del esquema de datos** (`id_factura`, `id_cliente`, `id_producto`, `precio_venta`, `tipo_compra: "Física" / "En Línea"`…). La Parte 5 de [`API_DOCUMENTACION.md`](./API_DOCUMENTACION.md) trae la lista.
-- [ ] **Formularios**: toda venta necesita un cliente (`id_cliente`); un gasto es siempre la compra de un producto (`id_producto` + `monto`); un cliente nuevo necesita `nombre` y `contacto`. No existe anular una venta.
-- [ ] **Diseñar los estados de carga y error**: qué ve el usuario mientras cargan los datos o si el servidor no responde.
-- [x] **Pantalla de login JWT**: el frontend Vue ya usa `login`, `refresh`, `logout` y `perfil`, protege las rutas financieras y no ofrece registro público. El procedimiento y las limitaciones de tokens están en el [README técnico de Vue](./ux/prototype/cajaclara-ui/README.md).
-- [ ] **Conectar el botón "Exportar a Excel"** con `apiService.descargarExcel()` (un enlace directo ya no sirve, porque la descarga necesita el token).
+- [x] **Conectar las vistas financieras a los endpoints confirmados**: Dashboard, Operaciones, Cobros y Resumen conectados con selección explícita mediante `VITE_USE_MOCKS`. Detalle en [`ux/INTEGRACION-BACKEND.md`](./ux/INTEGRACION-BACKEND.md).
+- [x] **Gráfico semanal y formularios financieros**: parámetros, respuestas y estados de error validados con contratos reales de venta, gasto y pago.
+- [x] **Mostrar los montos en pesos chilenos** (ej.: `$1.250.000` sin decimales).
+- [x] **Usar los nombres de campo del esquema de datos** (`id_factura`, `id_cliente`, `id_producto`, `precio_venta`, `tipo_compra: "Física" / "En Línea"`).
+- [x] **Formularios integrados**: venta con cliente (`id_cliente`), gasto asociado a insumo/producto (`id_producto` + `monto`) y alta de cliente con feedback de error.
+- [x] **Estados de carga, error y vacío**: implementados en todas las vistas con botón de reintento.
+- [x] **Pantalla de login JWT y rutas protegidas**: login, refresh, logout y perfil con persistencia en cliente.
+- [x] **Conectar el botón "Exportar a Excel"**: descarga de archivo `.xlsx` autenticada con Bearer token y filtros activos del periodo.
+- [ ] **Sincronización automática entre vistas**: actualización reactiva sin requerir navegación o nueva carga.
 
 ### 🧠 Equipo de Backend
 

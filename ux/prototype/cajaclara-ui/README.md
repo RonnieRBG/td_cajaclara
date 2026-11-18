@@ -136,10 +136,10 @@ Definidas en `src/router/index.js` con `createWebHistory`:
 | Ruta | Vista | Estado |
 | --- | --- | --- |
 | `/login` | Inicio de sesión | Pública |
-| `/` | Dashboard | Protegida por JWT; datos mock |
+| `/` | Dashboard | Protegida por JWT; mock o API según entorno |
 | `/operaciones` | Compras y ventas | Protegida por JWT; mock o API según entorno |
 | `/cobros` | Cuentas por cobrar | Protegida por JWT; mock o API según entorno |
-| `/resumen` | Resumen mensual | Protegida por JWT; datos mock |
+| `/resumen` | Resumen mensual | Protegida por JWT; mock o API según entorno |
 | `/dashboard` | Redirección a `/` | Activa |
 | Ruta desconocida | Redirección a `/` | Activa |
 
