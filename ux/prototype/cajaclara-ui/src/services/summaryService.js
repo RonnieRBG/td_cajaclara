@@ -63,7 +63,7 @@ export async function getMonthlySummaryData({ startDate, endDate, channel = '', 
   const groupedParams = { ...dateParams, agrupacion: 'semanas_mes' }
   const operationsParams = { ...dateParams, page_size: 5 }
   const largestSaleParams = { ...dateParams, tipo: 'venta', ordering: '-monto', page_size: 1 }
-  const productsParams = { ...dateParams, ordering: '-total_vendido', page_size: 1 }
+  const productsParams = { ...dateParams, ordering: '-total_vendido', con_ventas: true, page_size: 1 }
   const [summaryResponse, groupedResponse, operationsResponse, largestSaleResponse, productsResponse] =
     await Promise.all([
       apiRequest(`/finanzas/resumen-mensual/?${queryString(dateParams)}`, {

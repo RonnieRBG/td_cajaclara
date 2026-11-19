@@ -11,6 +11,10 @@ Documentación técnica del prototipo frontend de alta fidelidad. Para la invest
 - Layout responsive y design tokens compartidos.
 - Login JWT, restauración de sesión, refresh automático, perfil y logout.
 - Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar conectados a los endpoints financieros con JWT, estados de carga/error/vacío y reintento.
+- Cobros solicita solo la página visible y envía al servidor el estado, la búsqueda y el orden; sus indicadores se consultan por separado desde `resumen.por_estado`.
+- Tras pagar o revertir un cobro se recargan la página actual, sus indicadores y el contador lateral desde `resumen.total_alertas`.
+- Dashboard y Resumen filtran productos con `con_ventas=true`; el encabezado usa el periodo seleccionado en estas vistas cuando está activo el modo API.
+- Favicon SVG enlazado desde el documento HTML.
 - Resumen mensual permite exportar ventas a Excel con sus filtros activos, exclusivamente en modo API.
 - Modo mock explícito e independiente para Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar.
 - Cuentas por cobrar permite consultar facturas, registrar pagos completos y revertirlos; sus indicadores usan el resumen global de la API.
@@ -78,6 +82,7 @@ No hay scripts configurados para tests, lint o formateo.
 ```text
 cajaclara-ui/
 ├── index.html
+├── public/favicon.svg
 ├── package.json
 ├── package-lock.json
 ├── vite.config.js
@@ -234,13 +239,11 @@ Dashboard y Resumen mensual llaman, a través de servicios y `apiClient`, a:
 
 Compras y ventas usa `operationsService.js` y estos endpoints con JWT y refresh: `GET /api/finanzas/operaciones/` (paginación, filtros, orden y resumen global de resultados), `GET /api/finanzas/facturas/{id}/` (detalle), `GET /api/finanzas/opciones/clientes/`, `GET /api/finanzas/opciones/productos/`, `POST /api/finanzas/clientes/`, `POST /api/finanzas/facturas/` y `POST /api/finanzas/gastos/`. El formulario registra ventas al contado o a crédito y gastos asociados a producto; los errores `400` del alta de cliente aparecen junto a sus campos. No se implementan eliminación, anulación ni pagos parciales.
 
-`receivablesService.js` conecta Cuentas por cobrar con JWT y refresh: `GET /api/finanzas/cuentas-por-cobrar/`, `GET /api/finanzas/alertas-cobro/`, `GET /api/finanzas/facturas/{id_factura}/` (solo al abrir detalle), y los POST `/api/finanzas/cuentas-por-cobrar/{id_cuenta}/pagar/` y `/revertir-pago/`. El listado recorre las páginas documentadas para permitir búsqueda, filtro por estado y ordenamiento por vencimiento en el cliente; los indicadores salen de `resumen`, no de la página visible. Pagar acepta fecha opcional y es siempre por el total. La reversión no envía body. Los recordatorios muestran y copian `mensaje_sugerido` de la API, pero no se envían.
+`receivablesService.js` conecta Cuentas por cobrar con JWT y refresh. En modo API, el listado pide únicamente la página actual (`page_size=10`) y envía al servidor estado, búsqueda y orden por vencimiento; la búsqueda se aplica tras una pausa de 300 ms. Los indicadores y contadores de las pestañas provienen de `resumen.por_estado` en una consulta independiente (`page_size=1`). El detalle consulta `/api/finanzas/facturas/{id_factura}/` solo al abrirse. Los recordatorios se limitan a una página de `/api/finanzas/alertas-cobro/`. El contador del layout usa `resumen.total_alertas` de esa ruta con `page_size=1`, se consulta al iniciar sesión y se actualiza tras pagar o revertir. Pagar acepta fecha opcional y siempre es por el total. La reversión no envía body. Los recordatorios muestran y copian `mensaje_sugerido`, pero no se envían. En modo mock se mantienen búsqueda, filtro, orden y paginación locales.
 
 Limitaciones del contrato: no hay desglose de gastos por categoría; se muestra el total de gastos en insumos. Las alertas operativas no corresponden al periodo seleccionado y no tienen filtro por canal. La métrica `ranking-productos` es histórica, por lo que las vistas usan en su lugar el endpoint `/productos/`, que sí permite filtrar por periodo y canal. Los gastos carecen de canal. Cobros no permite crear cuentas ni registrar pagos parciales. Dashboard y Resumen obtienen los totales actualizados en su próxima carga; no hay sincronización automática de otras vistas. Ver [guía de integración UX/Backend](../../INTEGRACION-BACKEND.md). Backend comparte actualmente el mismo negocio entre usuarios autenticados.
 
-Paso técnico previsto:
-
-1. Añadir sincronización automática entre vistas sin recargar la aplicación.
+Tras una operación de pago o reversión, Cobros actualiza inmediatamente su página, resumen e indicador lateral. Dashboard y Resumen reflejan cambios de otros módulos al volver a cargarse; no existe sincronización automática general entre vistas.
 
 ## Pruebas y calidad
 

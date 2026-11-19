@@ -49,6 +49,7 @@ export async function getDashboardData({ startDate, endDate, channel = '', perio
   const productsParams = queryString({
     ...dateParams,
     ordering: '-total_vendido',
+    con_ventas: true,
     page_size: 4
   })
   const [summaryResponse, groupedResponse, operationsResponse, alertsResponse, productsResponse] =

@@ -3,7 +3,7 @@
 ## Estado tras integrar las ramas
 
 - El proyecto Django está en la raíz (`manage.py`, `cajaclara/`, `finanzas/`, `usuarios/`); la aplicación Vue 3/Vite permanece en `ux/prototype/cajaclara-ui/`.
-- Backend de referencia: `upstream/backend`, commit `ce68c3c1835fbfef96ffb6bc1deff3fd5dfaf9ef`. Contratos y procedimientos: [`API_DOCUMENTACION.md`](../API_DOCUMENTACION.md) y [`ACOPLAMIENTO.md`](../ACOPLAMIENTO.md).
+- Backend de referencia: `upstream/backend`, incorporado desde el commit `5815003`. Contratos y procedimientos: [`API_DOCUMENTACION.md`](../API_DOCUMENTACION.md) y [`ACOPLAMIENTO.md`](../ACOPLAMIENTO.md).
 - El login JWT, refresh, perfil, logout y protección de rutas ya están conectados en Vue. No existe registro público.
 - Dashboard, Resumen mensual, Compras y ventas y Cuentas por cobrar consumen los endpoints financieros documentados cuando `VITE_USE_MOCKS=false`; cada vista conserva mocks seleccionados explícitamente con `VITE_USE_MOCKS=true`.
 - Este cambio no escribe ni modifica contratos, modelos, endpoints o pruebas de Django.
@@ -40,7 +40,7 @@ Las peticiones pasan por `src/services/apiClient.js` con Bearer JWT y refresh au
 | `GET /api/finanzas/exportar-excel/` | Archivo `.xlsx` del detalle de ventas, con los filtros de `resumen-mensual`. |
 | `GET /api/finanzas/operaciones/` | Operaciones recientes, sus fechas/montos y conteos agregados; el resumen mensual muestra las primeras cinco. |
 | `GET /api/finanzas/alertas-cobro/` | Cobros prioritarios operativos a la fecha actual (primeros tres); no dependen del periodo/canal del resumen. |
-| `GET /api/finanzas/productos/` | Productos más vendidos del periodo (`fecha_inicio`, `fecha_fin`, `tipo_compra`, `ordering=-total_vendido`, `page_size=4`). |
+| `GET /api/finanzas/productos/` | Productos con ventas del periodo (`fecha_inicio`, `fecha_fin`, `tipo_compra`, `ordering=-total_vendido`, `con_ventas=true`, `page_size=4`). |
 
 `src/services/apiAdapters.js` valida la forma documentada, convierte montos a `Number` y adapta las respuestas a las propiedades de los componentes. Los montos permanecen enteros en CLP y las fechas ISO se conservan. `optionsService.js` controla la fuente y las opciones; `dashboardService.js` y `summaryService.js` realizan las consultas con `apiRequest`.
 
@@ -67,15 +67,19 @@ El formulario envía `fecha_vencimiento` solo para ventas a crédito y usa `ulti
 
 | Acción | Endpoint |
 | --- | --- |
-| Listar cuentas y obtener indicadores globales | `GET /cuentas-por-cobrar/` |
-| Obtener recordatorios y el texto sugerido por Backend | `GET /alertas-cobro/` |
+| Listar la página visible de cuentas | `GET /cuentas-por-cobrar/?estado=&search=&ordering=&page=&page_size=10` |
+| Obtener los indicadores y contadores de estado, independientemente de los filtros activos | `GET /cuentas-por-cobrar/?page=1&page_size=1` (`resumen.por_estado`) |
+| Obtener recordatorios y el texto sugerido por Backend (una página) | `GET /alertas-cobro/?page_size=10` |
+| Obtener/actualizar el indicador lateral de cobros | `GET /alertas-cobro/?page_size=1` (`resumen.total_alertas`) |
 | Consultar productos y líneas de factura al abrir el detalle | `GET /facturas/{id_factura}/` |
 | Registrar un pago completo | `POST /cuentas-por-cobrar/{id_cuenta}/pagar/` |
 | Revertir un pago | `POST /cuentas-por-cobrar/{id_cuenta}/revertir-pago/` |
 
-El listado y las alertas consumen las páginas documentadas. La interfaz busca por cliente/factura, filtra los tres estados y ordena por vencimiento en el cliente porque esos parámetros no están documentados para estos endpoints. Los indicadores usan `resumen` del listado sin filtro, no los registros visibles. El detalle consulta la factura únicamente al abrirse, ya que el listado no incluye productos.
+En modo API, el listado pide solamente la página visible; búsqueda por cliente/factura, estado y orden por vencimiento se envían al servidor. La escritura espera 300 ms antes de buscar. Los indicadores y contadores de las pestañas se cargan con una consulta independiente sin estado y se derivan de `resumen.por_estado`, no de los registros visibles. Las alertas de recordatorio se limitan a una página. El indicador lateral usa `resumen.total_alertas`, se carga al iniciar sesión y se actualiza después de pagar o revertir. El detalle consulta la factura únicamente al abrirse, ya que el listado no incluye productos.
 
-El pago es completo y acepta `fecha_pago` opcional; al omitirla no se envía body. La reversión es un POST sin body. No se registran método ni referencia de pago, no se permiten abonos ni crear cuentas manualmente. El recordatorio solo muestra/copia `mensaje_sugerido` devuelto por la API; no hay envío de mensajes documentado. Después de pagar o revertir se actualizan cuentas e indicadores sin recargar la aplicación. Dashboard y Resumen vuelven a obtener los totales vigentes en su próxima carga.
+El pago es completo y acepta `fecha_pago` opcional; al omitirla no se envía body. La reversión es un POST sin body. No se registran método ni referencia de pago, no se permiten abonos ni crear cuentas manualmente. El recordatorio solo muestra/copia `mensaje_sugerido` devuelto por la API; no hay envío de mensajes documentado. Después de pagar o revertir se recargan la página actual, los indicadores de `resumen.por_estado`, las alertas y el indicador lateral. Dashboard y Resumen vuelven a obtener sus totales en su próxima carga.
+
+Dashboard y Resumen solicitan productos con `con_ventas=true` para omitir productos sin ventas en el periodo y canal elegidos. El encabezado muestra el periodo seleccionado en esas dos vistas y lo oculta en las demás cuando se usa la API; el modo mock conserva el periodo y los valores simulados actuales.
 
 ### Fuente explícita
 

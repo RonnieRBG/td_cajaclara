@@ -87,8 +87,9 @@ El frontend Vue 3 (`ux/prototype/cajaclara-ui/`) se encuentra completamente cone
    - Flujo de caja semanal obtenido desde `/api/finanzas/resumen-agrupado/?agrupacion=semanas_mes`.
    - Cobros prioritarios operativos obtenidos desde `/api/finanzas/alertas-cobro/`.
    - Operaciones recientes obtenidas desde `/api/finanzas/operaciones/`.
-   - Productos más vendidos obtenidos desde `/api/finanzas/productos/`.
+   - Productos más vendidos obtenidos desde `/api/finanzas/productos/?con_ventas=true`, sin productos con cero ventas.
    - Rango de fechas y opciones dinámicas obtenidas desde `/api/finanzas/opciones-filtros/`.
+   - En modo API, el encabezado refleja el periodo seleccionado en Dashboard o Resumen y no muestra un periodo simulado en otras vistas.
 3. **Compras y Ventas (Operaciones):**
    - Listado, paginación, filtros de canal y periodo desde `/api/finanzas/operaciones/`.
    - Consulta de detalle de venta desde `/api/finanzas/facturas/{id_factura}/`.
@@ -96,10 +97,12 @@ El frontend Vue 3 (`ux/prototype/cajaclara-ui/`) se encuentra completamente cone
    - Registro de gastos de insumos asociados a producto (`POST /api/finanzas/gastos/`).
    - Creación y selección de clientes (`POST /api/finanzas/clientes/` y `/api/finanzas/opciones/clientes/`).
 4. **Cuentas por Cobrar:**
-   - Listado paginado de deudas e indicadores globales desde `/api/finanzas/cuentas-por-cobrar/`.
-   - Alertas operativas de cobranza y mensajes sugeridos desde `/api/finanzas/alertas-cobro/`.
+   - Listado con paginación, búsqueda, estado y ordenamiento en el servidor; se solicita solo la página visible.
+   - Indicadores y contadores de pestañas desde `resumen.por_estado`, mediante una consulta independiente.
+   - Alertas operativas de cobranza y mensajes sugeridos desde una página de `/api/finanzas/alertas-cobro/`.
    - Registro de pago completo (`POST /api/finanzas/cuentas-por-cobrar/{id}/pagar/`).
    - Reversión de pago registrado (`POST /api/finanzas/cuentas-por-cobrar/{id}/revertir-pago/`).
+   - Después de pagar o revertir, se actualizan la página actual, sus indicadores y el indicador lateral, que usa `resumen.total_alertas`.
 5. **Exportación a Excel Autenticada:**
    - Descarga de archivo `.xlsx` desde `/api/finanzas/exportar-excel/` mediante `apiClient` con Bearer token, enviando los filtros de fecha y canal activos.
 6. **Selección Explícita entre Mocks y API:**
@@ -107,11 +110,12 @@ El frontend Vue 3 (`ux/prototype/cajaclara-ui/`) se encuentra completamente cone
    - En modo API no se realiza fallback silencioso a mocks en caso de error, garantizando trazabilidad y visualización de estados de error con opción de reintento.
 7. **Frontend Desplegado en Vercel:**
    - Prototipo responsivo y accesible públicamente en: [https://tdcajaclara-cajaclara-ui-omega.vercel.app/](https://tdcajaclara-cajaclara-ui-omega.vercel.app/)
-8. **Limitaciones Técnicas Reconocidas:**
+8. **Favicon:** La aplicación utiliza `public/favicon.svg`, enlazado desde `index.html`.
+9. **Limitaciones Técnicas Reconocidas:**
    - Sin pagos parciales ni abonos (solo pago completo o reversión según contrato).
    - Sin control automático de inventario físico ni stock remanente.
    - Sin facturación electrónica ni boletas ante entidades fiscales.
-   - Sin sincronización reactiva inmediata entre pestañas o módulos: tras registrar un movimiento o cobro, las otras vistas (Dashboard/Resumen) recuperan los totales vigentes en su siguiente carga.
+   - Sin sincronización reactiva inmediata entre pestañas o módulos: tras registrar un movimiento o cobro, Dashboard y Resumen recuperan los totales vigentes en su siguiente carga.
 
 ---
 

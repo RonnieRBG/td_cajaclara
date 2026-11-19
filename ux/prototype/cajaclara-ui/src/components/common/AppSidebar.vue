@@ -148,7 +148,7 @@ const navigateTo = (path) => {
 
               <span class="nav-text">{{ item.label }}</span>
 
-              <span v-if="item.badge && pendingCount > 0" class="nav-badge" :title="`${pendingCount} cuentas por cobrar pendientes`">
+              <span v-if="item.badge && pendingCount !== null && pendingCount > 0" class="nav-badge" :title="`${pendingCount} cuentas por cobrar pendientes`">
                 {{ pendingCount }}
               </span>
             </button>

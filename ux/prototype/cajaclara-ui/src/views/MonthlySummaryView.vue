@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import BadgeStatus from '@/components/common/BadgeStatus.vue'
 import CashChart from '@/components/dashboard/CashChart.vue'
@@ -22,6 +22,7 @@ const exporting = ref(false)
 const exportStatus = ref('')
 const exportError = ref('')
 const numberFormatter = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 })
+const setActivePeriod = inject('setActivePeriod', () => {})
 let requestSequence = 0
 
 const availableYears = computed(() => [
@@ -45,6 +46,7 @@ const periodLabel = computed(() => {
     ? `${month.charAt(0).toLocaleUpperCase('es-CL')}${month.slice(1)} de ${selectedYear.value}`
     : ''
 })
+watch(periodLabel, setActivePeriod, { immediate: true })
 const dateRangeLabel = computed(() => selectedRange.value
   ? `${formatDate(selectedRange.value.startDate)} – ${formatDate(selectedRange.value.endDate)}`
   : '')

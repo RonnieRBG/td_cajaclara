@@ -40,7 +40,7 @@
 
     <div class="app-header__right">
       <!-- Selector de Periodo -->
-      <div class="app-header__period">
+      <div v-if="showPeriod" class="app-header__period">
         <span class="app-header__period-icon" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -96,6 +96,10 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  showPeriod: {
+    type: Boolean,
+    default: true
+  },
   userName: {
     type: String,
     default: 'Max Ceballos'
@@ -116,7 +120,7 @@ const props = defineProps({
 
 defineEmits(['toggle-sidebar', 'logout'])
 
-const activePeriod = computed(() => props.period || props.periodLabel || 'Octubre de 2026')
+const activePeriod = computed(() => props.period || props.periodLabel)
 const activeUser = computed(() => props.ownerName || props.userName || 'Usuario')
 const activeInitials = computed(() => props.ownerInitials || 'U')
 </script>

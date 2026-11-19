@@ -84,7 +84,7 @@ const navigateTo = (path) => {
           </svg>
 
           <!-- Notification badge -->
-          <span v-if="item.badge && pendingCount > 0" class="badge-dot" :title="`${pendingCount} pendientes`">
+          <span v-if="item.badge && pendingCount !== null && pendingCount > 0" class="badge-dot" :title="`${pendingCount} pendientes`">
             {{ pendingCount }}
           </span>
         </span>

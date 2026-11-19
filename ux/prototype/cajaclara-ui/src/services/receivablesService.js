@@ -1,9 +1,14 @@
 import { getLocalDateString } from '@/utils/formatters'
 import { ApiError, apiRequest } from './apiClient'
-import { adaptCollectionAlerts, adaptInvoiceDetail, adaptReceivables } from './apiAdapters'
+import {
+  adaptCollectionAlerts,
+  adaptInvoiceDetail,
+  adaptReceivables,
+  adaptReceivablesSummary
+} from './apiAdapters'
 import { USE_MOCKS } from './optionsService'
 
-const PAGE_SIZE = 100
+const PAGE_SIZE = 10
 let mockAccounts = null
 
 async function loadMockAccounts() {
@@ -16,9 +21,10 @@ async function loadMockAccounts() {
   }
 }
 
-function requestOptions(page) {
-  const query = new URLSearchParams({ page: String(page), page_size: String(PAGE_SIZE) })
-  return { authenticated: true, retryAfterRefresh: true, query: query.toString() }
+function queryString(params) {
+  return new URLSearchParams(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  ).toString()
 }
 
 function getMockStatus(account) {
@@ -34,6 +40,9 @@ function mockSummary(accounts) {
     pendingAmount: [...pending, ...overdue].reduce((total, account) => total + Number(account.amount), 0),
     overdueAmount: overdue.reduce((total, account) => total + Number(account.amount), 0),
     pendingCount: pending.length + overdue.length,
+    pendingOnlyCount: pending.length,
+    overdueCount: overdue.length,
+    totalCount: accounts.length,
     paidCount: paid.length
   }
 }
@@ -48,48 +57,38 @@ async function getMockAccounts() {
   return { count: results.length, results, summary: mockSummary(mockAccounts) }
 }
 
-async function getAllPages(path, adaptPage) {
-  let page = 1
-  let expectedCount = null
-  let pageData = null
-  const results = []
-
-  while (page === 1 || pageData.next) {
-    const { query, ...options } = requestOptions(page)
-    const payload = await apiRequest(`${path}?${query}`, options)
-    pageData = adaptPage(payload)
-    expectedCount ??= pageData.count
-    results.push(...pageData.results)
-
-    if (pageData.next && pageData.results.length === 0) {
-      throw new ApiError('La API devolvió una página vacía antes de completar el listado.', {
-        code: 'INVALID_API_RESPONSE'
-      })
-    }
-    page += 1
-  }
-
-  if (results.length !== expectedCount) {
-    throw new ApiError('La API indicó un total de registros distinto al listado paginado.', {
-      code: 'INVALID_API_RESPONSE'
-    })
-  }
-
-  return { ...pageData, count: expectedCount, results }
-}
-
-export async function getReceivables() {
+export async function getReceivables({ filter = 'all', search = '', sortOrder = 'earliest', page = 1 } = {}) {
   if (USE_MOCKS) return getMockAccounts()
 
-  const pages = await getAllPages('/finanzas/cuentas-por-cobrar/', adaptReceivables)
+  const query = queryString({
+    ...(filter !== 'all' ? { estado: filter } : {}),
+    search: search.trim(),
+    ordering: sortOrder === 'latest' ? '-fecha_vencimiento' : 'fecha_vencimiento',
+    page,
+    page_size: PAGE_SIZE
+  })
+  const payload = await apiRequest(`/finanzas/cuentas-por-cobrar/?${query}`, {
+    authenticated: true,
+    retryAfterRefresh: true
+  })
+  const pageData = adaptReceivables(payload)
   return {
-    count: pages.count,
-    results: pages.results.map((account) => ({
+    ...pageData,
+    results: pageData.results.map((account) => ({
       ...account,
       displayStatus: account.status
-    })),
-    summary: pages.summary
+    }))
   }
+}
+
+export async function getReceivablesSummary() {
+  if (USE_MOCKS) return (await getMockAccounts()).summary
+
+  const payload = await apiRequest('/finanzas/cuentas-por-cobrar/?page=1&page_size=1', {
+    authenticated: true,
+    retryAfterRefresh: true
+  })
+  return adaptReceivablesSummary(payload)
 }
 
 export async function getReceivableDetail(account) {
@@ -122,8 +121,19 @@ export async function getReceivableDetail(account) {
 export async function getCollectionAlerts() {
   if (USE_MOCKS) return []
 
-  const pages = await getAllPages('/finanzas/alertas-cobro/', adaptCollectionAlerts)
-  return pages.results
+  const payload = await apiRequest(`/finanzas/alertas-cobro/?page_size=${PAGE_SIZE}`, {
+    authenticated: true,
+    retryAfterRefresh: true
+  })
+  return adaptCollectionAlerts(payload).results
+}
+
+export async function getCollectionAlertCount() {
+  const payload = await apiRequest('/finanzas/alertas-cobro/?page_size=1', {
+    authenticated: true,
+    retryAfterRefresh: true
+  })
+  return adaptCollectionAlerts(payload).count
 }
 
 export async function payReceivable(id, paymentDate) {

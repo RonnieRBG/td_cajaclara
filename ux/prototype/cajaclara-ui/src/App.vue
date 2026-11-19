@@ -1,18 +1,59 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { mockData } from '@/data/dashboardMock'
 import AppSidebar from '@/components/common/AppSidebar.vue'
 import AppHeader from '@/components/common/AppHeader.vue'
 import AppBottomNav from '@/components/common/AppBottomNav.vue'
 import { useAuth } from '@/composables/useAuth'
-import { DEMO_ACCESS_ENABLED } from '@/services/optionsService'
+import { getCollectionAlertCount } from '@/services/receivablesService'
+import { DEMO_ACCESS_ENABLED, USE_MOCKS } from '@/services/optionsService'
 
 const isSidebarOpen = ref(false)
 const route = useRoute()
 const router = useRouter()
 const { user, logout } = useAuth()
 const isAuthLayout = computed(() => route.meta.layout === 'auth')
+const pendingCount = ref(USE_MOCKS ? mockData.operationsSummary.cuentasPendientes : null)
+const pendingCountError = ref('')
+const activePeriod = ref(USE_MOCKS ? mockData.business.period : '')
+let countRequestSequence = 0
+
+async function refreshCollectionAlertCount() {
+  if (USE_MOCKS) return
+
+  const sequence = ++countRequestSequence
+  pendingCountError.value = ''
+  try {
+    const count = await getCollectionAlertCount()
+    if (sequence === countRequestSequence) pendingCount.value = count
+  } catch (error) {
+    if (sequence === countRequestSequence) {
+      pendingCountError.value = error.message || 'No se pudo actualizar el indicador de cobros.'
+    }
+  }
+}
+
+provide('refreshCollectionAlertCount', refreshCollectionAlertCount)
+provide('setActivePeriod', (period) => {
+  if (!USE_MOCKS) activePeriod.value = period || ''
+})
+
+watch([user, isAuthLayout], ([currentUser, authLayout]) => {
+  if (USE_MOCKS) return
+  if (currentUser && !authLayout) {
+    refreshCollectionAlertCount()
+  } else {
+    countRequestSequence += 1
+    pendingCount.value = null
+    pendingCountError.value = ''
+  }
+}, { immediate: true })
+
+watch(() => route.path, () => {
+  if (!USE_MOCKS) activePeriod.value = ''
+})
+
 // TODO: eliminar acceso demo temporal.
 const isDemoSession = computed(() => DEMO_ACCESS_ENABLED && user.value?.isDemo === true)
 const profileName = computed(() => user.value?.nombre || user.value?.username || 'Usuario')
@@ -53,7 +94,7 @@ const handleLogout = async () => {
     <!-- Sidebar navigation (Desktop permanent, Mobile/Tablet drawer) -->
     <AppSidebar
       :isOpen="isSidebarOpen"
-      :pendingCount="mockData.operationsSummary.cuentasPendientes"
+      :pendingCount="pendingCount"
       :userName="profileName"
       :userEmail="user?.email || ''"
       :userInitials="profileInitials"
@@ -65,13 +106,20 @@ const handleLogout = async () => {
       <!-- Top Bar Header -->
       <AppHeader
         :businessName="mockData.business.name"
-        :period="mockData.business.period"
+        :period="USE_MOCKS ? mockData.business.period : activePeriod"
+        :period-label="USE_MOCKS ? mockData.business.period : ''"
+        :show-period="USE_MOCKS || Boolean(activePeriod)"
         :ownerName="profileName"
         :ownerEmail="user?.email || ''"
         :ownerInitials="profileInitials"
         @toggle-sidebar="toggleSidebar"
         @logout="handleLogout"
       />
+
+      <div v-if="pendingCountError" class="layout-api-error" role="alert">
+        <span>{{ pendingCountError }}</span>
+        <button type="button" @click="refreshCollectionAlertCount">Reintentar</button>
+      </div>
 
       <div v-if="isDemoSession" class="demo-banner" role="status">
         Modo demostración: datos simulados
@@ -84,7 +132,7 @@ const handleLogout = async () => {
     </div>
 
     <!-- Bottom Navigation Bar for Mobile -->
-    <AppBottomNav :pendingCount="mockData.operationsSummary.cuentasPendientes" />
+    <AppBottomNav :pendingCount="pendingCount" />
   </div>
 </template>
 
@@ -141,12 +189,35 @@ const handleLogout = async () => {
   text-align: center;
 }
 
+.layout-api-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--layout-control-gap);
+  padding: var(--space-2) var(--layout-gutter-desktop);
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.layout-api-error button {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
 @media (max-width: 1200px) {
   .app-main {
     padding: var(--layout-gutter-tablet) var(--layout-gutter-tablet) var(--space-12);
   }
 
   .demo-banner {
+    padding-inline: var(--layout-gutter-tablet);
+  }
+
+  .layout-api-error {
     padding-inline: var(--layout-gutter-tablet);
   }
 }
@@ -167,6 +238,10 @@ const handleLogout = async () => {
   }
 
   .demo-banner {
+    padding-inline: var(--layout-gutter-mobile);
+  }
+
+  .layout-api-error {
     padding-inline: var(--layout-gutter-mobile);
   }
 }

@@ -1,22 +1,27 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import StatCard from '@/components/common/StatCard.vue'
 import BadgeStatus from '@/components/common/BadgeStatus.vue'
 import ReceivableDetailModal from '@/components/receivables/ReceivableDetailModal.vue'
 import PaymentModal from '@/components/receivables/PaymentModal.vue'
 import { formatCLP, formatDate, getLocalDateString } from '@/utils/formatters'
+import { USE_MOCKS } from '@/services/optionsService'
 import {
   getCollectionAlerts,
   getReceivableDetail,
   getReceivables,
+  getReceivablesSummary,
   payReceivable,
   revertReceivablePayment
 } from '@/services/receivablesService'
 
 const accounts = ref([])
-const summary = ref({ pendingAmount: 0, overdueAmount: 0, pendingCount: 0, paidCount: 0 })
+const summary = ref(null)
+const summaryLoading = ref(false)
+const summaryError = ref('')
 const isLoading = ref(false)
 const loadError = ref('')
+const resultCount = ref(0)
 const alerts = ref([])
 const alertsLoading = ref(false)
 const alertsError = ref('')
@@ -35,6 +40,13 @@ const paymentError = ref('')
 const showToast = ref(false)
 const toastMessage = ref('')
 let toastTimeout
+let searchTimeout
+let accountRequestSequence = 0
+let summaryRequestSequence = 0
+let skipPageReload = false
+const refreshCollectionAlertCount = inject('refreshCollectionAlertCount', () => {
+  throw new Error('No está disponible la actualización del indicador lateral de cobros.')
+})
 
 const alertByAccount = computed(() => Object.fromEntries(
   alerts.value.map((alert) => [String(alert.id), alert])
@@ -52,6 +64,8 @@ const statusByFilter = {
 }
 
 const filteredAccounts = computed(() => {
+  if (!USE_MOCKS) return accounts.value
+
   const query = searchQuery.value.trim().toLocaleLowerCase('es-CL')
   return accounts.value
     .filter(account => activeFilter.value === 'all' || account.displayStatus === statusByFilter[activeFilter.value])
@@ -61,13 +75,55 @@ const filteredAccounts = computed(() => {
       return sortOrder.value === 'earliest' ? result : -result
     })
 })
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredAccounts.value.length / pageSize)))
+const displayedCount = computed(() => USE_MOCKS ? filteredAccounts.value.length : resultCount.value)
+const totalPages = computed(() => Math.max(
+  1,
+  Math.ceil((USE_MOCKS ? filteredAccounts.value.length : resultCount.value) / pageSize)
+))
 const pageAccounts = computed(() => {
+  if (!USE_MOCKS) return accounts.value
   const start = (currentPage.value - 1) * pageSize
   return filteredAccounts.value.slice(start, start + pageSize)
 })
+const noAccounts = computed(() => USE_MOCKS
+  ? accounts.value.length === 0
+  : summary.value?.totalCount === 0
+)
 
-watch([activeFilter, searchQuery, sortOrder], () => { currentPage.value = 1 })
+function tabCount(filter) {
+  if (!summary.value) return 0
+  if (filter === 'all') return summary.value.totalCount
+  if (filter === 'pending') return summary.value.pendingOnlyCount
+  if (filter === 'overdue') return summary.value.overdueCount
+  return summary.value.paidCount
+}
+
+watch([activeFilter, sortOrder], () => {
+  if (currentPage.value !== 1) {
+    skipPageReload = true
+    currentPage.value = 1
+  }
+  if (!USE_MOCKS) loadAccounts()
+})
+watch(currentPage, () => {
+  if (skipPageReload) {
+    skipPageReload = false
+    return
+  }
+  if (!USE_MOCKS) loadAccounts()
+})
+watch(searchQuery, () => {
+  if (USE_MOCKS) {
+    currentPage.value = 1
+    return
+  }
+  window.clearTimeout(searchTimeout)
+  if (currentPage.value !== 1) {
+    skipPageReload = true
+    currentPage.value = 1
+  }
+  searchTimeout = window.setTimeout(loadAccounts, 300)
+})
 watch(totalPages, (pages) => {
   if (currentPage.value > pages) currentPage.value = pages
 })
@@ -88,16 +144,41 @@ const dueAlert = (account) => {
 }
 
 async function loadAccounts() {
+  const sequence = ++accountRequestSequence
   isLoading.value = true
   loadError.value = ''
   try {
-    const data = await getReceivables()
+    const data = await getReceivables({
+      filter: statusByFilter[activeFilter.value] || 'all',
+      search: searchQuery.value,
+      sortOrder: sortOrder.value,
+      page: currentPage.value
+    })
+    if (sequence !== accountRequestSequence) return
     accounts.value = data.results
-    summary.value = data.summary
+    resultCount.value = data.count
   } catch (error) {
-    loadError.value = error.message || 'No se pudieron cargar las cuentas por cobrar.'
+    if (sequence === accountRequestSequence) {
+      loadError.value = error.message || 'No se pudieron cargar las cuentas por cobrar.'
+    }
   } finally {
-    isLoading.value = false
+    if (sequence === accountRequestSequence) isLoading.value = false
+  }
+}
+
+async function loadSummary() {
+  const sequence = ++summaryRequestSequence
+  summaryLoading.value = true
+  summaryError.value = ''
+  try {
+    const data = await getReceivablesSummary()
+    if (sequence === summaryRequestSequence) summary.value = data
+  } catch (error) {
+    if (sequence === summaryRequestSequence) {
+      summaryError.value = error.message || 'No se pudieron cargar los indicadores de cobros.'
+    }
+  } finally {
+    if (sequence === summaryRequestSequence) summaryLoading.value = false
   }
 }
 
@@ -181,7 +262,12 @@ async function savePayment({ date }) {
   paymentAccount.value = null
   paymentSaving.value = false
   notify(savedMode === 'pay' ? 'Pago completo registrado.' : 'Pago revertido.')
-  await Promise.all([loadAccounts(), loadAlerts()])
+  await Promise.all([
+    loadAccounts(),
+    loadSummary(),
+    loadAlerts(),
+    refreshCollectionAlertCount()
+  ])
   await nextTick()
   document.querySelector('#receivables-list-title')?.focus()
 }
@@ -201,9 +287,13 @@ async function copyReminder(account) {
 
 onMounted(() => {
   loadAccounts()
+  loadSummary()
   loadAlerts()
 })
-onBeforeUnmount(() => window.clearTimeout(toastTimeout))
+onBeforeUnmount(() => {
+  window.clearTimeout(toastTimeout)
+  window.clearTimeout(searchTimeout)
+})
 </script>
 
 <template>
@@ -221,12 +311,19 @@ onBeforeUnmount(() => window.clearTimeout(toastTimeout))
       </div>
     </header>
 
-    <section class="summary-grid" aria-label="Resumen de cuentas por cobrar">
+    <section v-if="summary" class="summary-grid" aria-label="Resumen de cuentas por cobrar">
       <StatCard title="Total pendiente" :amount="summary.pendingAmount" subtitle="Incluye cuentas vencidas" variant="pending" />
       <StatCard title="Total vencido" :amount="summary.overdueAmount" subtitle="Monto fuera de plazo" variant="expense" />
       <StatCard title="Cuentas pendientes" :value="summary.pendingCount" subtitle="Pendientes o vencidas" variant="pending" :format-as-currency="false" />
       <StatCard title="Cuentas pagadas" :value="summary.paidCount" subtitle="Cuentas completamente pagadas" variant="income" :format-as-currency="false" />
     </section>
+    <div v-else-if="summaryLoading" class="receivables-feedback" role="status" aria-live="polite">
+      Cargando indicadores de cobros…
+    </div>
+    <div v-if="summaryError" class="receivables-feedback receivables-feedback--error" role="alert">
+      <span>{{ summaryError }}</span>
+      <button type="button" class="btn btn-secondary" @click="loadSummary">Reintentar indicadores</button>
+    </div>
 
     <div v-if="alertsLoading" class="receivables-feedback" role="status" aria-live="polite">
       Cargando recordatorios sugeridos…
@@ -242,7 +339,7 @@ onBeforeUnmount(() => window.clearTimeout(toastTimeout))
           <span class="page-eyebrow">Seguimiento de clientes</span>
           <h2 id="receivables-list-title" tabindex="-1">Listado de cuentas</h2>
         </div>
-        <span class="result-count">{{ filteredAccounts.length }} {{ filteredAccounts.length === 1 ? 'cuenta' : 'cuentas' }}</span>
+        <span class="result-count">{{ displayedCount }} {{ displayedCount === 1 ? 'cuenta' : 'cuentas' }}</span>
       </div>
 
       <div class="filter-tabs" role="group" aria-label="Filtrar cuentas por estado">
@@ -253,7 +350,7 @@ onBeforeUnmount(() => window.clearTimeout(toastTimeout))
           :aria-pressed="activeFilter === tab.id"
           :class="{ 'is-active': activeFilter === tab.id }"
           @click="activeFilter = tab.id"
-        >{{ tab.label }}</button>
+        >{{ tab.label }} ({{ tabCount(tab.id) }})</button>
       </div>
 
       <div class="filter-controls">
@@ -281,7 +378,7 @@ onBeforeUnmount(() => window.clearTimeout(toastTimeout))
         <p>{{ loadError }}</p>
         <button type="button" class="btn btn-secondary" @click="loadAccounts">Reintentar</button>
       </div>
-      <div v-else-if="accounts.length === 0" class="empty-state">
+      <div v-else-if="noAccounts" class="empty-state">
         <span class="empty-icon" aria-hidden="true">◇</span>
         <h3>Aún no tienes cuentas por cobrar</h3>
         <p>Las ventas pendientes aparecerán aquí.</p>
@@ -383,7 +480,7 @@ onBeforeUnmount(() => window.clearTimeout(toastTimeout))
           </article>
         </div>
 
-        <nav v-if="filteredAccounts.length > pageSize" class="pagination" aria-label="Paginación de cuentas por cobrar">
+        <nav v-if="totalPages > 1" class="pagination" aria-label="Paginación de cuentas por cobrar">
           <button type="button" class="btn btn-secondary" :disabled="currentPage === 1" @click="currentPage -= 1">
             Página anterior
           </button>

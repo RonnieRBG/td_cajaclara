@@ -309,11 +309,7 @@ export function adaptCollectionAlerts(payload) {
 }
 
 export function adaptReceivables(payload) {
-  const summary = requiredRecord(payload?.resumen, 'resumen')
-  const byStatus = requiredRecord(summary.por_estado, 'resumen.por_estado')
-  const pending = requiredRecord(byStatus.PENDIENTE, 'resumen.por_estado.PENDIENTE')
-  const overdue = requiredRecord(byStatus.VENCIDA, 'resumen.por_estado.VENCIDA')
-  const paid = requiredRecord(byStatus.PAGADA, 'resumen.por_estado.PAGADA')
+  const summary = adaptReceivablesSummary(payload)
   const results = requiredArray(payload?.results, 'results').map((item) => {
     const account = requiredRecord(item, 'results[]')
     if (account.id_cuenta === null || account.id_cuenta === undefined) invalidResponse('results[].id_cuenta')
@@ -349,14 +345,28 @@ export function adaptReceivables(payload) {
     next: payload.next,
     previous: payload.previous,
     results,
-    summary: {
-      pendingAmount: requiredNumber(pending.monto, 'resumen.por_estado.PENDIENTE.monto') +
-        requiredNumber(overdue.monto, 'resumen.por_estado.VENCIDA.monto'),
-      overdueAmount: requiredNumber(overdue.monto, 'resumen.por_estado.VENCIDA.monto'),
-      pendingCount: requiredNumber(pending.cantidad, 'resumen.por_estado.PENDIENTE.cantidad') +
-        requiredNumber(overdue.cantidad, 'resumen.por_estado.VENCIDA.cantidad'),
-      paidCount: requiredNumber(paid.cantidad, 'resumen.por_estado.PAGADA.cantidad')
-    }
+    summary
+  }
+}
+
+export function adaptReceivablesSummary(payload) {
+  const summary = requiredRecord(payload?.resumen, 'resumen')
+  const byStatus = requiredRecord(summary.por_estado, 'resumen.por_estado')
+  const pending = requiredRecord(byStatus.PENDIENTE, 'resumen.por_estado.PENDIENTE')
+  const overdue = requiredRecord(byStatus.VENCIDA, 'resumen.por_estado.VENCIDA')
+  const paid = requiredRecord(byStatus.PAGADA, 'resumen.por_estado.PAGADA')
+  return {
+    pendingOnlyCount: requiredNumber(pending.cantidad, 'resumen.por_estado.PENDIENTE.cantidad'),
+    overdueCount: requiredNumber(overdue.cantidad, 'resumen.por_estado.VENCIDA.cantidad'),
+    paidCount: requiredNumber(paid.cantidad, 'resumen.por_estado.PAGADA.cantidad'),
+    pendingAmount: requiredNumber(pending.monto, 'resumen.por_estado.PENDIENTE.monto') +
+      requiredNumber(overdue.monto, 'resumen.por_estado.VENCIDA.monto'),
+    overdueAmount: requiredNumber(overdue.monto, 'resumen.por_estado.VENCIDA.monto'),
+    pendingCount: requiredNumber(pending.cantidad, 'resumen.por_estado.PENDIENTE.cantidad') +
+      requiredNumber(overdue.cantidad, 'resumen.por_estado.VENCIDA.cantidad'),
+    totalCount: requiredNumber(pending.cantidad, 'resumen.por_estado.PENDIENTE.cantidad') +
+      requiredNumber(overdue.cantidad, 'resumen.por_estado.VENCIDA.cantidad') +
+      requiredNumber(paid.cantidad, 'resumen.por_estado.PAGADA.cantidad')
   }
 }
 

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { ApiError } from '@/services/apiClient'
 import { getDashboardData } from '@/services/dashboardService'
 import { getFilterOptions, getPeriodRange, USE_MOCKS } from '@/services/optionsService'
@@ -18,6 +18,7 @@ const selectedChannel = ref('')
 const dashboardData = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const setActivePeriod = inject('setActivePeriod', () => {})
 let requestSequence = 0
 
 const periodLabel = computed(() => {
@@ -25,6 +26,7 @@ const periodLabel = computed(() => {
   if (!period) return ''
   return `${period.label.charAt(0).toLocaleUpperCase('es-CL')}${period.label.slice(1)} de ${period.year}`
 })
+watch(periodLabel, setActivePeriod, { immediate: true })
 const numberFormatter = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 })
 
 const errorMessage = computed(() => {
