@@ -92,3 +92,26 @@ class AutenticacionTests(TestCase):
         for _ in range(10):
             self.login(password="mala")
         self.assertEqual(self.login().status_code, 429)
+
+
+class CorsVercelTests(TestCase):
+    PATRON = r"^https://tdcajaclara-cajaclara-[a-z0-9]+-jltamayocabello-droids-projects\.vercel\.app$"
+
+    def preflight(self, origen):
+        return self.client.options(
+            "/api/auth/login/",
+            HTTP_ORIGIN=origen,
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS="content-type",
+        )
+
+    def test_acepta_deploys_del_proyecto_por_patron(self):
+        with self.settings(CORS_ALLOWED_ORIGIN_REGEXES=[self.PATRON]):
+            origen = "https://tdcajaclara-cajaclara-aj9avu5oe-jltamayocabello-droids-projects.vercel.app"
+            respuesta = self.preflight(origen)
+        self.assertEqual(respuesta.get("Access-Control-Allow-Origin"), origen)
+
+    def test_rechaza_otros_dominios(self):
+        with self.settings(CORS_ALLOWED_ORIGIN_REGEXES=[self.PATRON]):
+            respuesta = self.preflight("https://sitio-ajeno.vercel.app")
+        self.assertIsNone(respuesta.get("Access-Control-Allow-Origin"))
