@@ -22,7 +22,7 @@ RUTAS_PROTEGIDAS = [
 
 class AutenticacionTests(TestCase):
     def setUp(self):
-        cache.clear()  # reinicia el contador de intentos de login entre pruebas
+        cache.clear()
         self.client = APIClient()
         self.usuario = get_user_model().objects.create_user(
             username="cajera", password="ClaveSegura.2026", first_name="Ana", last_name="Pérez"

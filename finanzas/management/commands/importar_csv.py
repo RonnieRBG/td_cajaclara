@@ -25,7 +25,6 @@ from django.utils import timezone
 
 from finanzas.models import Cliente, CuentaPorCobrar, DetalleVenta, GastoInsumo, Producto, Venta
 
-# Carpetas donde se buscan los CSV (la primera que exista). También se puede indicar con --carpeta.
 CARPETAS_CANDIDATAS = [
     Path(settings.BASE_DIR) / "data",
     Path(settings.BASE_DIR) / "datos" / "Etapas_4-5-6" / "Etapa_4_Carga_y_Nube" / "datos_procesados",
@@ -79,12 +78,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("\n✅ Importación completada."))
         self._mostrar_resumen()
-        # Vistas de métricas del equipo de datos (las que lee /api/finanzas/metricas/)
         call_command("crear_vistas_metricas", stdout=self.stdout)
 
-    # ------------------------------------------------------------------
-    # Utilidades
-    # ------------------------------------------------------------------
     def _carpeta_datos(self, carpeta):
         if carpeta:
             ruta = Path(carpeta)
@@ -140,9 +135,6 @@ class Command(BaseCommand):
         modelo.objects.bulk_create(nuevos, batch_size=BATCH_SIZE)
         self.stdout.write(f"  {nombre:<18} {len(nuevos):>9,} nuevas ({total_csv:,} en el CSV)")
 
-    # ------------------------------------------------------------------
-    # Tablas
-    # ------------------------------------------------------------------
     def _importar_clientes(self, filas):
         self._crear(
             Cliente,
@@ -210,7 +202,7 @@ class Command(BaseCommand):
             vencimiento = self._fecha(f["fecha_vencimiento"])
             estado = f.get("estado", "").upper()
             fecha_pago = self._fecha(f.get("fecha_pago"))
-            if not estado:  # formato Etapa 3: sin estado ni pagos
+            if not estado:
                 estado = CuentaPorCobrar.VENCIDA if vencimiento < hoy else CuentaPorCobrar.PENDIENTE
                 fecha_pago = None
             objetos.append(

@@ -51,8 +51,6 @@ NOMBRES_ESTADO_PAGO = dict(ESTADO_PAGO_CHOICES)
 ESTADOS_CUENTA_VALIDOS = [codigo for codigo, _ in CuentaPorCobrar.ESTADO_CHOICES]
 VALORES_VERDADEROS = ("true", "1", "si", "sí")
 
-# Función de la base de datos con la que se agrupa cada opción. "semanas_mes" agrupa por
-# día y luego se juntan los días en las semanas del mes (1-7, 8-14, 15-21 y 22 a fin de mes).
 AGRUPACIONES = {
     "diaria": TruncDay,
     "semanal": TruncWeek,
@@ -167,9 +165,9 @@ def _sumar_meses(dia, meses):
 def _inicio_periodo(dia, agrupacion):
     if agrupacion == "diaria":
         return dia
-    if agrupacion == "semanal":  # semana de lunes a domingo
+    if agrupacion == "semanal":
         return dia - timedelta(days=dia.weekday())
-    if agrupacion == "semanas_mes":  # semanas del mes: días 1, 8, 15 y 22
+    if agrupacion == "semanas_mes":
         return dia.replace(day=min((dia.day - 1) // 7, 3) * 7 + 1)
     if agrupacion == "mensual":
         return dia.replace(day=1)
@@ -184,7 +182,6 @@ def _siguiente_periodo(inicio, agrupacion):
     if agrupacion == "semanal":
         return inicio + timedelta(days=7)
     if agrupacion == "semanas_mes":
-        # la 4ª semana (desde el día 22) llega hasta fin de mes
         return _sumar_meses(inicio, 1) if inicio.day == 22 else inicio + timedelta(days=7)
     if agrupacion == "mensual":
         return _sumar_meses(inicio, 1)
@@ -282,15 +279,12 @@ class ResumenFinancieroView(APIView):
             "total_facturas": total_facturas,
             "total_transacciones": totales["transacciones"],
             "total_unidades": totales["unidades"] or 0,
-            # Ventas del período (al contado y a crédito) y su costo de mercadería
             "total_ingresos": _monto(ingresos),
             "total_costos": _monto(costos),
             "utilidad_bruta": _monto(utilidad),
             "margen_porcentaje": _margen(ingresos, utilidad),
             "por_estado_pago": por_estado,
-            # Ventas por canal (Física / En Línea)
             "por_tipo_compra": por_canal,
-            # Dinero que realmente entró y salió (ver finanzas/flujo_caja.py)
             "flujo_caja": flujo_caja.a_json(flujo),
         })
 
@@ -339,7 +333,6 @@ class ResumenAgrupadoView(APIView):
                 costos=Sum("total_costo"),
             )
         )
-        # Varias filas pueden caer en el mismo período (ej.: los días de una semana del mes)
         por_grupo = {}
         for f in filas:
             clave = _inicio_periodo(_a_fecha(f["grupo"]), agrupacion)
@@ -372,7 +365,6 @@ class ResumenAgrupadoView(APIView):
                 "periodo": _etiqueta(inicio, agrupacion),
                 "fecha_inicio": desde.strftime(FORMATO_FECHA),
                 "fecha_fin": hasta.strftime(FORMATO_FECHA),
-                # Texto corto para el gráfico, ej.: "01 - 07 Oct"
                 "rango": _rango_corto(desde, hasta),
                 **_resumen(transacciones, ingresos, costos),
                 "flujo_caja": flujo_caja.a_json(flujo_por_periodo.get(inicio, flujo_caja.vacio())),
@@ -406,9 +398,6 @@ class ExportarExcelView(APIView):
     ]
 
     def perform_content_negotiation(self, request, force=False):
-        # El frontend pide el archivo con "Accept: application/vnd.openxmlformats-...sheet".
-        # DRF solo conoce JSON y respondía 406; con force=True usa JSON para los errores
-        # y el Excel sale igual, porque se devuelve como HttpResponse.
         return super().perform_content_negotiation(request, force=True)
 
     def get(self, request):
@@ -481,16 +470,10 @@ class ExportarExcelView(APIView):
         hoja.auto_filter.ref = hoja.dimensions
 
 
-# ==============================================================================
-# PAGINACIÓN Y ENDPOINTS REST PARA EL EQUIPO DE FRONTEND
-# ==============================================================================
-
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50
     page_size_query_param = "page_size"
     max_page_size = 500
-
-
 
 
 def _rango_opcional(params):
@@ -538,9 +521,6 @@ class ClienteListView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        # Cada total se calcula en su propia subconsulta. Si se hacen dos JOIN
-        # (ventas y cuentas) en la misma consulta, las filas se multiplican y
-        # la deuda sale inflada (deuda real × número de ventas del cliente).
         ventas_del_cliente = (
             Venta.objects.filter(cliente=OuterRef("pk"))
             .order_by()
@@ -596,7 +576,6 @@ class ProductoListView(generics.ListAPIView):
     def get_queryset(self):
         params = self.request.query_params
 
-        # Ventas que cuentan para los totales de cada producto
         cuenta = Q()
         fecha_ini, fecha_fin = _rango_opcional(params)
         if fecha_ini:
@@ -785,7 +764,6 @@ class CuentaPorCobrarListView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
-        # Totales para los indicadores del dashboard y de la pantalla de Cobros
         qs_filtrado = self.filter_queryset(self.get_queryset()).order_by()
         por_estado = {
             codigo: {"nombre": nombre, "cantidad": 0, "monto": 0}

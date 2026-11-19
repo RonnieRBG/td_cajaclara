@@ -41,7 +41,6 @@ class Command(BaseCommand):
             with transaction.atomic(), connection.cursor() as cursor:
                 for sentencia in _sentencias(script):
                     if sentencia.upper().startswith("GRANT"):
-                        # Los roles de Neon (cajaclara_lectura_bi, cajaclara_app_rw) pueden no existir en local.
                         try:
                             with transaction.atomic():
                                 cursor.execute(sentencia)
