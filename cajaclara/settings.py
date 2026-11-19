@@ -220,6 +220,20 @@ CORS_ALLOWED_ORIGINS = _lista(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
 CSRF_TRUSTED_ORIGINS = _lista("CSRF_TRUSTED_ORIGINS")
+# Permite que el frontend lea el nombre del archivo al descargar el Excel (otro dominio).
+CORS_EXPOSE_HEADERS = ["Content-Disposition"]
+
+# Registro de errores: con DEBUG=False, Django no muestra el detalle del error en la página.
+# Esto lo escribe en la consola, que es lo que muestran los registros (Logs) de Render o Railway.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"consola": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "django.request": {"handlers": ["consola"], "level": "ERROR", "propagate": False},
+        "django.security": {"handlers": ["consola"], "level": "WARNING", "propagate": False},
+    },
+}
 
 # Ajustes de producción (se activan solo con DEBUG=False)
 if not DEBUG:

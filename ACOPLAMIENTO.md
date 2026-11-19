@@ -16,15 +16,18 @@ Guía paso a paso para juntar las tres ramas del proyecto en una sola aplicació
 
 ## 📅 Orden de trabajo
 
-| Paso | Equipo   | Qué se hace                                                        | Depende de |
-| :--: | :------- | :----------------------------------------------------------------- | :--------: |
-|  1   | Datos    | Dejar Neon listo y entregar las credenciales del backend           |     —      |
-|  2   | Datos    | Crear (una sola vez) las tablas de usuarios de Django en Neon      |     1      |
-|  3   | Backend  | Conectar la API a Neon y comprobar el esquema                      |    1, 2    |
-|  4   | Frontend | Conectar el prototipo a la API (login, lecturas y formularios)     |     3      |
-|  5   | Todos    | Prueba de integración completa (checklist final)                   |  1 al 4    |
+| Paso | Equipo   | Qué se hace                                                        | Depende de | Estado (18/11/2026)                                   |
+| :--: | :------- | :----------------------------------------------------------------- | :--------: | :---------------------------------------------------- |
+|  1   | Datos    | Dejar Neon listo y entregar las credenciales del backend           |     —      | ✅ Neon cargado y credenciales entregadas (el equipo decidió mantener las claves actuales) |
+|  2   | Datos    | Crear (una sola vez) las tablas de usuarios de Django en Neon      |     1      | ⏳ **Pendiente: es lo que destraba el resto**         |
+|  3   | Backend  | Conectar la API a Neon y comprobar el esquema                      |    1, 2    | ✅ Conectado a Neon (`verificar_esquema` OK) y publicado en Render: `https://cajaclara-api.onrender.com/api` |
+|  4   | Frontend | Conectar el prototipo a la API (login, lecturas y formularios)     |     3      | 🟡 Todas las pantallas y formularios funcionan contra la API (`integration/ux-backend`); quedan los ajustes de la **Parte 3C** |
+|  5   | Todos    | Prueba de integración completa (checklist final)                   |  1 al 4    | ⏳ Pendiente (necesita el paso 2 y el usuario `demo`) |
+|  6   | Backend + Frontend | Publicar: backend en Render + frontend en Vercel (Parte 5) | 2, 4 | 🟡 Backend publicado; falta pasar Vercel a la API real |
 
 > El frontend **no necesita esperar a Neon**: puede avanzar desde el día 1 contra el backend en local con SQLite (ver 3.1).
+>
+> 🤖 **Equipo UX:** si usan un asistente de IA, la [Parte 3B](#-parte-3b--prompt-para-la-ia-del-equipo-ux) trae un prompt listo para copiar con todo el contexto.
 
 ---
 
@@ -175,17 +178,32 @@ python manage.py runserver
    - Neon: `SELECT flujo_caja_neto FROM vw_flujo_caja_mensual WHERE periodo = '2022-08';`
    - Los dos deben dar **-164348**.
 
-### Paso 2.4 — Crear los usuarios del equipo
+### Paso 2.4 — Crear los usuarios de la app (los administra backend)
 
-No hay registro público. Cada persona que use la app necesita un usuario, creado desde `/admin/` → **Usuarios** → **Agregar**, o con:
+Hay **dos tipos de usuario** y es fácil confundirlos:
+
+| Tipo                          | Qué es                                                          | Ejemplos                               | Quién lo maneja |
+| :---------------------------- | :-------------------------------------------------------------- | :------------------------------------- | :-------------- |
+| **Usuario de la base de datos** | Con el que Django se conecta a Neon. Nadie entra a la app con él. | `cajaclara_app_rw`, `neondb_owner`   | Datos           |
+| **Usuario de la app**         | Con el que una persona entra al login (Vercel o local). Es una fila de la tabla `auth_user` de Django, guardada en Neon. | `admin`, `demo`, `jorge` | **Backend** |
+
+- **No hay un usuario ni una contraseña fijos en el código**, y no debe haberlos. Tampoco hay registro público.
+- **Requisito:** las tablas de usuarios de Django deben existir en Neon (paso 1.4). Crearlas necesita `neondb_owner`. Si el equipo de datos prefiere, puede pasarle esa clave a backend **solo para ese paso**, y backend la borra de su `.env` al terminar.
+- Después, backend crea los usuarios de la app con las credenciales normales (`cajaclara_app_rw`):
 
 ```bash
-python manage.py createsuperuser
+python manage.py createsuperuser      # administrador (entra también a /admin/)
 ```
+
+  o desde `/admin/` → **Usuarios** → **Agregar** (para usuarios comunes, como el de la demo).
+
+- Se sugiere: **un administrador** (backend), **un usuario por integrante** que lo necesite y **un usuario `demo`** para la presentación.
+- Las contraseñas se entregan por un canal privado. **Nunca** en GitHub, en el README ni en las variables de Vercel.
+- En **local** (SQLite), cada persona crea su propio usuario con `createsuperuser`: no hace falta pedirlo.
 
 ### Paso 2.5 — Avisar al frontend
 
-Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entregarles **un usuario de prueba** (no el administrador).
+Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entregarles **un usuario de prueba** (no el administrador). El equipo UX **no necesita credenciales de Neon**: solo un usuario de la app.
 
 ### Paso 2.6 — Si el equipo de datos cambia el esquema
 
@@ -199,14 +217,18 @@ Cuando 2.3 funcione, avisar al equipo de frontend que la API está lista y entre
 - [ ] `.env` con Neon, clave secreta y CORS (2.1).
 - [ ] `verificar_esquema` y `test` sin errores (2.2).
 - [ ] Saldo de agosto 2022 igual a `vw_flujo_caja_mensual` (2.3).
-- [ ] Usuarios del equipo creados (2.4).
+- [ ] Usuarios de la app creados: administrador, integrantes y `demo` (2.4).
 - [ ] Usuario de prueba entregado al frontend (2.5).
 
 ---
 
 ## 🎨 Parte 3 — Equipo de Frontend / UX
 
-El prototipo (`ux/prototype/cajaclara-ui`) hoy funciona con datos simulados: `dashboardMock.js`, `operationsMock.js`, `receivablesMock.js` y `monthlySummaryMock.js`. Hay que reemplazarlos por llamadas a la API.
+El prototipo está en `ux/prototype/cajaclara-ui`.
+
+> **Estado al 18/11/2026:** el trabajo de integración está en la rama **`integration/ux-backend`** (Jorge). Login, Dashboard, Resumen, Operaciones, Cobros, formularios y pago/reversión **ya funcionan contra la API**. Lo que falta, con su orden y un prompt para la IA de UX, está en la **[Parte 3C](#-parte-3c--lo-que-le-falta-a-ux-al-17112026)**. Todavía **no está en `main`**.
+>
+> Los pasos 3.1 a 3.9 de abajo quedan como referencia de cómo se hace cada parte.
 
 ### Paso 3.1 — Tener el backend corriendo en local (sin esperar a Neon)
 
@@ -224,48 +246,47 @@ python manage.py runserver       # queda en http://127.0.0.1:8000
 
 > En local las fechas se desplazan para que la última venta quede en esta semana, así el dashboard muestra "el mes actual" con datos. **En Neon no**: ahí los datos terminan en noviembre de 2022 (ver paso 3.8).
 
-### Paso 3.2 — Limpiar la rama `ux` antes de integrar
+### Paso 3.2 — Limpiar la rama `ux` antes de integrar ✅
 
-La rama `ux` tiene subidas las carpetas `node_modules/` y `dist/`, que pesan mucho y se generan solas. Agregar en `ux/prototype/cajaclara-ui/.gitignore`:
+**Hecho** (commits `e520c03` y `df42a8e`): `node_modules/` y `dist/` ya no están en el repositorio y el `.gitignore` de la raíz los excluye. El `.gitignore` del prototipo excluye `.env`.
 
-```gitignore
-node_modules/
-dist/
-.env
-```
+### Paso 3.3 — Conexión con la API ✅ (sin proxy)
 
-Y sacarlas del repositorio (quedan en el computador):
+**Hecho, de otra forma:** el prototipo llama a la API directamente con la variable `VITE_API_BASE_URL` (`.env.example`: `http://127.0.0.1:8000/api`). Funciona porque el backend ya acepta el origen del servidor de Vite (`http://localhost:5173` y `http://127.0.0.1:5173`) en `CORS_ALLOWED_ORIGINS`. **El proxy de Vite no hace falta.**
 
-```bash
-git rm -r --cached ux/prototype/cajaclara-ui/node_modules ux/prototype/cajaclara-ui/dist
-```
+Para correrlo: copiar `.env.example` como `.env` en `ux/prototype/cajaclara-ui/` y luego `npm install` y `npm run dev`.
 
-### Paso 3.3 — Proxy de Vite
+> **Al publicar:** `VITE_API_BASE_URL` pasa a ser la dirección pública del backend (ej. `https://<backend>/api`), y el backend agrega la dirección pública del frontend en `CORS_ALLOWED_ORIGINS` (sección *Publicar el backend* del README).
+>
+> Si algún día prefieren el proxy (por ejemplo, para evitar CORS en otro puerto), se agrega `server.proxy: { '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true } }` en `vite.config.js` y `VITE_API_BASE_URL=/api`.
 
-En `ux/prototype/cajaclara-ui/vite.config.js`, agregar `server.proxy` para que `/api` llegue a Django sin problemas de CORS:
+### Paso 3.4 — Servicio de API y login ✅
+
+**Hecho** (commit `1b64e4b`), con archivos propios de `ux` en vez del `api.js` de ejemplo:
+
+| Archivo de `ux`                 | Qué hace                                                                                                  |
+| :------------------------------ | :-------------------------------------------------------------------------------------------------------- |
+| `src/services/apiClient.js`     | `apiRequest()`: agrega el token, renueva el `access` una sola vez si llega un `401` y guarda los tokens.  |
+| `src/services/authService.js`   | `login`, `refreshToken`, `logout` y `getProfile` contra `/api/auth/...`.                                  |
+| `src/composables/useAuth.js`    | Estado del usuario y aviso de sesión expirada (`auth:session-expired`).                                   |
+| `src/views/LoginView.vue`       | Pantalla de login.                                                                                        |
+| `src/router/index.js`           | `beforeEach`: las rutas con `requiresAuth` mandan a `/login` si no hay sesión.                            |
+| `AppHeader.vue`                 | Botón **Cerrar sesión**.                                                                                  |
+
+**Para conectar las pantallas (3.5), usar el mismo `apiRequest()`** con `authenticated: true, retryAfterRefresh: true`. Por ejemplo:
 
 ```js
-export default defineConfig({
-  plugins: [vue()],
-  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  server: {
-    proxy: {
-      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
-    },
-  },
+import { apiRequest } from '@/services/apiClient'
+
+const resumen = await apiRequest('/finanzas/resumen-mensual/?fecha_inicio=2022-08-01&fecha_fin=2022-08-31', {
+  authenticated: true,
+  retryAfterRefresh: true,
 })
 ```
 
-### Paso 3.4 — Servicio de API y login
+Las rutas y parámetros de cada consulta están en la sección 4.3 de `API_DOCUMENTACION.md` (`apiService`): sirven de guía aunque no se use ese archivo.
 
-Crear `src/services/api.js` con el código de la **sección 4.3 de `API_DOCUMENTACION.md`** (ya trae login, renovación automática del token, `apiService` con todas las consultas y la descarga de Excel).
-
-Luego:
-
-1. Crear una vista de **login** (`/login`) con usuario y contraseña que llame a `authService.login(usuario, clave)`.
-2. En `src/router/index.js`, agregar un `beforeEach` que mande a `/login` si `authService.estaLogueado()` es `false`.
-3. Escuchar el evento `sesion-expirada` para volver al login.
-4. Botón **Cerrar sesión** en `AppHeader.vue` → `authService.logout()`.
+> `apiRequest()` lee las respuestas como JSON. Para **Exportar a Excel** (3.9) hace falta una función aparte que descargue el archivo con el token; ver 3.9.
 
 ### Paso 3.5 — Conectar cada pantalla
 
@@ -336,19 +357,252 @@ En Neon las ventas llegan hasta **18/11/2022**. Si el dashboard parte en "el mes
 
 ### Paso 3.9 — Botón Exportar a Excel
 
-Usar `apiService.descargarExcel({ fecha_inicio, fecha_fin })`. Un enlace `<a href>` directo **no funciona**, porque la descarga necesita el token.
+Un enlace `<a href>` directo **no funciona**, porque la descarga necesita el token. Y `apiRequest()` no sirve tal cual, porque la respuesta es un archivo y no JSON. Se descarga con `fetch` y el token guardado:
+
+```js
+import { tokenStore } from '@/services/apiClient'
+
+export async function descargarExcel(filtros) {
+  const url = `${import.meta.env.VITE_API_BASE_URL}/finanzas/exportar-excel/?${new URLSearchParams(filtros)}`
+  const respuesta = await fetch(url, { headers: { Authorization: `Bearer ${tokenStore.access}` } })
+  if (!respuesta.ok) throw new Error('No se pudo descargar el Excel.')
+  const enlace = document.createElement('a')
+  enlace.href = URL.createObjectURL(await respuesta.blob())
+  enlace.download = 'cajaclara_ventas.xlsx'
+  enlace.click()
+  URL.revokeObjectURL(enlace.href)
+}
+```
+
+> Si el `access` venció (`401`), llamar antes a `refreshToken()` de `authService.js` y reintentar.
 
 ### ✅ Checklist del equipo de Frontend
 
 - [ ] Backend corriendo en local (3.1).
-- [ ] `node_modules/` y `dist/` fuera del repositorio (3.2).
-- [ ] Proxy de Vite (3.3).
-- [ ] `api.js`, pantalla de login y protección de rutas (3.4).
-- [ ] Las 4 pantallas sin mocks (3.5).
+- [x] `node_modules/` y `dist/` fuera del repositorio (3.2).
+- [x] Conexión con la API por `VITE_API_BASE_URL`, sin proxy (3.3).
+- [x] Cliente de API, pantalla de login y protección de rutas (3.4). Probado contra el backend.
+- [ ] Las 4 pantallas sin mocks (3.5). Dashboard y Resumen ✅ en `integration/ux-backend`; faltan Operaciones y Cobros.
 - [ ] Formularios ajustados: cliente obligatorio, gasto = producto + monto, sin anular (3.6).
 - [ ] Estados de carga, error y vacío (3.7).
-- [ ] Período inicial según `rango_fechas_disponible.max` (3.8).
-- [ ] Exportar a Excel con `descargarExcel()` (3.9).
+- [x] Período inicial según `rango_fechas_disponible.max` (3.8). Hecho en `integration/ux-backend`.
+- [ ] Exportar a Excel descargando con el token (3.9).
+
+---
+
+## 🤖 Parte 3B — Prompt para la IA del equipo UX
+
+Para que el asistente de IA del equipo UX (Claude, Copilot, Cursor u otro) tenga todo el contexto y conecte el prototipo con el backend sin inventar campos. **Copiar el bloque completo** y pegarlo como primer mensaje, con el repositorio abierto en la rama `integration/ux-backend`.
+
+```text
+Eres el asistente del equipo UX/Frontend del proyecto Caja Clara (Bootcamp Talento Digital):
+una app de flujo de caja para pymes, montos en pesos chilenos (CLP). Tu tarea es conectar el
+prototipo Vue con la API del backend, reemplazando los datos simulados (mocks) por datos reales.
+
+## 1. El repositorio y sus ramas
+- Repositorio: RonnieRBG/td_cajaclara. Hay 3 equipos y cada uno trabaja en su rama:
+  - `datos`: base PostgreSQL en Neon (6 tablas + vistas para Power BI). La define el equipo de datos.
+  - `backend`: API Django REST que usa EXACTAMENTE el esquema de datos.
+  - `ux`: este prototipo, en `ux/prototype/cajaclara-ui` (Vue 3 + Vue Router + Vite).
+- La regla del proyecto es: datos define las tablas, backend se adapta a datos, y UX se adapta a los dos.
+
+## 2. Reglas para ti
+- Trabaja SOLO en la rama de integración del equipo UX, `integration/ux-backend` (o en `ux` si así
+  te lo piden), y SOLO dentro de `ux/` (sobre todo `ux/prototype/cajaclara-ui/src`).
+- Para traer novedades del backend: `git merge origin/backend` (no cambies sus archivos).
+- NO modifiques, ni hagas commits o push en, las ramas `backend`, `datos` ni `main`.
+- Los archivos de Django en la raíz (`manage.py`, `cajaclara/`, `finanzas/`, `requirements.txt`) son
+  del equipo backend. En `integration/ux-backend` son el backend real (vienen de la rama `backend`);
+  en la rama `ux` son una copia ANTIGUA. En ambos casos: NO los modifiques. Si necesitas algo del
+  backend, anótalo en "Pedidos al backend".
+- `ux/INTEGRACION-BACKEND.md`: en `integration/ux-backend` ya está actualizado y sirve como resumen del
+  estado; en la rama `ux` es una versión ANTIGUA (habla de `Movimiento` y `Categoria`): no la uses.
+  Si choca con los documentos del punto 3, mandan los del punto 3. Mantenlo al día al terminar.
+- No inventes campos ni endpoints. Si una pantalla necesita algo que la API no entrega, NO lo simules:
+  anótalo en una lista "Pedidos al backend" y sigue con lo demás.
+- Haz commits chicos y descriptivos en español (una pantalla o pieza por commit).
+
+## 3. Fuentes de verdad (léelas antes de escribir código)
+Están en la rama `backend`. Léelas sin cambiar de rama:
+    git fetch origin
+    git show origin/backend:ACOPLAMIENTO.md        # qué hace cada equipo; Parte 3 = tus pasos
+    git show origin/backend:API_DOCUMENTACION.md   # contrato de la API, endpoint por endpoint
+En API_DOCUMENTACION.md, lo más importante para ti:
+  - Parte 3: cada endpoint con parámetros y respuesta de ejemplo (endpoints 1 a 16).
+  - Endpoint 16: contrato de los formularios (campos, obligatorios, reglas).
+  - Parte 5: tabla "qué campo de la API alimenta cada componente".
+En ACOPLAMIENTO.md: paso 3.5 (qué endpoint usa cada pantalla y la tabla mock → API) y pasos 3.6 a 3.9.
+Si algo de este prompt contradice esos documentos, mandan los documentos.
+
+## 4. Levantar el backend en local (sin tocar la rama ux)
+En una carpeta APARTE (no dentro del repo de ux):
+    git clone -b backend https://github.com/RonnieRBG/td_cajaclara.git cajaclara_backend
+    cd cajaclara_backend
+    python -m venv venv && source venv/bin/activate      # Windows: venv\Scripts\activate
+    pip install -r requirements.txt
+    python manage.py migrate
+    python manage.py importar_csv --fechas-originales     # datos 2010–2022, iguales a Neon
+    python manage.py createsuperuser
+    python manage.py runserver                            # http://127.0.0.1:8000/api/
+Con `--fechas-originales` los números coinciden con la documentación y con Neon. Sin esa opción,
+las fechas se mueven al presente (útil para ver "el mes actual" con datos).
+Catálogo de endpoints: http://127.0.0.1:8000/api/
+
+## 5. Lo que YA existe en ux (reutilízalo, no lo reescribas)
+- `src/services/apiClient.js`: `apiRequest(path, { authenticated, retryAfterRefresh, method, body })`.
+  Agrega el token, lo renueva solo si llega un 401 y lanza `ApiError` (con `status` y `validationErrors`).
+- `src/services/authService.js`, `src/composables/useAuth.js`, `src/views/LoginView.vue` y el
+  `beforeEach` de `src/router/index.js`: el login ya funciona y se probó contra el backend.
+- `src/utils/formatters.js`: `formatCLP` y `formatDate` (espera fechas `AAAA-MM-DD`).
+- `.env.example`: `VITE_API_BASE_URL=http://127.0.0.1:8000/api` (cópialo a `.env`). No hace falta
+  proxy de Vite: el backend ya acepta CORS desde localhost:5173 y 127.0.0.1:5173.
+Como `VITE_API_BASE_URL` ya termina en `/api`, las rutas se piden así:
+    apiRequest('/finanzas/resumen-mensual/?fecha_inicio=2022-08-01&fecha_fin=2022-08-31',
+               { authenticated: true, retryAfterRefresh: true })
+
+## 6. Cómo hacerlo (en este orden)
+1. Crea `src/services/finanzasService.js` con una función por endpoint (todas con
+   `authenticated: true, retryAfterRefresh: true`), armando los parámetros con URLSearchParams.
+2. Crea adaptadores (por ejemplo `src/services/adapters.js`) que conviertan la respuesta de la API
+   a la forma que ya esperan los componentes. Así los componentes cambian lo mínimo.
+   La tabla mock → API está en ACOPLAMIENTO.md, paso 3.5.
+3. Conecta cada pantalla y borra su import de `@/data/*Mock`:
+   - Dashboard (`/`): opciones-filtros/ (para el mes inicial), resumen-mensual/,
+     resumen-agrupado/?agrupacion=semanas_mes, alertas-cobro/?page_size=5 (cobros prioritarios),
+     operaciones/?page_size=5 (operaciones recientes), productos/?ordering=-total_vendido&page_size=4,
+     cuentas-por-cobrar/?page_size=1 (solo su "resumen").
+   - Compras y ventas (`/operaciones`): operaciones/?mes=AAAA-MM (filtros tipo, estado, search y su
+     "resumen"); detalle con facturas/{id_factura}/.
+   - Cuentas por cobrar (`/cobros`): cuentas-por-cobrar/ (lista + "resumen"), alertas-cobro/,
+     pagar con POST cuentas-por-cobrar/{id_cuenta}/pagar/.
+   - Resumen mensual (`/resumen`): resumen-mensual/ (incluye por_tipo_compra),
+     resumen-agrupado/?agrupacion=semanas_mes, productos/?ordering=-total_vendido,
+     facturas/?ordering=-total_venta&page_size=1, clientes/?ordering=-total_deuda&page_size=1.
+4. Formularios (endpoint 16 de API_DOCUMENTACION.md):
+   - Nueva venta: POST facturas/ con { id_cliente, items: [{ id_producto, cantidad, precio_venta?,
+     costo_venta? }], tipo_compra, por_cobrar, fecha_vencimiento? }. El cliente es OBLIGATORIO
+     siempre. Selectores: opciones/clientes/?search= y opciones/productos/?search= (este trae
+     ultimo_precio_venta y ultimo_costo_venta como precio sugerido; si vienen null, pide precio y costo).
+   - Gasto: POST gastos/ con { id_producto, monto, fecha? }. Quita del formulario categoría de
+     gasto, proveedor y descripción: no existen en la base.
+   - Cliente: POST clientes/ con { nombre, contacto } (contacto único).
+   - Pago: POST cuentas-por-cobrar/{id_cuenta}/pagar/ con { fecha_pago? }. Pago completo, sin abonos.
+   - Quita el botón "Anular venta": la base no permite anular ni borrar.
+   - Errores: 400 con { campo: [mensaje] } → bajo el campo (ApiError.validationErrors);
+     400 con { error: mensaje } → toast.
+5. Estados de carga, error (con "Reintentar") y vacío en cada vista. Nunca muestres mocks como si
+   fueran datos reales.
+6. Período inicial: pide primero opciones-filtros/ y usa rango_fechas_disponible.max como mes inicial
+   (en Neon los datos terminan en noviembre de 2022; "el mes actual" saldría vacío).
+7. Exportar a Excel: GET finanzas/exportar-excel/ devuelve un archivo, no JSON, así que no sirve
+   apiRequest(). Descárgalo con fetch + `Authorization: Bearer ${tokenStore.access}` (ejemplo en
+   ACOPLAMIENTO.md, paso 3.9).
+8. Mantén al día `ux/INTEGRACION-BACKEND.md` y el README del prototipo (qué pantallas están conectadas).
+
+## 7. Reglas de datos (no las cambies)
+- Los nombres de campo son los de la base: id_factura, id_cliente (número), id_producto (ej. P100055),
+  id_cuenta, id_gasto, precio_venta, costo_venta, fecha_vencimiento, etc.
+- Montos: enteros en CLP (ya son números: no uses parseFloat). Muéstralos con formatCLP.
+- Fechas: "AAAA-MM-DD", sin hora. La base no guarda hora: no la muestres.
+- tipo_compra: "Física" o "En Línea" (con tilde y L mayúscula).
+- Cuentas por cobrar: para mostrar usa estado_actual (PENDIENTE, VENCIDA, PAGADA), no estado.
+- Ventas: estado_pago es PAGADO o PENDIENTE; por_cobrar=true significa venta al fiado.
+- Listados paginados: { count, next, previous, results } y a veces "resumen". Usa page y page_size.
+
+## 8. Cómo verificar antes de dar por terminado
+- `npm run build` sin errores en ux/prototype/cajaclara-ui.
+- Con el backend importado con --fechas-originales, en agosto de 2022:
+  saldo del período (flujo_caja.saldo) = -164.348; ventas = 16.057; gastos = 188.863.
+- Registra un cliente, una venta al fiado, págala y registra un gasto: todo debe seguir ahí después
+  de recargar la página.
+- Cierra sesión: las rutas protegidas deben mandar a /login.
+- Revisa la consola del navegador: sin errores de CORS ni 401 repetidos.
+
+## 9. Qué entregar
+- Commits en `integration/ux-backend` (nunca en backend, datos ni main).
+- Un resumen corto con: pantallas conectadas, cambios en formularios, mocks eliminados y la lista
+  "Pedidos al backend" (si quedó algo que la API no entrega).
+```
+
+> Si la IA encuentra algo que la API no entrega, la lista **"Pedidos al backend"** es la que hay que traer al equipo backend: se agrega en la rama `backend` y se actualiza `API_DOCUMENTACION.md`.
+
+---
+
+## 🎯 Parte 3C — Lo que le falta a UX (al 17/11/2026)
+
+Revisión de backend sobre `integration/ux-backend` (commit `b97ebd8`), probando el frontend contra la API en un navegador. Dashboard, Resumen, Operaciones, Cobros, formularios, pago/reversión y login **ya funcionan** contra la API. Quedan estos ajustes, en este orden:
+
+| # | Tarea | Dónde | Cómo se comprueba |
+| :-: | :---- | :---- | :---------------- |
+| 1 | **Traer lo último de `backend`**: `git fetch origin` y `git merge origin/backend` estando en `integration/ux-backend`. Probado: se une **sin conflictos**. | Rama `integration/ux-backend` | `python manage.py test` da OK |
+| 2 | **Cobros: pedir solo la página visible.** Hoy `getReceivables()` recorre todas las páginas (150 peticiones y ~15.000 cuentas al abrir la pantalla); publicado en Render tardaría más de un minuto. Usar `GET /cuentas-por-cobrar/?estado=&search=&ordering=&page=&page_size=` y quitar `getAllPages`, el filtro y el orden hechos en el navegador. | `services/receivablesService.js`, `views/ReceivablesView.vue` | Abrir Cobros hace **3 peticiones o menos** |
+| 3 | **Top productos sin ceros**: agregar `con_ventas: true` a la consulta de productos. | `services/dashboardService.js` y `services/summaryService.js` | En un mes con pocas ventas no aparecen productos con 0 unidades |
+| 4 | **Encabezado y barra lateral con datos reales**: en modo API, `App.vue` todavía usa `mockData` (muestra "Octubre de 2026" y "7" cuentas). El período debe ser el seleccionado y el número, `resumen.total_alertas` de `GET /alertas-cobro/?page_size=1`. En modo mock, dejarlo como está. | `App.vue`, `AppHeader.vue`, `AppSidebar.vue`, `AppBottomNav.vue` | Con `VITE_USE_MOCKS=false`, el número coincide con la pantalla de Cobros |
+| 5 | **Ícono de la pestaña**: hoy da error 404 en la consola. | `index.html` (+ un `public/favicon.svg`) | Consola sin errores 404 |
+| 6 | **Actualizar la documentación de UX**: `INTEGRACION-BACKEND.md` dice que Cobros filtra en el navegador "porque esos parámetros no están documentados"; ya lo están. | `ux/INTEGRACION-BACKEND.md` | — |
+| 7 | **Pasar Vercel a la API real**, **solo después** de que datos haga el paso 1.4 y backend entregue el usuario `demo`: `VITE_API_BASE_URL=https://cajaclara-api.onrender.com/api`, `VITE_USE_MOCKS=false`, quitar `VITE_DEMO_ACCESS` y borrar el acceso demo temporal (buscar `TODO: eliminar acceso demo temporal`). Luego **Redeploy**. Si recargar `/cobros` da 404, agregar el `vercel.json` de la Parte 5. | Panel de Vercel y `src/` | Entrar al sitio de Vercel con `demo` y hacer la Parte 4 |
+| 8 | **Pull request a `main`** según las reglas de `ux/README.md` (sin push directo ni merge sin aprobación). | GitHub | PR aprobado por backend y frontend |
+
+Ya resuelto por backend (no hay que pedirlo): búsqueda y orden en `/cuentas-por-cobrar/`, `con_ventas` en `/productos/`, y el Excel ya no responde `406` y entrega su nombre de archivo a Vercel.
+
+### Prompt para la IA de UX (tareas 1 a 6)
+
+Copiar el bloque completo como primer mensaje, con el repositorio abierto en la rama `integration/ux-backend`:
+
+```text
+Eres el asistente del equipo UX del proyecto Caja Clara (repo RonnieRBG/td_cajaclara).
+Trabajas SOLO en la rama integration/ux-backend y SOLO dentro de ux/ (el frontend Vue está en
+ux/prototype/cajaclara-ui/). No modifiques finanzas/, usuarios/, cajaclara/, manage.py,
+API_DOCUMENTACION.md ni ACOPLAMIENTO.md: son del backend. No hagas push a main.
+
+Antes de escribir código lee: ACOPLAMIENTO.md (Parte 3C), API_DOCUMENTACION.md (secciones 6
+"Productos" y 9 "Cuentas por cobrar") y ux/INTEGRACION-BACKEND.md. No inventes campos: si algo no
+está en API_DOCUMENTACION.md, anótalo en una lista "Pedidos al backend" y no lo implementes.
+
+Tareas, en este orden (un commit por tarea, mensajes en español):
+
+1. Ejecuta `git fetch origin` y `git merge origin/backend`. No debería haber conflictos.
+
+2. Cobros con paginación en el servidor.
+   - En src/services/receivablesService.js reemplaza getAllPages por UNA llamada:
+     GET /finanzas/cuentas-por-cobrar/?estado=<PENDIENTE|VENCIDA|PAGADA, omitir para todas>
+       &search=<texto>&ordering=<fecha_vencimiento | -fecha_vencimiento>&page=<n>&page_size=10
+     y devuelve { count, next, previous, results, summary } usando los adaptadores existentes.
+   - Los contadores de las pestañas y los indicadores salen de `resumen.por_estado` de una llamada
+     SIN estado y con page_size=1 (no dependen de la pestaña elegida).
+   - En src/views/ReceivablesView.vue quita el filtro, la búsqueda y el orden hechos en el navegador:
+     cada cambio de pestaña, búsqueda (con espera de ~300 ms al escribir), orden o página vuelve a
+     pedir a la API. Mantén estados de carga, error con "Reintentar" y vacío.
+   - Después de pagar o revertir, vuelve a pedir la página actual y el resumen.
+   - El modo mock (VITE_USE_MOCKS=true) debe seguir funcionando igual que hoy.
+
+3. En src/services/dashboardService.js y src/services/summaryService.js agrega `con_ventas: true`
+   a los parámetros de GET /finanzas/productos/.
+
+4. En modo API, App.vue no debe usar mockData para el encabezado ni para el número de la barra
+   lateral y la barra inferior:
+   - período: el que está seleccionado en la pantalla (o no mostrarlo si la pantalla no tiene período);
+   - número de cobros: `resumen.total_alertas` de GET /finanzas/alertas-cobro/?page_size=1,
+     cargado una vez al iniciar sesión y actualizado después de pagar o revertir.
+   En modo mock, deja los valores simulados.
+
+5. Agrega un favicon (public/favicon.svg y su <link> en index.html) para quitar el 404 de la consola.
+
+6. Actualiza ux/INTEGRACION-BACKEND.md: Cobros ahora filtra, busca, ordena y pagina en la API.
+
+Verificación antes de terminar:
+- `cd ux/prototype/cajaclara-ui && npm run build` sin errores.
+- Con el backend local (`python manage.py runserver`, datos cargados con importar_csv) y
+  VITE_USE_MOCKS=false: abrir Cobros hace 3 peticiones o menos (revisar la pestaña Red del
+  navegador), buscar por nombre de cliente funciona, cambiar de pestaña cambia los resultados,
+  pagar y revertir actualiza la lista y el número de la barra lateral.
+- Con VITE_USE_MOCKS=true todo sigue funcionando.
+
+Entrega: commits en integration/ux-backend y un resumen corto con lo hecho y la lista
+"Pedidos al backend" (vacía si no hubo).
+```
+
+> La tarea 7 (Vercel) y la 8 (pull request) las hace Jorge a mano: la 7 recién cuando backend avise que el usuario `demo` funciona en https://cajaclara-api.onrender.com/admin/.
 
 ---
 
@@ -382,11 +636,66 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 | `permission denied for table auth_user`       | `migrate --fake-initial` no se corrió con `neondb_owner`  | Datos       |
 | `relation "venta" already exists` al migrar   | Faltó `--fake-initial`                                    | Datos       |
 | `SSL connection is required`                  | Falta `DB_SSLMODE=require` en el `.env`                   | Backend     |
-| `401` en todas las consultas                  | No se inició sesión o falta el encabezado `Authorization` | Frontend    |
-| Error de CORS en la consola del navegador     | Falta el proxy de Vite (3.3) o el dominio en `CORS_ALLOWED_ORIGINS` | Frontend / Backend |
+| `401` en todas las consultas                  | No se inició sesión, o la consulta no usa `apiRequest(..., { authenticated: true })` | Frontend    |
+| Error de CORS en la consola del navegador     | La dirección del frontend no está en `CORS_ALLOWED_ORIGINS` del backend, o `VITE_API_BASE_URL` apunta mal (3.3) | Backend / Frontend |
 | Dashboard en cero con Neon                    | Está pidiendo el mes actual (paso 3.8)                    | Frontend    |
 | Montos en `NaN` o campos vacíos               | Se usa un nombre de campo antiguo del mock (tabla del 3.5) | Frontend   |
+| *"Falta configurar VITE_API_BASE_URL"*       | No se creó el `.env` del prototipo a partir de `.env.example` (3.3) | Frontend |
 | `400` al registrar una venta                  | Falta `id_cliente`, o el producto nunca se vendió y no se envió `precio_venta`/`costo_venta` | Frontend |
+
+---
+
+## 🌐 Parte 5 — Publicar: backend + frontend en Vercel
+
+**Vercel publica solo el frontend.** El backend Django está publicado aparte, en **Render**: **`https://cajaclara-api.onrender.com/api`** (servicio `cajaclara-api`, desde la rama `backend`; cada push a `backend` lo vuelve a publicar).
+
+| Paso | Equipo   | Qué se hace                                                                                                   |
+| :--: | :------- | :------------------------------------------------------------------------------------------------------------ |
+|  1   | Datos    | Neon listo y paso 1.4 hecho (`migrate --fake-initial`). ⏳ **Falta el paso 1.4.**                            |
+|  2   | Backend  | ✅ Backend publicado en Render y conectado a Neon. ⏳ Después del paso 1.4: crear el administrador y el usuario `demo` en `https://cajaclara-api.onrender.com/admin/` (2.4). |
+|  3   | Backend  | En Render → **Environment**: `CORS_ALLOWED_ORIGINS=https://tdcajaclara-cajaclara-ui-omega.vercel.app` y `CSRF_TRUSTED_ORIGINS=https://cajaclara-api.onrender.com` (este último, para entrar al `/admin/`). |
+|  4   | Todos    | Jorge termina la Parte 3C y abre el pull request de `integration/ux-backend` a `main`; se revisa y se une.  |
+|  5   | Frontend | En Vercel → **Settings → Environment Variables**: `VITE_API_BASE_URL=https://cajaclara-api.onrender.com/api` y `VITE_USE_MOCKS=false`. Luego **Redeploy**. Solo después de que funcione el usuario `demo`. |
+|  6   | Todos    | Entrar al sitio de Vercel con el usuario `demo` y repetir la prueba de la Parte 4. En el plan gratuito, abrir `https://cajaclara-api.onrender.com/api/` un rato antes: si estaba dormido, la primera carga tarda cerca de un minuto. |
+
+**Configuración del proyecto en Vercel:**
+
+- **Root Directory:** `ux/prototype/cajaclara-ui`.
+- **Rama de producción:** `main` (cuando la integración esté ahí).
+- Las variables `VITE_*` se leen **al construir** el sitio: si se cambian, hay que volver a desplegar para que tomen efecto.
+- Si al **recargar** una página interna (por ejemplo `/cobros`) aparece un error **404**, falta un `vercel.json` en `ux/prototype/cajaclara-ui/` que mande todas las rutas a `index.html`:
+
+```json
+{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+```
+
+> **Seguridad:** en Vercel solo van la dirección del backend y `VITE_USE_MOCKS`. Ninguna clave (ni de Neon ni de usuarios) va en las variables de Vercel: todo lo que empieza con `VITE_` queda visible en el código que descarga el navegador.
+
+### Respuestas de Backend a la lista de UX para el deploy final
+
+Respuesta a la sección *"Información requerida de Backend para el deploy final"* de [`ux/README.md`](./ux/README.md) (rama `integration/ux-backend`). Estado al 17/11/2026.
+
+| #  | Pregunta de UX | Respuesta de Backend |
+| :-: | :------------- | :------------------- |
+| 1  | URL pública definitiva de la API | ✅ **`https://cajaclara-api.onrender.com/api`** (publicada en Render el 17/11/2026 desde la rama `backend`; cada push a `backend` la vuelve a publicar). En el plan gratuito se duerme tras 15 min sin uso: la primera visita puede tardar cerca de un minuto. |
+| 2  | ¿Django en Vercel o en otra plataforma? | **En Render** (servicio `cajaclara-api`, región Virginia). Vercel queda **solo** para el frontend Vue. Django no se publica como función serverless de Vercel. |
+| 3  | Archivos WSGI/ASGI o de inicio | Ya están en el repositorio: `Procfile` (`gunicorn cajaclara.wsgi`), `build.sh` (dependencias + `collectstatic`), `cajaclara/wsgi.py` y `.python-version` (3.13). **No se necesita `vercel.json` para el backend.** (El frontend sí puede necesitar uno para recargar rutas internas: ver arriba.) |
+| 4  | Variables de entorno | **Backend (en el panel del servicio):** `DJANGO_DEBUG=False`, `DJANGO_SECRET_KEY`, `CORS_ALLOWED_ORIGINS`, `DB_ENGINE`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_SSLMODE`. Opcionales: `DJANGO_ALLOWED_HOSTS` (dominio propio), `CSRF_TRUSTED_ORIGINS`, `JWT_ACCESS_MINUTOS`, `JWT_REFRESH_DIAS`, `LOGIN_RATE`. Detalle en [`.env.example`](./.env.example). **Frontend (en Vercel):** `VITE_API_BASE_URL` y `VITE_USE_MOCKS=false`. |
+| 5  | Parámetros de Neon | ✅ **Confirmados** (17/11): el backend se conectó a Neon con `cajaclara_app_rw` y `verificar_esquema` dio *"El esquema de la base coincide con el backend"* (6 tablas + vistas de métricas). Parámetros: `DB_NAME=neondb`, `DB_USER=cajaclara_app_rw`, `DB_PORT=5432`, `DB_SSLMODE=require`; el host y la clave se entregan por canal privado. |
+| 6  | `DJANGO_ALLOWED_HOSTS` | Render (y Railway) agregan **solos** su dominio público (`RENDER_EXTERNAL_HOSTNAME` / `RAILWAY_PUBLIC_DOMAIN`). Solo hay que listar un dominio propio si se usa uno. |
+| 7  | `CORS_ALLOWED_ORIGINS` | `https://tdcajaclara-cajaclara-ui-omega.vercel.app` (más el dominio propio, si se agrega). El backend ya expone `Content-Disposition`, así que el nombre del Excel se lee bien desde Vercel. |
+| 8  | Migraciones contra Neon | ⏳ **Pendiente del equipo de datos.** Una sola vez, con `neondb_owner`: `python manage.py migrate --fake-initial` (paso 1.4). `--fake-initial` registra las 6 tablas de datos sin tocarlas y crea solo las de Django (usuarios, login). Hoy Neon todavía no tiene esas tablas, por eso nadie puede iniciar sesión contra Neon. **El servicio publicado no corre migraciones**: `build.sh` no las incluye a propósito. |
+| 9  | Usuario demo en producción | Lo crea **backend** después del paso 1.4 (ver paso 2.4): `python manage.py createsuperuser` para el administrador y, desde `/admin/` → Usuarios → Agregar, un usuario `demo` común. La contraseña se entrega por canal privado; **nunca** en el código ni en Vercel. |
+| 10 | Valor de `VITE_API_BASE_URL` | `https://cajaclara-api.onrender.com/api` (sin barra al final), junto con `VITE_USE_MOCKS=false`. Después de cambiarla en Vercel, hacer **Redeploy**. ⚠️ Cambiarla **después** del paso 1.4: antes de eso nadie puede iniciar sesión contra Neon. |
+| 11 | Ruta de health check | `GET /api/` responde `200` **sin iniciar sesión** (índice de la API): confirma que Django está arriba. No consulta la base; para confirmar la conexión con Neon, iniciar sesión y abrir `GET /api/finanzas/opciones-filtros/`. |
+| 12 | Plan de rollback | **Base:** antes de conectar la app, el equipo de datos crea un branch de respaldo en Neon (paso 1.5); si algo sale mal, se vuelve a ese punto. **API:** el servicio (Render/Railway) permite volver al deploy anterior desde su panel. **Frontend:** Vercel permite volver a un deployment anterior (*Promote to Production*). La API no borra datos: solo agrega ventas, gastos, clientes y pagos. |
+| 13 | Responsable de validar Backend en producción | El equipo de Backend (RonnieRBG). Valida con la prueba de la Parte 4 contra la URL publicada antes de avisar a UX. |
+
+**Cambios de Backend del 17/11 que UX puede aprovechar** (ya en la rama `backend`):
+
+- `GET /cuentas-por-cobrar/` acepta `search` (cliente, contacto o `id_factura`) y `ordering` (`fecha_vencimiento`, `monto`, `id_cuenta`; con `-` de mayor a menor). La pantalla de Cobros puede pedir **solo la página visible** en vez de descargar las ~15.000 cuentas (hoy son 150 peticiones al abrirla). Los contadores de cada pestaña salen de `resumen.por_estado` con una llamada sin `estado` y `page_size=1`.
+- `GET /productos/` acepta `con_ventas=true`: el "Top productos" ya no muestra productos con 0 unidades.
+- `GET /exportar-excel/` ya no responde `406` cuando el navegador pide el archivo con `Accept` de Excel, y el nombre del archivo (`Content-Disposition`) se puede leer desde otro dominio.
 
 ---
 
@@ -397,4 +706,5 @@ Con el backend conectado a **Neon** y el frontend corriendo (`npm run dev` → `
 - [ ] **Gastos que no son insumos** (arriendo, flete, servicios): hoy la base no los permite. Si se quieren, datos tiene que agregar una tabla o columnas y avisar al backend.
 - [ ] **Anular ventas:** la base no lo permite. Si se necesita, acordar cómo marcarlo (por ejemplo, una columna `anulada` en `venta`).
 - [ ] **Pagos parciales (abonos):** hoy un pago es siempre completo.
-- [ ] **Dónde se publica** la app (backend y frontend) para la presentación final. El backend ya está preparado para Render, Railway u otro servicio (ver *Publicar el backend* en el README); falta elegir y, con eso, poner la dirección del frontend en `CORS_ALLOWED_ORIGINS`.
+- [x] **Dónde se publica el backend:** en **Render** (`https://cajaclara-api.onrender.com`), publicado el 17/11/2026. El frontend sigue en Vercel.
+- [ ] **Qué mes muestra la demo:** con los datos en Neon, el mes inicial es noviembre 2022, que tiene muy pocas ventas (1 venta y 102 gastos). Elegir un mes con más movimiento o desplazar las fechas.

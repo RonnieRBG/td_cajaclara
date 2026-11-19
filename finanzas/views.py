@@ -405,6 +405,12 @@ class ExportarExcelView(APIView):
         "Precio Venta Unitario", "Costo Venta Unitario", "Total Venta", "Total Costo", "Utilidad",
     ]
 
+    def perform_content_negotiation(self, request, force=False):
+        # El frontend pide el archivo con "Accept: application/vnd.openxmlformats-...sheet".
+        # DRF solo conoce JSON y respondía 406; con force=True usa JSON para los errores
+        # y el Excel sale igual, porque se devuelve como HttpResponse.
+        return super().perform_content_negotiation(request, force=True)
+
     def get(self, request):
         try:
             filtros = _obtener_filtros(request)
@@ -578,6 +584,8 @@ class ProductoListView(generics.ListAPIView):
       - fecha_inicio, fecha_fin: período para calcular total_vendido y total_ingresos
         (sin fechas = todas las ventas).
       - tipo_compra: Física o En Línea (para los mismos totales).
+      - con_ventas=true: solo productos con al menos una unidad vendida en ese período/canal
+        (para el "Top productos" del dashboard, así no aparecen productos en 0).
       - ordering: producto (por defecto), total_vendido, total_ingresos o id_producto;
         con "-" adelante es de mayor a menor. Productos más vendidos: ?ordering=-total_vendido
       - page, page_size: Paginación.
@@ -618,6 +626,12 @@ class ProductoListView(generics.ListAPIView):
         unidad = params.get("unidad_negocio")
         if unidad:
             qs = qs.filter(unidad_negocio__iexact=unidad.strip())
+
+        con_ventas = (params.get("con_ventas") or "").strip().lower()
+        if con_ventas in ("1", "true", "si", "sí"):
+            qs = qs.filter(total_vendido__gt=0)
+        elif con_ventas not in ("", "0", "false", "no"):
+            raise ValidationError({"error": "'con_ventas' inválido. Usa true o false."})
 
         orden = (params.get("ordering") or "producto").strip()
         if orden.lstrip("-") not in ORDEN_PRODUCTOS:
@@ -709,6 +723,9 @@ class DetalleVentaListView(generics.ListAPIView):
         return qs
 
 
+ORDEN_CUENTAS = ("fecha_vencimiento", "monto", "id_cuenta")
+
+
 class CuentaPorCobrarListView(generics.ListAPIView):
     """
     GET /api/finanzas/cuentas-por-cobrar/
@@ -717,6 +734,8 @@ class CuentaPorCobrarListView(generics.ListAPIView):
       - factura: id_factura.
       - estado: PENDIENTE (aún no vence), VENCIDA o PAGADA (estado a la fecha de hoy).
       - vencidas: true para solo vencidas, false para todas menos las vencidas.
+      - search: busca en el nombre o contacto del cliente y en el id_factura.
+      - ordering: fecha_vencimiento (por defecto), monto o id_cuenta; con "-" de mayor a menor.
       - page, page_size: Paginación.
     El bloque "resumen" trae el total por cobrar (pendientes + vencidas) y el detalle por estado.
     """
@@ -754,7 +773,15 @@ class CuentaPorCobrarListView(generics.ListAPIView):
                 qs = qs.filter(estado_actual=CuentaPorCobrar.VENCIDA)
             else:
                 qs = qs.exclude(estado_actual=CuentaPorCobrar.VENCIDA)
-        return qs
+
+        search = (params.get("search") or "").strip()
+        if search:
+            qs = qs.filter(
+                Q(cliente__nombre__icontains=search)
+                | Q(cliente__contacto__icontains=search)
+                | Q(venta__id_factura__icontains=search)
+            )
+        return _ordenar(qs, params, ORDEN_CUENTAS, "fecha_vencimiento", "id_cuenta")
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
@@ -911,7 +938,7 @@ class ApiCatalogView(APIView):
                     "url": f"{host}/api/finanzas/productos/",
                     "metodo": "GET",
                     "descripcion": "Listado paginado de productos con unidades e ingresos vendidos; ?ordering=-total_vendido para los más vendidos.",
-                    "parametros": ["search", "categoria", "unidad_negocio", "fecha_inicio", "fecha_fin", "tipo_compra", "ordering", "page", "page_size"],
+                    "parametros": ["search", "categoria", "unidad_negocio", "fecha_inicio", "fecha_fin", "tipo_compra", "con_ventas", "ordering", "page", "page_size"],
                 },
                 "facturas": {
                     "url": f"{host}/api/finanzas/facturas/",
@@ -929,7 +956,7 @@ class ApiCatalogView(APIView):
                     "url": f"{host}/api/finanzas/cuentas-por-cobrar/",
                     "metodo": "GET",
                     "descripcion": "Listado paginado de cuentas por cobrar con estado (pendiente, vencida, pagada) y totales.",
-                    "parametros": ["cliente", "factura", "estado", "vencidas", "page", "page_size"],
+                    "parametros": ["cliente", "factura", "estado", "vencidas", "search", "ordering", "page", "page_size"],
                 },
                 "gastos": {
                     "url": f"{host}/api/finanzas/gastos/",

@@ -466,10 +466,13 @@ Los endpoints 9, 10, 12 y 14 agregan una clave `resumen` con totales que **no de
 | `unidad_negocio`            | Por ejemplo, `Supermercado`                                                                |
 | `fecha_inicio`, `fecha_fin` | Período para calcular `total_vendido` y `total_ingresos` (sin fechas = todo el historial)  |
 | `tipo_compra`               | `Física` o `En Línea` (para los mismos totales)                                            |
+| `con_ventas`                | `true`: solo productos con al menos 1 unidad vendida en ese período y canal (usar en "Top productos") |
 | `ordering`                  | `producto` (por defecto), `total_vendido`, `total_ingresos`, `id_producto`. Con `-` adelante, de mayor a menor. |
 | `page`, `page_size`         | Paginación                                                                                 |
 
-**Productos más vendidos del mes:** `?ordering=-total_vendido&fecha_inicio=01/10/2026&fecha_fin=31/10/2026&page_size=4`
+**Productos más vendidos del mes:** `?ordering=-total_vendido&con_ventas=true&fecha_inicio=01/10/2026&fecha_fin=31/10/2026&page_size=4`
+
+> Sin `con_ventas=true` la lista incluye todo el catálogo (7.488 productos), también los que no se vendieron en el período (con `total_vendido: 0`).
 
 ```json
 {
@@ -588,7 +591,11 @@ Los endpoints 9, 10, 12 y 14 agregan una clave `resumen` con totales que **no de
 | `factura`           | `id_factura`                                                                 |
 | `estado`            | `PENDIENTE` (aún no vence) · `VENCIDA` · `PAGADA` (estado a la fecha de hoy) |
 | `vencidas`          | `true` = solo vencidas · `false` = todas menos las vencidas · omitir = todas |
+| `search`            | Busca en el nombre o contacto del cliente y en el `id_factura`               |
+| `ordering`          | `fecha_vencimiento` (por defecto, la que vence antes) · `monto` · `id_cuenta`. Con `-` adelante, de mayor a menor |
 | `page`, `page_size` | Paginación                                                                   |
+
+> **Pantalla de Cobros:** no hace falta descargar todas las cuentas (son ~15.000). Pedir solo la página visible con `estado`, `search`, `ordering`, `page` y `page_size`, y leer los totales de `resumen`. Para los contadores de cada pestaña, una llamada sin `estado` y con `page_size=1` trae `resumen.por_estado` completo.
 
 ```json
 {
