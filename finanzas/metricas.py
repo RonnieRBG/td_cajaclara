@@ -36,14 +36,14 @@ class Vista:
 
     nombre: str
     descripcion: str
-    columnas: tuple  # todas las columnas, en el orden de la vista (también sirven para ordenar)
-    filtros: tuple = ()  # columnas que se pueden filtrar con ?columna=valor (igualdad)
-    enteros: tuple = ()  # filtros cuyo valor debe ser un número entero
-    buscar: tuple = ()  # columnas donde busca ?search=texto
-    orden: tuple = ()  # orden por defecto (con "-" adelante, de mayor a menor)
-    booleanos: tuple = ()  # columnas sí/no (SQLite las entrega como 0/1)
+    columnas: tuple
+    filtros: tuple = ()
+    enteros: tuple = ()
+    buscar: tuple = ()
+    orden: tuple = ()
+    booleanos: tuple = ()
     paginada: bool = True
-    extra: dict = field(default_factory=dict)  # filtros especiales: {parametro: condición SQL fija}
+    extra: dict = field(default_factory=dict)
 
 
 VISTAS = {
@@ -174,7 +174,7 @@ class ConsultaVista:
         partes = []
         for campo in campos:
             columna = campo.lstrip("-")
-            if columna not in self.vista.columnas:  # solo columnas conocidas: nunca texto libre en el SQL
+            if columna not in self.vista.columnas:
                 raise ParametroInvalido(
                     f"'ordering' inválido. Usa: {', '.join(self.vista.columnas)} (con '-' para mayor a menor)."
                 )

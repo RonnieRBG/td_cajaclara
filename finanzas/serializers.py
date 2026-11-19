@@ -19,7 +19,6 @@ def _sin_tildes(texto):
     return "".join(c for c in unicodedata.normalize("NFD", texto) if unicodedata.category(c) != "Mn")
 
 
-# Valores aceptados para tipo_compra (sin importar mayúsculas ni tildes)
 ALIAS_TIPO_COMPRA = {
     "FISICA": Venta.FISICA,
     "EN LINEA": Venta.EN_LINEA,
@@ -53,7 +52,6 @@ class ClienteSerializer(serializers.ModelSerializer):
 
 
 class ProductoSerializer(serializers.ModelSerializer):
-    # Unidades vendidas y monto vendido (en el período pedido)
     total_vendido = serializers.IntegerField(read_only=True, default=0)
     total_ingresos = serializers.IntegerField(read_only=True, default=0)
 
@@ -68,7 +66,6 @@ class VentaSerializer(serializers.ModelSerializer):
     total_venta = serializers.IntegerField(read_only=True, default=0)
     items_count = serializers.IntegerField(read_only=True, default=0)
     estado_pago = serializers.CharField(read_only=True)
-    # Fecha de vencimiento de su cuenta por cobrar (null si fue al contado)
     fecha_vencimiento = serializers.DateField(
         source="cuenta_por_cobrar.fecha_vencimiento", read_only=True, default=None
     )
@@ -94,7 +91,6 @@ class DetalleVentaSerializer(serializers.ModelSerializer):
     id_producto = serializers.CharField(source="producto_id", read_only=True)
     producto_nombre = serializers.CharField(source="producto.producto", read_only=True, default="")
     categoria = serializers.CharField(source="producto.categoria", read_only=True, default="")
-    # Fecha y tipo de compra vienen de la venta
     fecha = serializers.DateField(source="venta.fecha", read_only=True)
     tipo_compra = serializers.CharField(source="venta.tipo_compra", read_only=True)
     estado_pago = serializers.CharField(read_only=True)
@@ -149,7 +145,6 @@ class CuentaPorCobrarSerializer(serializers.ModelSerializer):
         ]
 
     def get_estado_actual(self, obj):
-        # Si la consulta ya lo calculó (con_estado_actual), se usa ese valor.
         if hasattr(obj, "estado_actual"):
             return obj.estado_actual
         return obj.calcular_estado_actual()
@@ -169,10 +164,6 @@ class GastoInsumoSerializer(serializers.ModelSerializer):
         model = GastoInsumo
         fields = ["id_gasto", "id_producto", "producto_nombre", "categoria", "fecha", "monto"]
 
-
-# ==============================================================================
-# DETALLE DE UNA VENTA (respuesta al registrar o consultar una venta)
-# ==============================================================================
 
 class LineaVentaSerializer(serializers.ModelSerializer):
     id_producto = serializers.CharField(source="producto_id", read_only=True)
@@ -198,10 +189,6 @@ class VentaDetalleSerializer(VentaSerializer):
         return CuentaPorCobrarSerializer(cuenta).data if cuenta else None
 
 
-# ==============================================================================
-# ENTRADA DE DATOS (POST): validan lo que envía el frontend
-# ==============================================================================
-
 class ItemVentaEntradaSerializer(serializers.Serializer):
     id_producto = serializers.PrimaryKeyRelatedField(
         queryset=Producto.objects.all(),
@@ -209,7 +196,6 @@ class ItemVentaEntradaSerializer(serializers.Serializer):
         error_messages={"does_not_exist": "No existe el producto '{pk_value}'."},
     )
     cantidad = serializers.IntegerField(min_value=1, max_value=100000)
-    # Unitarios. Si no se envían, se usan los de la última venta del producto.
     precio_venta = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     costo_venta = serializers.IntegerField(min_value=1, required=False, allow_null=True)
 

@@ -31,9 +31,8 @@ PRIORIDADES = {
     MEDIA: "Vence en 8-15 días",
     BAJA: "Vigente > 15 días",
 }
-# Formas cortas aceptadas en ?prioridad=
 ALIAS_PRIORIDAD = {"CRITICA": CRITICA, "ALTA": ALTA, "MEDIA": MEDIA, "BAJA": BAJA}
-DIAS_AVISO = 15  # ventana de anticipación por defecto, igual que la vista
+DIAS_AVISO = 15
 
 
 def cuentas_con_alerta(corte):
@@ -52,7 +51,6 @@ def cuentas_con_alerta(corte):
                 default=Value(BAJA),
                 output_field=CharField(),
             ),
-            # 0 = vencidas primero, como ordena el equipo de datos
             orden_alerta=Case(When(vencida, then=Value(0)), default=Value(1), output_field=IntegerField()),
         )
     )

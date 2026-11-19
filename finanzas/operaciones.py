@@ -40,7 +40,6 @@ VENTA, GASTO = "VENTA", "GASTO"
 TIPOS = {"VENTA": VENTA, "VENTAS": VENTA, "GASTO": GASTO, "GASTOS": GASTO, "COMPRA": GASTO, "COMPRAS": GASTO}
 ESTADOS = {"PAGADO": "PAGADO", "PAGADA": "PAGADO", "PENDIENTE": "PENDIENTE", "PENDIENTES": "PENDIENTE"}
 ORDENES = ("fecha", "monto")
-# Columnas de la lista unificada, en el mismo orden para ventas y gastos
 COLUMNAS = (
     "tipo", "id", "fecha", "detalle", "monto", "items_count", "tipo_compra", "por_cobrar", "estado_pago",
     "fecha_vencimiento", "id_cliente", "id_producto",
@@ -65,7 +64,6 @@ def _rango_fechas(params):
     return _rango_opcional(params)
 
 
-# Venta al fiado que todavía no se paga
 PENDIENTE = Q(por_cobrar=True) & (
     Q(cuenta_por_cobrar__isnull=True) | ~Q(cuenta_por_cobrar__estado=CuentaPorCobrar.PAGADA)
 )
@@ -169,7 +167,6 @@ class OperacionesView(generics.GenericAPIView):
         ventas_base = _ventas_filtradas(inicio, fin, tipo_compra, estado, buscar)
         ventas = _ventas_como_operaciones(ventas_base)
         gastos = _gastos(inicio, fin, buscar)
-        # Los gastos no tienen canal ni quedan pendientes: esos filtros dejan solo ventas.
         incluir_ventas = tipo in (None, VENTA)
         incluir_gastos = tipo in (None, GASTO) and not tipo_compra and estado != "PENDIENTE"
 
@@ -181,7 +178,6 @@ class OperacionesView(generics.GenericAPIView):
             lista = gastos
         else:
             lista = ventas.none()
-        # Desempate estable: a igual fecha, primero las ventas y luego por id
         lista = lista.order_by(orden, "-tipo", "-id")
 
         pagina = self.paginate_queryset(lista)
@@ -208,10 +204,6 @@ class OperacionesView(generics.GenericAPIView):
             "ventas_pendientes": de_ventas(ventas.filter(PENDIENTE) if ventas is not None else None),
         }
 
-
-# ------------------------------------------------------------------------------
-# Listas livianas para los selectores de los formularios (Tarea 35)
-# ------------------------------------------------------------------------------
 
 def _limite(params):
     limite = (params.get("limit") or "20").strip()
@@ -257,7 +249,6 @@ class OpcionesProductosView(APIView):
         categoria = (request.query_params.get("categoria") or "").strip()
         if categoria:
             qs = qs.filter(categoria__iexact=categoria)
-        # Primero se eligen los productos y después se busca su último precio (pocas filas).
         ids = list(qs.values_list("pk", flat=True)[: _limite(request.query_params)])
         filas = (
             Producto.objects.filter(pk__in=ids)

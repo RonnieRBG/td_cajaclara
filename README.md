@@ -196,6 +196,7 @@ El proyecto trae lo necesario para Render, Railway u otro servicio que ejecute P
 | `DJANGO_SECRET_KEY`     | Una clave nueva y larga (no la de desarrollo)                            |
 | `DJANGO_ALLOWED_HOSTS`  | El dominio del servicio (Render y Railway lo agregan solos)              |
 | `CORS_ALLOWED_ORIGINS`  | La dirección donde se publique el frontend, ej. `https://cajaclara.vercel.app` |
+| `CORS_ALLOWED_ORIGIN_REGEXES` | Opcional: patrones para aceptar varias direcciones del frontend (ej. todos los deploys de Vercel de un proyecto) |
 | `CSRF_TRUSTED_ORIGINS`  | La dirección del backend con `https://` (para entrar al `/admin/`)       |
 | `DB_*` y `DB_SSLMODE`   | Los de Neon, con el usuario `cajaclara_app_rw` (ver `.env.example`)      |
 

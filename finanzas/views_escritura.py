@@ -47,10 +47,6 @@ def _venta_con_detalle(pk):
     )
 
 
-# ------------------------------------------------------------------------------
-# Ventas
-# ------------------------------------------------------------------------------
-
 class VentaListCreateView(VentaListView):
     """
     GET  /api/finanzas/facturas/  → listado (ver VentaListView)
@@ -87,10 +83,6 @@ class VentaDetalleView(APIView):
         return Response(VentaDetalleSerializer(_venta_con_detalle(pk)).data)
 
 
-# ------------------------------------------------------------------------------
-# Cobros
-# ------------------------------------------------------------------------------
-
 class PagarCuentaView(APIView):
     """
     POST /api/finanzas/cuentas-por-cobrar/{id_cuenta}/pagar/
@@ -123,10 +115,6 @@ class RevertirPagoView(APIView):
             return _error(regla)
         return Response(CuentaPorCobrarSerializer(cuenta).data)
 
-
-# ------------------------------------------------------------------------------
-# Gastos y clientes
-# ------------------------------------------------------------------------------
 
 class GastoListCreateView(GastoInsumoListView):
     """

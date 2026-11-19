@@ -39,26 +39,19 @@ from finanzas.views_escritura import (
 )
 
 urlpatterns = [
-    # Panel de administración
     path('admin/', admin.site.urls),
 
-    # Login, renovación de token, logout y perfil (JWT)
     path('api/auth/', include('usuarios.urls')),
 
-    # Catálogo de documentación de la API (público, no requiere login)
     path('api/', ApiCatalogView.as_view(), name='api-catalog'),
     path('api/finanzas/', ApiCatalogView.as_view(), name='api-finanzas-catalog'),
 
-    # Opciones de filtros para el Frontend (categorías, unidades, fechas min/max)
     path('api/finanzas/opciones-filtros/', OpcionesFiltrosView.as_view(), name='opciones-filtros'),
 
-    # Analítica y KPIs
     path('api/finanzas/resumen-mensual/', ResumenFinancieroView.as_view(), name='resumen-mensual'),
     path('api/finanzas/resumen-agrupado/', ResumenAgrupadoView.as_view(), name='resumen-agrupado'),
     path('api/finanzas/exportar-excel/', ExportarExcelView.as_view(), name='exportar-excel'),
 
-    # Entidades principales con paginación y búsqueda
-    # GET lista y POST registra (clientes, facturas y gastos)
     path('api/finanzas/clientes/', ClienteListCreateView.as_view(), name='cliente-list'),
     path('api/finanzas/productos/', ProductoListView.as_view(), name='producto-list'),
     path('api/finanzas/facturas/', VentaListCreateView.as_view(), name='factura-list'),
@@ -69,15 +62,12 @@ urlpatterns = [
     path('api/finanzas/cuentas-por-cobrar/<int:pk>/revertir-pago/', RevertirPagoView.as_view(), name='cuenta-revertir-pago'),
     path('api/finanzas/gastos/', GastoListCreateView.as_view(), name='gastoinsumo-list'),
 
-    # Para las pantallas del frontend: ventas y gastos en una lista, y selectores livianos
     path('api/finanzas/operaciones/', OperacionesView.as_view(), name='operaciones'),
     path('api/finanzas/opciones/clientes/', OpcionesClientesView.as_view(), name='opciones-clientes'),
     path('api/finanzas/opciones/productos/', OpcionesProductosView.as_view(), name='opciones-productos'),
 
-    # Alertas de cobro (misma lógica que vw_alertas_cobro del equipo de datos, a la fecha de hoy)
     path('api/finanzas/alertas-cobro/', AlertasCobroView.as_view(), name='alertas-cobro'),
 
-    # Métricas: lectura directa de las vistas SQL del equipo de datos (las mismas de Power BI)
     path('api/finanzas/metricas/', MetricasCatalogoView.as_view(), name='metricas-catalogo'),
     path('api/finanzas/metricas/<str:nombre>/', MetricaView.as_view(), name='metrica'),
 ]

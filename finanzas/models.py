@@ -62,11 +62,10 @@ class Venta(models.Model):
     id_factura = models.CharField(max_length=30, primary_key=True)
     cliente = models.ForeignKey(
         Cliente, on_delete=models.PROTECT, db_column="id_cliente", related_name="ventas",
-        db_index=False,  # índice con nombre en Meta.indexes, igual que en el esquema de datos
+        db_index=False,
     )
     fecha = models.DateField()
     tipo_compra = models.CharField(max_length=20, choices=TIPO_COMPRA_CHOICES)
-    # True = venta a crédito (fiado). No cambia al pagar: el pago queda en su CuentaPorCobrar.
     por_cobrar = models.BooleanField(default=False)
 
     class Meta:
@@ -134,7 +133,6 @@ class DetalleVentaQuerySet(models.QuerySet):
 
 class DetalleVentaManager(models.Manager.from_queryset(DetalleVentaQuerySet)):
     def get_queryset(self):
-        # Trae la venta y el producto en la misma consulta (JOIN)
         return super().get_queryset().select_related("venta", "producto")
 
 
@@ -145,11 +143,11 @@ class DetalleVenta(models.Model):
     id_detalle = models.IntegerField(primary_key=True)
     venta = models.ForeignKey(
         Venta, on_delete=models.CASCADE, db_column="id_factura", related_name="detalles",
-        db_index=False,  # índice con nombre en Meta.indexes, igual que en el esquema de datos
+        db_index=False,
     )
     producto = models.ForeignKey(
         Producto, on_delete=models.PROTECT, db_column="id_producto", related_name="ventas",
-        db_index=False,  # índice con nombre en Meta.indexes, igual que en el esquema de datos
+        db_index=False,
     )
     cantidad = models.IntegerField(validators=[MinValueValidator(1)])
     precio_venta = models.IntegerField(validators=[MinValueValidator(1)])
@@ -172,7 +170,6 @@ class DetalleVenta(models.Model):
             models.CheckConstraint(condition=Q(costo_venta__gt=0), name="chk_detalle_costo"),
         ]
 
-    # (los nombres total_venta / total_costo / utilidad quedan para las anotaciones de con_totales())
     @property
     def total_linea_venta(self):
         return self.cantidad * self.precio_venta
@@ -229,7 +226,7 @@ class CuentaPorCobrar(models.Model):
     )
     cliente = models.ForeignKey(
         Cliente, on_delete=models.PROTECT, db_column="id_cliente", related_name="cuentas_por_cobrar",
-        db_index=False,  # índice con nombre en Meta.indexes, igual que en el esquema de datos
+        db_index=False,
     )
     monto = models.IntegerField(validators=[MinValueValidator(1)])
     fecha_vencimiento = models.DateField()
@@ -255,7 +252,6 @@ class CuentaPorCobrar(models.Model):
             models.CheckConstraint(
                 condition=Q(estado__in=["PAGADA", "PENDIENTE", "VENCIDA"]), name="chk_cxc_estado"
             ),
-            # Igual que en el esquema de datos: pagada ⇔ tiene fecha de pago.
             models.CheckConstraint(
                 condition=(Q(estado="PAGADA") & Q(fecha_pago__isnull=False))
                 | (Q(estado__in=["PENDIENTE", "VENCIDA"]) & Q(fecha_pago__isnull=True)),
@@ -283,7 +279,7 @@ class GastoInsumo(models.Model):
     id_gasto = models.IntegerField(primary_key=True)
     producto = models.ForeignKey(
         Producto, on_delete=models.PROTECT, db_column="id_producto", related_name="gastos",
-        db_index=False,  # índice con nombre en Meta.indexes, igual que en el esquema de datos
+        db_index=False,
     )
     fecha = models.DateField()
     monto = models.IntegerField(validators=[MinValueValidator(1)])
