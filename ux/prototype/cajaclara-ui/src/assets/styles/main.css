@@ -1,0 +1,345 @@
+/* ==========================================================================
+   CajaClara — Sistema de Diseño de Alta Fidelidad (Desktop-First / Responsive)
+   ========================================================================== */
+
+:root {
+  /* Marca e Identidad */
+  --color-brand-primary: #0f766e;        /* Teal oscuro elegante / confianza financiera */
+  --color-brand-primary-hover: #115e59;
+  --color-brand-primary-light: #f0fdfa;  /* Tinte sutil de marca */
+  --color-brand-primary-border: #ccfbf1;
+  --color-brand-accent: #059669;         /* Esmeralda / entradas de caja */
+  --color-brand-accent-light: #ecfdf5;
+
+  /* Superficies y Fondos */
+  --color-bg-app: #f8fafc;              /* Slate 50 muy limpio */
+  --color-bg-surface: #ffffff;          /* Blanco puro */
+  --color-bg-subtle: #f1f5f9;           /* Slate 100 para contenedores secundarios */
+  --color-bg-hover: #e2e8f0;
+
+  /* Textos y Tipografía */
+  --color-text-main: #0f172a;           /* Slate 900 de alto contraste y legibilidad */
+  --color-text-secondary: #475569;      /* Slate 600 para metadatos y labels */
+  --color-text-muted: #94a3b8;          /* Slate 400 */
+  --color-text-on-dark: #ffffff;
+
+  /* Bordes y Divisiones */
+  --color-border: #e2e8f0;              /* Slate 200 */
+  --color-border-subtle: #f1f5f9;
+  --color-border-focus: #0f766e;
+
+  /* Semántica de Caja y Finanzas */
+  --color-income: #059669;              /* Verde esmeralda para ventas / entradas */
+  --color-income-light: #ecfdf5;
+  --color-expense: #e11d48;             /* Rosa-rojo para salidas / compras / gastos */
+  --color-expense-light: #fff1f2;
+  --color-warning: #d97706;             /* Ámbar para cuentas por vencer */
+  --color-warning-light: #fef3c7;
+  --color-danger: #dc2626;              /* Rojo para vencidas */
+  --color-danger-light: #fee2e2;
+
+  /* Sombras Modernas (Suaves y táctiles) */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+
+  /* Radios de Borde */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
+
+  /* Sistema de Espaciado Oficial */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+
+  /* Gráficos */
+  --chart-min-height: 20rem;
+  --chart-bar-width: clamp(1.25rem, 2.5vw, 2.25rem);
+  --chart-series-gap: var(--space-2);
+  --chart-group-gap: var(--space-5);
+  --chart-axis-width: 5rem;
+
+  /* Layout responsive */
+  --layout-sidebar-width: 15.625rem;
+  --layout-header-height: 4rem;
+  --layout-bottom-nav-height: 4rem;
+  --layout-content-max: 85rem;
+  --layout-gutter-desktop: var(--space-8);
+  --layout-gutter-tablet: var(--space-6);
+  --layout-gutter-mobile: var(--space-4);
+  --layout-section-gap: var(--space-10);
+  --layout-card-gap: var(--space-6);
+  --layout-control-gap: var(--space-3);
+  --control-min-height: 2.75rem;
+  --content-min-width: 0;
+
+  /* Alias para los componentes que ya usan los nombres anteriores */
+  --sidebar-width: var(--layout-sidebar-width);
+  --header-height: var(--layout-header-height);
+  --bottom-nav-height: var(--layout-bottom-nav-height);
+  --max-content-width: var(--layout-content-max);
+
+  /* Alias semánticos y tokens compartidos */
+  --color-background: var(--color-bg-app);
+  --color-surface: var(--color-bg-surface);
+  --color-surface-subtle: var(--color-bg-subtle);
+  --color-surface-hover: var(--color-bg-hover);
+  --color-text: var(--color-text-main);
+  --color-border-strong: #cbd5e1;
+  --color-slate-100: #f1f5f9;
+  --color-slate-900: #0f172a;
+
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-500: #f59e0b;
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
+
+  --font-display: 'Plus Jakarta Sans', var(--font-sans);
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+
+  /* Tipografía Base */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Reset y Normalización */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-app);
+  color: var(--color-text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Enlaces y Botones Base */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* Foco Accesible */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+}
+
+/* Utilidades Comunes de Cards */
+.card,
+.ui-card {
+  min-width: var(--content-min-width);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-6);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.card:hover,
+.ui-card--hoverable:hover {
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-md);
+}
+
+/* Botones y Acciones Base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-min-height);
+  gap: var(--space-2);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background-color: var(--color-primary-600);
+  color: white;
+  border: 1px solid var(--color-primary-600);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-700);
+  border-color: var(--color-primary-700);
+}
+
+.btn-secondary {
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.btn-success {
+  background-color: var(--color-emerald-600);
+  color: white;
+  border: 1px solid var(--color-emerald-600);
+}
+
+.btn-success:hover {
+  background-color: var(--color-emerald-700);
+  border-color: var(--color-emerald-700);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+}
+
+.ui-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ui-section-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-main);
+}
+
+.ui-section-kicker {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+/* Botones UI de Alta Fidelidad */
+.btn-ui {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-ui--primary {
+  background: var(--color-brand-primary);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.2);
+}
+
+.btn-ui--primary:hover {
+  background: var(--color-brand-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.25);
+}
+
+.btn-ui--secondary {
+  background: var(--color-bg-surface);
+  color: var(--color-text-main);
+  border: 1px solid var(--color-border);
+}
+
+.btn-ui--secondary:hover {
+  background: var(--color-bg-subtle);
+  border-color: #cbd5e1;
+}
+
+.btn-ui--ghost {
+  background: transparent;
+  color: var(--color-brand-primary);
+  padding: 6px 10px;
+}
+
+.btn-ui--ghost:hover {
+  background: var(--color-brand-primary-light);
+}
+
+/* Scrollbar sutil */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

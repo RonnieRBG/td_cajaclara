@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CajaClara — Panel Principal</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- =========================================================================
+           ENCABEZADO GLOBAL
+           ========================================================================= -->
+      <header class="header">
+        <div class="brand">
+          <a class="logo" href="dashboard.html" aria-label="CajaClara Inicio">
+            <span class="logo__mark"></span>
+          </a>
+          <span class="brand__name">CajaClara</span>
+        </div>
+        <div class="user">
+          <div class="user__avatar" aria-hidden="true"></div>
+          <div class="user__meta">
+            <!-- [DATO DIRECTO]: Nombre del micronegocio -->
+            <span class="user__label">Negocio</span>
+            <strong style="font-size: 13px; color: var(--ink);">Almacén La Esquina</strong>
+          </div>
+        </div>
+      </header>
+
+      <!-- =========================================================================
+           CONTENIDO PRINCIPAL - PANEL DE CAJA
+           ========================================================================= -->
+      <main class="main">
+        <!-- -----------------------------------------------------------------------
+             ACCIONES RÁPIDAS DE CAJA REGISTRADORA
+             Flujos prioritarios: registrar venta, compra, otro gasto y revisar cobros
+             ----------------------------------------------------------------------- -->
+        <section class="card" aria-label="Acciones Rápidas de Caja">
+          <span class="section-kicker">Operaciones de Caja</span>
+          <div class="quick-actions">
+            <!-- Acción 1: Registrar venta unitaria -->
+            <a class="btn-primary" href="movimientos.html?tipo=venta" title="Registrar venta de productos por unidad">
+              + Registrar venta
+            </a>
+            <!-- Acción 2: Registrar compra de mercadería -->
+            <a class="btn-secondary" href="movimientos.html?tipo=compra" title="Registrar compra de productos en cajas o paquetes">
+              + Registrar compra
+            </a>
+            <!-- Acción 3: Registrar otro gasto operativo -->
+            <a class="btn-secondary" href="movimientos.html?tipo=gasto" title="Registrar otro gasto como transporte o embalaje">
+              + Registrar otro gasto
+            </a>
+            <!-- Acción 4: Revisar cuentas por cobrar -->
+            <a class="btn-secondary" href="cuentas-cobrar.html" title="Revisar dinero pendiente de clientes">
+              Revisar cobros
+            </a>
+          </div>
+        </section>
+
+        <!-- -----------------------------------------------------------------------
+             SELECTOR DE PERÍODO TEMPORAL
+             ----------------------------------------------------------------------- -->
+        <section class="period" aria-label="Selector de período">
+          <div class="period__copy">
+            <span class="section-kicker">Período</span>
+            <h1 class="period__title">Mes actual (Noviembre 2026)</h1>
+          </div>
+          <button class="period__selector" type="button" aria-label="Cambiar período">
+            <span>Nov 2026</span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+        </section>
+
+        <!-- -----------------------------------------------------------------------
+             INDICADORES CLAVE (KPIS DE CAJA Y FINANZAS SENCILLAS)
+             Métricas monetarias en Pesos Chilenos (CLP sin decimales)
+             ----------------------------------------------------------------------- -->
+        <!--
+          DOCUMENTACIÓN DE ORIGEN DE DATOS Y REGLAS DE NEGOCIO:
+          - Ventas del mes = movimientos de tipo INGRESO (Ventas pagadas).
+          - Compras y gastos = movimientos de tipo GASTO (Compras de productos + Otros gastos).
+          - Saldo del periodo = ingresos menos gastos (Flujo neto de caja del periodo).
+            REGLA: No usar "Resultado estimado", "Ganancia neta" ni "Margen bruto".
+          - Pendiente por cobrar = total acumulado de cuentas PENDIENTES y VENCIDAS.
+        -->
+        <section class="kpis kpis--four" aria-label="Indicadores clave del negocio">
+          <!-- KPI 1: Ventas del mes -->
+          <article class="card kpi">
+            <div class="kpi__icon" aria-hidden="true"></div>
+            <span class="kpi__label">Ventas del mes</span>
+            <!-- TODO BACKEND: Ventas = movimientos de tipo INGRESO -->
+            <strong class="section-title">$ 145.000</strong>
+            <span class="data-meta-sub">Dinero recibido por ventas</span>
+          </article>
+
+          <!-- KPI 2: Compras y gastos -->
+          <article class="card kpi">
+            <div class="kpi__icon" aria-hidden="true"></div>
+            <span class="kpi__label">Compras y gastos</span>
+            <!-- TODO BACKEND: Compras y gastos = movimientos de tipo GASTO -->
+            <strong class="section-title">$ 85.500</strong>
+            <span class="data-meta-sub">Dinero destinado a productos y otros gastos</span>
+          </article>
+
+          <!-- KPI 3: Saldo del periodo (Énfasis) -->
+          <article class="card kpi kpi--emphasis">
+            <div class="kpi__icon" aria-hidden="true"></div>
+            <span class="kpi__label">Saldo del periodo</span>
+            <!-- TODO BACKEND: Saldo = ingresos menos gastos ($ 145.000 - $ 85.500) -->
+            <strong class="section-title" style="color: #ffffff;">$ 59.500</strong>
+            <span class="data-meta-sub" style="color: #c8c8cc;">Diferencia entre entradas y salidas</span>
+          </article>
+
+          <!-- KPI 4: Pendiente por cobrar -->
+          <article class="card kpi">
+            <div class="kpi__icon" aria-hidden="true"></div>
+            <span class="kpi__label">Pendiente por cobrar</span>
+            <!-- TODO BACKEND: Pendiente por cobrar = total de cuentas PENDIENTES y VENCIDAS ($ 38.500) -->
+            <strong class="section-title">$ 38.500</strong>
+            <span class="data-meta-sub">Dinero que todavía deben tus clientes</span>
+          </article>
+        </section>
+
+        <!-- -----------------------------------------------------------------------
+             GRÁFICO PLACEHOLDER: ENTRADAS Y SALIDAS DEL MES
+             Comparativa de barras semanal en escala de grises
+             ----------------------------------------------------------------------- -->
+        <section class="card chart" aria-label="Comparativa de entradas y salidas del mes">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Evolución</span>
+              <h2 class="section-title">Entradas y salidas del mes</h2>
+            </div>
+            <div class="legend">
+              <span class="legend__item">
+                <span class="swatch swatch--dark"></span>
+                <span>Ventas</span>
+              </span>
+              <span class="legend__item">
+                <span class="swatch swatch--mid"></span>
+                <span>Compras y gastos</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="chart__canvas" role="img" aria-label="Gráfico de barras comparativo de ventas y compras/gastos por semana">
+            <div class="chart__bars">
+              <!-- Semana 1 -->
+              <div class="bar-group">
+                <div class="bar bar--dark" style="--h: 65%;" title="Ventas S1: $ 36.000"></div>
+                <div class="bar bar--mid" style="--h: 50%;" title="Compras y gastos S1: $ 27.500"></div>
+                <span class="bar-group__label">Sem 1</span>
+              </div>
+              <!-- Semana 2 -->
+              <div class="bar-group">
+                <div class="bar bar--dark" style="--h: 55%;" title="Ventas S2: $ 31.000"></div>
+                <div class="bar bar--mid" style="--h: 40%;" title="Compras y gastos S2: $ 22.000"></div>
+                <span class="bar-group__label">Sem 2</span>
+              </div>
+              <!-- Semana 3 -->
+              <div class="bar-group">
+                <div class="bar bar--dark" style="--h: 80%;" title="Ventas S3: $ 45.000"></div>
+                <div class="bar bar--mid" style="--h: 45%;" title="Compras y gastos S3: $ 24.000"></div>
+                <span class="bar-group__label">Sem 3</span>
+              </div>
+              <!-- Semana 4 -->
+              <div class="bar-group">
+                <div class="bar bar--dark" style="--h: 60%;" title="Ventas S4: $ 33.000"></div>
+                <div class="bar bar--mid" style="--h: 30%;" title="Compras y gastos S4: $ 12.000"></div>
+                <span class="bar-group__label">Sem 4</span>
+              </div>
+            </div>
+            <div class="chart__axis" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- -----------------------------------------------------------------------
+             BLOQUE: RESUMEN DE OPERACIONES Y DEMANDA DE PRODUCTOS
+             ----------------------------------------------------------------------- -->
+        <div class="insights-grid">
+          <!-- Tarjeta 1: Resumen de Operaciones -->
+          <!-- TODO BACKEND: confirmar disponibilidad de producto y cantidad en las operaciones -->
+          <section class="card" aria-label="Resumen de operaciones del periodo">
+            <div class="section-head">
+              <div>
+                <span class="section-kicker">Actividad de Caja</span>
+                <h2 class="section-title">Resumen de operaciones</h2>
+              </div>
+              <span class="data-meta-sub">Mes actual</span>
+            </div>
+
+            <div class="ranking-list">
+              <div class="activity-box">
+                <span class="section-kicker">Flujo Comercial</span>
+                <div class="op-preview-box__row">
+                  <span>Ventas registradas</span>
+                  <strong>18 ventas</strong>
+                </div>
+                <div class="op-preview-box__row">
+                  <span>Compras registradas</span>
+                  <strong>5 compras</strong>
+                </div>
+              </div>
+
+              <div class="activity-box">
+                <span class="section-kicker">Volumen y Cobranza</span>
+                <div class="op-preview-box__row">
+                  <span>Unidades vendidas</span>
+                  <strong>42 unidades</strong>
+                </div>
+                <div class="op-preview-box__row">
+                  <span>Cuentas pendientes</span>
+                  <strong>3 cuentas ($ 38.500)</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Tarjeta 2: Productos Más Vendidos (Demanda prevista) -->
+          <!-- TODO DATOS: validar cálculo y normalización de precio_venta antes de mostrar importes comerciales -->
+          <section class="card" aria-label="Productos más vendidos previstos">
+            <div class="section-head">
+              <div>
+                <span class="section-kicker">Demanda de Productos</span>
+                <h2 class="section-title">Productos Más Vendidos</h2>
+              </div>
+              <span class="data-meta-sub">Por unidades</span>
+            </div>
+
+            <ul class="ranking-list">
+              <!-- Item 1: Aceite vegetal 1L -->
+              <li class="ranking-item">
+                <div>
+                  <strong>Aceite vegetal de 1 litro</strong>
+                  <span class="data-meta-sub">Abarrotes básicos • Presentación individual</span>
+                </div>
+                <div>
+                  <div class="data-value">19 un.</div>
+                  <span class="data-meta-sub">Venta frecuente</span>
+                </div>
+              </li>
+
+              <!-- Item 2: Arroz 1kg -->
+              <li class="ranking-item">
+                <div>
+                  <strong>Arroz de 1 kilo</strong>
+                  <span class="data-meta-sub">Abarrotes básicos • Paquete unitario</span>
+                </div>
+                <div>
+                  <div class="data-value">14 un.</div>
+                  <span class="data-meta-sub">Venta frecuente</span>
+                </div>
+              </li>
+
+              <!-- Item 3: Azúcar 1kg -->
+              <li class="ranking-item">
+                <div>
+                  <strong>Azúcar de 1 kilo</strong>
+                  <span class="data-meta-sub">Abarrotes básicos • Bolsa unitaria</span>
+                </div>
+                <div>
+                  <div class="data-value">10 un.</div>
+                  <span class="data-meta-sub">Venta regular</span>
+                </div>
+              </li>
+
+              <!-- Item 4: Fideos 400g -->
+              <li class="ranking-item">
+                <div>
+                  <strong>Fideos de 400 gramos</strong>
+                  <span class="data-meta-sub">Pastas y fideos • Paquete</span>
+                </div>
+                <div>
+                  <div class="data-value">8 un.</div>
+                  <span class="data-meta-sub">Venta regular</span>
+                </div>
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <!-- -----------------------------------------------------------------------
+             SECCIÓN 7: COBROS QUE REQUIEREN ATENCIÓN
+             ----------------------------------------------------------------------- -->
+        <section class="card" aria-label="Cobros que requieren atención">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Cuentas por Cobrar</span>
+              <h2 class="section-title">Cobros que requieren atención</h2>
+            </div>
+            <!-- Enlace explícito a cuentas-cobrar.html -->
+            <a class="ghost-link" href="cuentas-cobrar.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
+              Ver todas las cuentas →
+            </a>
+          </div>
+
+          <!-- Vista Mobile (Cards) -->
+          <ul class="receivables-list receivables-mobile">
+            <!-- Cuenta 1: Claudia Rojas (Pendiente) -->
+            <li class="receivables-item">
+              <div>
+                <strong>Claudia Rojas</strong>
+                <span class="data-meta-sub">Venta de 4 botellas de aceite • Venta #0024</span>
+                <span class="data-meta-sub">Vence en 8 días (11 Nov 2026)</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 12.000</div>
+                <span class="badge-status badge-status--pendiente">Pendiente</span>
+              </div>
+            </li>
+
+            <!-- Cuenta 2: Almacén San Pedro (Vencida) -->
+            <li class="receivables-item">
+              <div>
+                <strong>Almacén San Pedro</strong>
+                <span class="data-meta-sub">Venta de productos surtidos • Venta #0019</span>
+                <span class="data-meta-sub" style="font-weight: 600;">Venció hace 10 días (25 Oct 2026)</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 18.000</div>
+                <span class="badge-status badge-status--vencida">Vencida</span>
+              </div>
+            </li>
+
+            <!-- Cuenta 3: Minimarket Central (Pendiente) -->
+            <li class="receivables-item">
+              <div>
+                <strong>Minimarket Central</strong>
+                <span class="data-meta-sub">Venta de aceite vegetal • Venta #0026</span>
+                <span class="data-meta-sub">Vence en 15 días (19 Nov 2026)</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 8.500</div>
+                <span class="badge-status badge-status--pendiente">Pendiente</span>
+              </div>
+            </li>
+          </ul>
+
+          <!-- Vista Tablet/Desktop (Tabla estructurada) -->
+          <table class="table-responsive-desktop" aria-label="Tabla de cobros que requieren atención">
+            <thead>
+              <tr>
+                <th scope="col">Cliente</th>
+                <th scope="col">Documento</th>
+                <th scope="col">Vencimiento</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Monto pendiente</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Fila 1: Claudia Rojas -->
+              <tr>
+                <td><strong>Claudia Rojas</strong><br><span class="data-meta-sub">Venta de 4 botellas de aceite</span></td>
+                <td>Venta #0024</td>
+                <td>11 Nov 2026 <span class="data-meta-sub">Vence en 8 días</span></td>
+                <td><span class="badge-status badge-status--pendiente">Pendiente</span></td>
+                <td><strong>$ 12.000</strong></td>
+              </tr>
+              <!-- Fila 2: Almacén San Pedro -->
+              <tr>
+                <td><strong>Almacén San Pedro</strong><br><span class="data-meta-sub">Venta de productos surtidos</span></td>
+                <td>Venta #0019</td>
+                <td>25 Oct 2026 <span class="data-meta-sub" style="font-weight: 600;">Venció hace 10 días</span></td>
+                <td><span class="badge-status badge-status--vencida">Vencida</span></td>
+                <td><strong>$ 18.000</strong></td>
+              </tr>
+              <!-- Fila 3: Minimarket Central -->
+              <tr>
+                <td><strong>Minimarket Central</strong><br><span class="data-meta-sub">Venta de aceite vegetal</span></td>
+                <td>Venta #0026</td>
+                <td>19 Nov 2026 <span class="data-meta-sub">Vence en 15 días</span></td>
+                <td><span class="badge-status badge-status--pendiente">Pendiente</span></td>
+                <td><strong>$ 8.500</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- -----------------------------------------------------------------------
+             SECCIÓN 8: OPERACIONES RECIENTES
+             ----------------------------------------------------------------------- -->
+        <section class="card" aria-label="Listado de operaciones recientes">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Últimos Movimientos</span>
+              <h2 class="section-title">Operaciones recientes</h2>
+            </div>
+            <!-- Enlace explícito a movimientos.html -->
+            <a class="ghost-link" href="movimientos.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: var(--ink);">
+              Ver todos los movimientos →
+            </a>
+          </div>
+
+          <!-- Vista Mobile (Cards con datos demostrativos del almacén) -->
+          <ul class="sales-list sales-mobile">
+            <!-- Operación 1: Venta pagada (Almacén San Pedro) -->
+            <li class="sales-item">
+              <div>
+                <span class="badge-op badge-op--venta">Venta</span>
+                <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
+                <span class="data-meta-sub">3 botellas • Venta #0025 • Cliente: Almacén San Pedro</span>
+                <span class="data-meta-sub">Fecha: 04 Nov 2026</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 9.000</div>
+                <span class="badge-status badge-status--pagada">Venta pagada</span>
+              </div>
+            </li>
+
+            <!-- Operación 2: Venta pendiente (Claudia Rojas) -->
+            <li class="sales-item">
+              <div>
+                <span class="badge-op badge-op--venta">Venta</span>
+                <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
+                <span class="data-meta-sub">4 botellas • Venta #0024 • Cliente: Claudia Rojas</span>
+                <span class="data-meta-sub">Fecha: 03 Nov 2026</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 12.000</div>
+                <span class="badge-status badge-status--pendiente">Pendiente de pago</span>
+              </div>
+            </li>
+
+            <!-- Operación 3: Compra (12 botellas) -->
+            <li class="sales-item">
+              <div>
+                <span class="badge-op badge-op--compra">Compra</span>
+                <strong style="margin-left: 6px;">Aceite vegetal de 1 litro</strong>
+                <span class="data-meta-sub">12 botellas (1 caja) • Compra #0012 • Distribuidora</span>
+                <span class="data-meta-sub">Fecha: 01 Nov 2026</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 24.000</div>
+                <span class="data-meta-sub">Compra registrada</span>
+              </div>
+            </li>
+
+            <!-- Operación 4: Otro gasto (Transporte) -->
+            <li class="sales-item">
+              <div>
+                <span class="badge-op badge-op--gasto">Otro gasto</span>
+                <strong style="margin-left: 6px;">Transporte para retirar mercadería</strong>
+                <span class="data-meta-sub">Flete retiro mercadería • Gasto #0008</span>
+                <span class="data-meta-sub">Fecha: 31 Oct 2026</span>
+              </div>
+              <div style="text-align: right;">
+                <div class="data-value">$ 3.500</div>
+                <span class="data-meta-sub">Gasto registrado</span>
+              </div>
+            </li>
+          </ul>
+
+          <!-- Vista Tablet/Desktop (Tabla estructurada) -->
+          <table class="table-responsive-desktop" aria-label="Tabla de operaciones recientes">
+            <thead>
+              <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Producto / Descripción</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Estado de pago</th>
+                <th scope="col">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Fila 1: Venta pagada (Almacén San Pedro) -->
+              <tr>
+                <td>04 Nov 2026</td>
+                <td><span class="badge-op badge-op--venta">Venta</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Venta #0025 • Cliente: Almacén San Pedro</span></td>
+                <td>3 un.</td>
+                <td><span class="badge-status badge-status--pagada">Venta pagada</span></td>
+                <td><strong>$ 9.000</strong></td>
+              </tr>
+              <!-- Fila 2: Venta pendiente (Claudia Rojas) -->
+              <tr>
+                <td>03 Nov 2026</td>
+                <td><span class="badge-op badge-op--venta">Venta</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Venta #0024 • Cliente: Claudia Rojas</span></td>
+                <td>4 un.</td>
+                <td><span class="badge-status badge-status--pendiente">Pendiente de pago</span></td>
+                <td><strong>$ 12.000</strong></td>
+              </tr>
+              <!-- Fila 3: Compra -->
+              <tr>
+                <td>01 Nov 2026</td>
+                <td><span class="badge-op badge-op--compra">Compra</span></td>
+                <td><strong>Aceite vegetal de 1 litro</strong><br><span class="data-meta-sub">Compra #0012 • 12 botellas (1 caja)</span></td>
+                <td>12 un.</td>
+                <td><span class="data-meta-sub">Compra registrada</span></td>
+                <td><strong>$ 24.000</strong></td>
+              </tr>
+              <!-- Fila 4: Otro gasto -->
+              <tr>
+                <td>31 Oct 2026</td>
+                <td><span class="badge-op badge-op--gasto">Otro gasto</span></td>
+                <td><strong>Transporte para retirar mercadería</strong><br><span class="data-meta-sub">Gasto #0008</span></td>
+                <td>—</td>
+                <td><span class="data-meta-sub">Gasto registrado</span></td>
+                <td><strong>$ 3.500</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+
+      <!-- =========================================================================
+           BARRA DE NAVEGACIÓN PRINCIPAL
+           ========================================================================= -->
+      <nav class="nav" aria-label="Navegación principal">
+        <a class="nav__item nav__item--active" href="dashboard.html" aria-current="page">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav__item" href="movimientos.html">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Compras y ventas</span>
+        </a>
+        <a class="nav__item" href="cuentas-cobrar.html">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Cobros</span>
+        </a>
+        <a class="nav__item" href="#resumen-mensual" title="Resumen mensual (Módulo de reportes en preparación)">
+          <span class="nav__icon" aria-hidden="true"></span>
+          <span>Reportes</span>
+        </a>
+      </nav>
+    </div>
+  </body>
+</html>

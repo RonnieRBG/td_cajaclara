@@ -1,4 +1,18 @@
 venv/
+.venv/
 __pycache__/
-*.pyc
+*.py[cod]
 db.sqlite3
+*.sqlite3
+
+# Local environment files; keep templates shareable.
+.env
+.env.*
+!.env.example
+
+# Python/Django generated files.
+staticfiles/
+
+# Frontend dependencies and build output.
+node_modules/
+dist/

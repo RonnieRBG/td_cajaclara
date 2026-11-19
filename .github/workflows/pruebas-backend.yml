@@ -1,0 +1,71 @@
+# Corre las pruebas del backend en cada push o pull request a la rama backend.
+name: Pruebas backend
+
+on:
+  push:
+    branches: [backend]
+  pull_request:
+    branches: [backend]
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        base: [sqlite, postgresql]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cajaclara
+          POSTGRES_PASSWORD: cajaclara
+          POSTGRES_DB: cajaclara
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DJANGO_DEBUG: "True"
+      DB_ENGINE: ${{ matrix.base == 'postgresql' && 'django.db.backends.postgresql' || '' }}
+      DB_NAME: cajaclara
+      DB_USER: cajaclara
+      DB_PASSWORD: cajaclara
+      DB_HOST: localhost
+      DB_PORT: "5432"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Revisar configuración y migraciones
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Pruebas (${{ matrix.base }})
+        run: python manage.py test --noinput
+
+  produccion:
+    # Comprueba que el proyecto arranca con la configuración de producción
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_DEBUG: "False"
+      DJANGO_SECRET_KEY: clave-solo-para-esta-prueba-de-github-actions-0123456789
+      DJANGO_ALLOWED_HOSTS: localhost
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+          cache: pip
+      - run: ./build.sh
+      - run: python manage.py check --deploy --fail-level ERROR

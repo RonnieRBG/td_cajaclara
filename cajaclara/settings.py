@@ -10,22 +10,43 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
+from datetime import timedelta
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Lee el archivo .env (si existe) de la carpeta del proyecto. Las variables que ya
+# estén definidas en el sistema tienen prioridad. Ver .env.example.
+load_dotenv(BASE_DIR / ".env")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9#c_y#sxfz$o6!zt$g3hmya!nm^n=m*!v)38h=al&s3g*v^h8a'
+def _lista(nombre, por_defecto=""):
+    """Lee una variable separada por comas y la convierte en lista."""
+    return [v.strip() for v in os.environ.get(nombre, por_defecto).split(",") if v.strip()]
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+# Seguridad
+# Por defecto el proyecto arranca en modo desarrollo (DEBUG=True) para que funcione
+# sin configurar nada. En producción hay que definir DJANGO_DEBUG=False y DJANGO_SECRET_KEY.
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").strip().lower() in ("true", "1", "si", "sí")
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("Define DJANGO_SECRET_KEY en el archivo .env (obligatoria con DEBUG=False).")
+    # Clave solo para desarrollo local: firma los tokens, así que nunca se usa en producción.
+    SECRET_KEY = "django-insecure-solo-desarrollo-cambiar-en-produccion"
+
+ALLOWED_HOSTS = _lista("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+# Render y Railway informan el dominio público del servicio en estas variables
+for _variable in ("RENDER_EXTERNAL_HOSTNAME", "RAILWAY_PUBLIC_DOMAIN"):
+    if os.environ.get(_variable):
+        ALLOWED_HOSTS.append(os.environ[_variable])
 
 
 # Application definition
@@ -38,12 +59,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'finanzas',
+    'usuarios',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Sirve los archivos estáticos (CSS/JS del /admin/) en producción, sin un servidor aparte
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -74,13 +99,59 @@ WSGI_APPLICATION = 'cajaclara.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Desacoplada y agnóstica: si el equipo de base de datos define DB_ENGINE o DATABASE_URL,
+# se conectará a PostgreSQL, MySQL, Cloud SQL, etc. De lo contrario, usa SQLite por defecto.
+DB_ENGINE = os.environ.get("DB_ENGINE")
+if DB_ENGINE:
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.environ.get('DB_NAME', 'cajaclara'),
+            'USER': os.environ.get('DB_USER', ''),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', ''),
+        }
     }
+    # Neon (la base del equipo de datos) exige SSL: DB_SSLMODE=require
+    if os.environ.get('DB_SSLMODE'):
+        DATABASES['default']['OPTIONS'] = {'sslmode': os.environ['DB_SSLMODE']}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+
+# Django REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    # Toda la API exige iniciar sesión, salvo las vistas marcadas como públicas.
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # Permite navegar la API en el navegador tras entrar al /admin/ (solo útil en desarrollo).
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # Límite de intentos de login para frenar a quien intente adivinar contraseñas.
+    'DEFAULT_THROTTLE_RATES': {
+        'login': os.environ.get('LOGIN_RATE', '10/min'),
+    },
+}
+
+# Tokens JWT: el "access" dura poco y se renueva con el "refresh".
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.environ.get('JWT_ACCESS_MINUTOS', '30'))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.environ.get('JWT_REFRESH_DIAS', '7'))),
+    'ROTATE_REFRESH_TOKENS': True,  # cada renovación entrega un refresh nuevo...
+    'BLACKLIST_AFTER_ROTATION': True,  # ...y el anterior deja de servir
+    'UPDATE_LAST_LOGIN': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 
@@ -106,9 +177,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-cl'
 
-TIME_ZONE = 'UTC'
+# Hora de Chile: así los cortes de día, semana y mes calzan con la hora local del negocio.
+TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 
@@ -119,15 +191,55 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
-
-
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
-
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+# Carpeta donde `python manage.py collectstatic` junta los estáticos para publicar
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    # En producción: archivos comprimidos y con nombre versionado (whitenoise)
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        if DEBUG
+        else 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+
+# Email
+# La app no envía correos. En desarrollo, si Django llegara a enviar uno, se muestra
+# en la consola; en producción no se define nada (Django usaría SMTP si algún día se configura).
+if DEBUG:
+    MAILERS = {
+        'default': {
+            'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        },
+    }
+
+# CORS: qué sitios web pueden llamar a la API desde el navegador.
+# Con el proxy de Vite no hace falta en desarrollo; importa al publicar el frontend en otro dominio.
+CORS_ALLOWED_ORIGINS = _lista(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+)
+CSRF_TRUSTED_ORIGINS = _lista("CSRF_TRUSTED_ORIGINS")
+# Permite que el frontend lea el nombre del archivo al descargar el Excel (otro dominio).
+CORS_EXPOSE_HEADERS = ["Content-Disposition"]
+
+# Registro de errores: con DEBUG=False, Django no muestra el detalle del error en la página.
+# Esto lo escribe en la consola, que es lo que muestran los registros (Logs) de Render o Railway.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"consola": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "django.request": {"handlers": ["consola"], "level": "ERROR", "propagate": False},
+        "django.security": {"handlers": ["consola"], "level": "WARNING", "propagate": False},
+    },
+}
+
+# Ajustes de producción (se activan solo con DEBUG=False)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    # Redirige http → https (desactivable si el servicio ya lo hace: DJANGO_SSL_REDIRECT=False)
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SSL_REDIRECT", "True").strip().lower() in ("true", "1", "si", "sí")
