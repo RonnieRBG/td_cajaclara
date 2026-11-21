@@ -38,8 +38,7 @@ def con_reintentos(funcion):
 
 
 def nuevo_id_factura(fecha, tipo_compra):
-    """Mismo estilo que las facturas del CSV (INV7811414-20100105-F), con prefijo propio
-    "CC" para distinguir las ventas registradas desde la app. Largo: 21 (máximo 30)."""
+    """Mismo estilo que las facturas del CSV (INV7811414-20100105-F)"""
     from .models import Venta
 
     canal = "L" if tipo_compra == Venta.EN_LINEA else "F"

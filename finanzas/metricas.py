@@ -138,8 +138,7 @@ def _valor(v):
 
 
 class ConsultaVista:
-    """Consulta de solo lectura sobre una vista. Se comporta como una lista
-    (count + slicing), así la paginación estándar de la API funciona igual."""
+    """Consulta de solo lectura sobre una vista. Se comporta como una lista"""
 
     def __init__(self, vista, params):
         self.vista = vista
@@ -215,8 +214,7 @@ class ConsultaVista:
 class MetricaView(APIView):
     """
     GET /api/finanzas/metricas/<nombre>/
-    Devuelve las filas de una vista del equipo de datos, con los mismos nombres de columna.
-    Parámetros: los filtros de cada vista (ver GET /api/finanzas/metricas/), `search`,
+    Devuelve las filas de una vista del equipo de datos, (ver GET /api/finanzas/metricas/), `search`,
     `ordering` y, en las paginadas, `page` y `page_size`.
     """
 
@@ -239,7 +237,7 @@ class MetricaView(APIView):
 
 
 class MetricasCatalogoView(APIView):
-    """GET /api/finanzas/metricas/ → lista de métricas disponibles, con sus filtros y columnas."""
+    """GET /api/finanzas/metricas/ """
 
     def get(self, request):
         base = request.build_absolute_uri(request.path).rstrip("/")

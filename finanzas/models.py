@@ -1,19 +1,17 @@
 """
 Modelos de Caja Clara.
 
-Siguen EXACTAMENTE el esquema que definió el equipo de datos
-(rama `datos`: Etapa_4_Carga_y_Nube/schema_postgresql.sql), que es el que está
-cargado en Neon y el que usan las vistas de Power BI:
+Siguen el esquema que definió el equipo de datos
+(rama `datos`: Etapa_4_Carga_y_Nube/schema_postgresql.sql),:
 
     cliente, producto, venta, detalle_venta, cuenta_por_cobrar, gastos_insumo
 
-Mismos nombres de tabla, mismos nombres de columna y mismos tipos. Por eso:
 - Los montos son enteros (pesos chilenos, sin decimales).
 - La fecha de una venta es solo fecha (sin hora).
 - Los ID (id_detalle, id_cuenta, id_gasto, id_cliente) no los genera la base de
   datos: en el esquema de datos son INTEGER PRIMARY KEY sin secuencia. Los asigna
   el backend (ver finanzas/ids.py).
-- No hay columnas extra: si un dato no existe en el esquema de datos, no está aquí.
+- No hay columnas extra.
 """
 
 from django.core.validators import MinValueValidator
@@ -89,7 +87,7 @@ class Venta(models.Model):
 
     @property
     def estado_pago(self):
-        """PAGADO o PENDIENTE, igual que DetalleVentaQuerySet.con_estado_pago()."""
+        
         if not self.por_cobrar:
             return "PAGADO"
         cuenta = getattr(self, "cuenta_por_cobrar", None)
@@ -106,15 +104,14 @@ ESTADO_PAGO_CHOICES = [
 
 class DetalleVentaQuerySet(models.QuerySet):
     def con_totales(self):
-        """Agrega total_venta, total_costo y utilidad calculados por la base de datos,
-        de modo que se pueden usar en filter(), order_by() y aggregate()."""
+    
         return self.annotate(
             total_venta=F("cantidad") * F("precio_venta"),
             total_costo=F("cantidad") * F("costo_venta"),
         ).annotate(utilidad=F("total_venta") - F("total_costo"))
 
     def con_estado_pago(self):
-        """Agrega estado_pago (PAGADO / PENDIENTE) a partir de la venta y su cuenta por cobrar."""
+       
         return self.annotate(
             estado_pago=Case(
                 When(
@@ -137,8 +134,7 @@ class DetalleVentaManager(models.Manager.from_queryset(DetalleVentaQuerySet)):
 
 
 class DetalleVenta(models.Model):
-    """Una línea de una venta: qué producto, cuántas unidades, a qué precio y con qué costo.
-    precio_venta y costo_venta son unitarios y quedan fijos al momento de vender."""
+    
 
     id_detalle = models.IntegerField(primary_key=True)
     venta = models.ForeignKey(
@@ -188,8 +184,7 @@ class DetalleVenta(models.Model):
 
 class CuentaPorCobrarQuerySet(models.QuerySet):
     def con_estado_actual(self, hoy=None):
-        """Agrega estado_actual a la fecha de hoy: PAGADA, VENCIDA o PENDIENTE.
-        Una cuenta guardada como PENDIENTE cuya fecha ya pasó cuenta como VENCIDA."""
+       
         hoy = hoy or timezone.localdate()
         return self.annotate(
             estado_actual=Case(
@@ -204,12 +199,12 @@ class CuentaPorCobrarQuerySet(models.QuerySet):
         )
 
     def abiertas(self):
-        """Cuentas que aún no se pagan (pendientes y vencidas)."""
+        
         return self.exclude(estado=CuentaPorCobrar.PAGADA)
 
 
 class CuentaPorCobrar(models.Model):
-    """Deuda de una venta a crédito (relación 1 a 0..1 con Venta)."""
+  
 
     PENDIENTE = "PENDIENTE"
     VENCIDA = "VENCIDA"
@@ -274,7 +269,7 @@ class CuentaPorCobrar(models.Model):
 
 
 class GastoInsumo(models.Model):
-    """Gasto en insumos: compra de un producto para reponer."""
+   
 
     id_gasto = models.IntegerField(primary_key=True)
     producto = models.ForeignKey(

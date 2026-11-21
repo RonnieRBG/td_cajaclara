@@ -1,6 +1,5 @@
 """
-Endpoints pensados para las pantallas del frontend (rama ux), usando solo lo que
-existe en el esquema del equipo de datos:
+Endpoints pensados para las pantallas del frontend:
 
 - /operaciones/        → ventas y gastos en una sola lista (pantalla "Compras y ventas"
                          y "Operaciones recientes" del dashboard).
@@ -51,7 +50,7 @@ def _texto(valor):
 
 
 def _rango_fechas(params):
-    """?mes=AAAA-MM o bien fecha_inicio / fecha_fin."""
+    """?mes=AAAA-MM o fecha_inicio / fecha_fin."""
     mes = (params.get("mes") or "").strip()
     if mes:
         try:
@@ -215,7 +214,7 @@ def _limite(params):
 class OpcionesClientesView(APIView):
     """
     GET /api/finanzas/opciones/clientes/?search=texto&limit=20
-    Para el selector de cliente: solo id_cliente, nombre y contacto (sin totales, es rápido).
+    Para el selector de cliente: solo id_cliente, nombre y contacto.
     """
 
     def get(self, request):
@@ -234,8 +233,7 @@ class OpcionesProductosView(APIView):
     """
     GET /api/finanzas/opciones/productos/?search=texto&limit=20
     Para el selector de producto: id_producto, producto, categoria y el precio y costo
-    unitarios de su última venta (null si nunca se ha vendido). Son los mismos valores
-    que usa la API cuando una venta nueva no trae precio.
+    unitarios de su última venta (null si nunca se ha vendido).
     """
 
     def get(self, request):

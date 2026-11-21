@@ -486,7 +486,7 @@ class ImportarCsvTests(TestCase):
 
 
 class AlertasCobroTests(BaseAPITest):
-    """Misma lógica que vw_alertas_cobro del equipo de datos, a la fecha de hoy."""
+    
 
     def setUp(self):
         super().setUp()
@@ -555,7 +555,7 @@ class AlertasCobroTests(BaseAPITest):
 
 
 class MetricasTests(BaseAPITest):
-    """La API lee las vistas SQL del equipo de datos (finanzas/sql/)."""
+    
 
     def setUp(self):
         super().setUp()
@@ -633,7 +633,7 @@ class MetricasTests(BaseAPITest):
 
 
 class OperacionesTests(BaseAPITest):
-    """Ventas y gastos en una sola lista, para la pantalla 'Compras y ventas'."""
+   
 
     def setUp(self):
         super().setUp()

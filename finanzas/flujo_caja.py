@@ -38,10 +38,6 @@ def _sumar(queryset, campo_monto, trunc=None, campo_fecha=None, a_clave=None):
 
 def calcular(fecha_inicio, fecha_fin, tipo_compra=None, trunc=None, a_clave=None):
     """Calcula las entradas y salidas entre dos fechas (ambas incluidas).
-
-    Sin trunc devuelve los totales. Con trunc (TruncMonth, etc.) y a_clave (función que
-    convierte el valor truncado en la fecha de inicio del período) devuelve un dict
-    por período con las mismas claves.
     """
     contado = DetalleVenta.objects.filter(
         venta__fecha__gte=fecha_inicio,
